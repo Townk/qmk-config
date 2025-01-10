@@ -62,15 +62,6 @@ enum custom_keycodes {
     CKC_TAB,
     CKC_BKTAB,
     CKC_SMART_SFT,
-    CKC_BRKGRV,
-    CKC_NMB1,
-    CKC_NMB2,
-    CKC_NMB3,
-    CKC_NMB4,
-    CKC_NMB5,
-    CKC_NMSN2,
-    CKC_NMSN3,
-    CKC_NMSN5,
     SMTD_KEYCODES_END,
 };
 

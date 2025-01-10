@@ -21,6 +21,8 @@
 #include "quantum_keycodes.h"
 #include "townk.h"
 
+key_override_t lbracket_as_tilde_override = ko_make_basic(MOD_MASK_GUI, KC_LBRC, KC_TILD);
+
 void keyboard_post_init_user(void) {
     // Customise these values if you need to debug the matrix
     // debug_enable=true;
@@ -38,8 +40,6 @@ void keyboard_post_init_user(void) {
     global_saved_values.mh_timer_index    = MOUSE_LAYER_TIMEOUT_NONE;
 }
 
-// const key_override_t lbracket_as_tilde_override = ko_make_basic(MOD_MASK_GUI, KC_LBRC, KC_TILD);
-
 const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_COLS] = {
     [_BASE] = LAYOUT(
         /*     Center          North      East      South       West       (XXX)        */
@@ -55,24 +55,24 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
 
         /*     Down            Pad        Up        Nail        Knuckle    Double Down  */
         /*RT*/ KC_ENTER,       CKC_SPC,   KC_ESC,   CKC_BKTAB,  MO(_MBO),  QK_CAPS_WORD_TOGGLE,
-        /*LT*/ CKC_SMART_SFT,  CKC_BSPC,  KC_ESC,   CKC_TAB,    MO(_MBO),  QK_CAPS_WORD_TOGGLE
+        /*LT*/ CKC_SMART_SFT,  CKC_BSPC,  QK_REP,   CKC_TAB,    MO(_MBO),  QK_CAPS_WORD_TOGGLE
         ),
 
     [_NAV] = LAYOUT(
-        /*     Center     North           East          South     West         (XXX)        */
-        /*R1*/ KC_LEFT,   C(G(KC_LEFT)),  KC_END,      KC_H,     KC_HOME,     XXXXXXX,
-        /*R2*/ KC_DOWN,   C(G(KC_DOWN)),  A(KC_RGHT),  KC_J,     A(KC_LEFT),  XXXXXXX,
-        /*R3*/ KC_UP,     C(G(KC_UP)),    C(KC_RGHT),  KC_K,     C(KC_LEFT),  XXXXXXX,
-        /*R4*/ KC_RIGHT,  C(G(KC_RGHT)),  KC_PGDN,     KC_L,     KC_PGUP,     XXXXXXX,
+        /*     Center     North           East          South     West          (XXX)        */
+        /*R1*/ KC_LEFT,   C(G(KC_LEFT)),  KC_END,      KC_H,     KC_HOME,       XXXXXXX,
+        /*R2*/ KC_DOWN,   C(G(KC_DOWN)),  A(KC_RGHT),  KC_J,     A(KC_LEFT),    XXXXXXX,
+        /*R3*/ KC_UP,     C(G(KC_UP)),    C(KC_RGHT),  KC_K,     C(KC_LEFT),    XXXXXXX,
+        /*R4*/ KC_RIGHT,  C(G(KC_RGHT)),  KC_PGDN,     KC_L,     KC_PGUP,       XXXXXXX,
 
-        /*L1*/ KC_LSFT,   XXXXXXX,        XXXXXXX,     XXXXXXX,  XXXXXXX,     XXXXXXX,
-        /*L2*/ KC_LGUI,   XXXXXXX,        XXXXXXX,     XXXXXXX,  XXXXXXX,     XXXXXXX,
-        /*L3*/ KC_LALT,   XXXXXXX,        XXXXXXX,     XXXXXXX,  XXXXXXX,     XXXXXXX,
-        /*L4*/ KC_LCTL,   XXXXXXX,        XXXXXXX,     XXXXXXX,  XXXXXXX,     XXXXXXX,
+        /*L1*/ KC_LSFT,   XXXXXXX,        XXXXXXX,     XXXXXXX,  XXXXXXX,       XXXXXXX,
+        /*L2*/ KC_LGUI,   XXXXXXX,        XXXXXXX,     XXXXXXX,  XXXXXXX,       XXXXXXX,
+        /*L3*/ KC_LALT,   XXXXXXX,        G(KC_TAB),   XXXXXXX,  G(S(KC_TAB)),  XXXXXXX,
+        /*L4*/ KC_LCTL,   XXXXXXX,        G(KC_GRV),   XXXXXXX,  G(KC_TILD),    XXXXXXX,
 
-        /*     Down       Pad             Up           Nail      Knuckle      Double Down  */
-        /*RT*/ _______,   _______,        _______,     XXXXXXX,  _______,     XXXXXXX,
-        /*LT*/ XXXXXXX,   _______,        _______,     XXXXXXX,  _______,     XXXXXXX
+        /*     Down       Pad             Up           Nail      Knuckle        Double Down  */
+        /*RT*/ _______,   _______,        _______,     XXXXXXX,  _______,       XXXXXXX,
+        /*LT*/ XXXXXXX,   _______,        _______,     XXXXXXX,  _______,       XXXXXXX
         ),
 
     [_NUM] = LAYOUT(
@@ -155,8 +155,8 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
         /*L3*/ _______,  SV_SNIPER_3,  _______,  KC_BTN2,  _______,  XXXXXXX,
         /*L4*/ _______,  SV_SNIPER_5,  _______,  KC_BTN4,  _______,  XXXXXXX,
 
-        /*     Down       Pad       Up        Nail          Knuckle   Double Down  */
-        /*RT*/ _______,   KC_BTN1,  _______,  KC_BTN2,      KC_BTN3,  _______,
-        /*LT*/ _______,   _______,  _______,  _______,      _______,  _______
+        /*     Down       Pad          Up        Nail      Knuckle   Double Down  */
+        /*RT*/ _______,   KC_BTN1,     TO(0),  KC_BTN2,  KC_BTN3,  _______,
+        /*LT*/ _______,   _______,     TO(0),  _______,  _______,  _______
         )
 };

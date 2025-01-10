@@ -106,43 +106,6 @@ uint8_t SMTD_MOD_STATE = 0;
         break;                                          \
     }
 
-#define SMTD_MORPH_KP(macro_key, tap_key, mod, morphed_key, current_mods) \
-    case macro_key: {                                                     \
-        switch (action) {                                                 \
-            case SMTD_ACTION_TOUCH:                                       \
-                break;                                                    \
-            case SMTD_ACTION_TAP:                                         \
-                if (current_mods & mod) {                                 \
-                    SMTD_TAP_16(false, morphed_key);                      \
-                    BREAK_CAPS_WORD(morphed_key);                         \
-                    mouse_mode(false);                                    \
-                } else {                                                  \
-                    SMTD_TAP_16(true, tap_key);                           \
-                    BREAK_CAPS_WORD(tap_key);                             \
-                }                                                         \
-                break;                                                    \
-            case SMTD_ACTION_HOLD:                                        \
-                if (current_mods & mod) {                                 \
-                    SMTD_REGISTER_16(false, morphed_key);                 \
-                } else {                                                  \
-                    SMTD_REGISTER_16(true, tap_key);                      \
-                }                                                         \
-                break;                                                    \
-            case SMTD_ACTION_RELEASE:                                     \
-                if (current_mods & mod) {                                 \
-                    SMTD_UNREGISTER_16(false, morphed_key);               \
-                    BREAK_CAPS_WORD(morphed_key);                         \
-                    mouse_mode(false);                                    \
-                } else {                                                  \
-                    SMTD_UNREGISTER_16(true, tap_key);                    \
-                    BREAK_CAPS_WORD(tap_key);                             \
-                }                                                         \
-                send_keyboard_report();                                   \
-                break;                                                    \
-        }                                                                 \
-        break;                                                            \
-    }
-
 uint32_t get_smtd_timeout(uint16_t keycode, smtd_timeout timeout) {
     switch (keycode) {
         // left side
@@ -200,42 +163,6 @@ uint32_t get_smtd_timeout(uint16_t keycode, smtd_timeout timeout) {
             if (timeout == SMTD_TIMEOUT_TAP) return 300;
             if (timeout == SMTD_TIMEOUT_RELEASE) return 20;
             break;
-        case CKC_NMB1:
-            if (timeout == SMTD_TIMEOUT_TAP) return 300;
-            if (timeout == SMTD_TIMEOUT_RELEASE) return 20;
-            break;
-        case CKC_NMB2:
-            if (timeout == SMTD_TIMEOUT_TAP) return 300;
-            if (timeout == SMTD_TIMEOUT_RELEASE) return 20;
-            break;
-        case CKC_NMB3:
-            if (timeout == SMTD_TIMEOUT_TAP) return 300;
-            if (timeout == SMTD_TIMEOUT_RELEASE) return 20;
-            break;
-        case CKC_NMB4:
-            if (timeout == SMTD_TIMEOUT_TAP) return 300;
-            if (timeout == SMTD_TIMEOUT_RELEASE) return 20;
-            break;
-        case CKC_NMB5:
-            if (timeout == SMTD_TIMEOUT_TAP) return 300;
-            if (timeout == SMTD_TIMEOUT_RELEASE) return 20;
-            break;
-        case CKC_NMSN2:
-            if (timeout == SMTD_TIMEOUT_TAP) return 300;
-            if (timeout == SMTD_TIMEOUT_RELEASE) return 20;
-            break;
-        case CKC_NMSN3:
-            if (timeout == SMTD_TIMEOUT_TAP) return 300;
-            if (timeout == SMTD_TIMEOUT_RELEASE) return 20;
-            break;
-        case CKC_NMSN5:
-            if (timeout == SMTD_TIMEOUT_TAP) return 300;
-            if (timeout == SMTD_TIMEOUT_RELEASE) return 20;
-            break;
-        case CKC_BRKGRV:
-            if (timeout == SMTD_TIMEOUT_TAP) return 300;
-            if (timeout == SMTD_TIMEOUT_RELEASE) return 20;
-            break;
     }
 
     return get_smtd_timeout_default(timeout);
@@ -257,8 +184,10 @@ void on_backspace_action(smtd_action action, const uint8_t tap_count, const uint
                 unregister_mods(MOD_MASK_SHIFT);
                 SMTD_TAP_16(false, KC_DEL);
                 register_mods(shift_mod);
-            } else if (mods & MOD_MASK_GUI) {
-                SMTD_TAP_16(false, KC_TILD);
+            // } else if (mods & MOD_MASK_GUI) {
+            //     SMTD_TAP_16(false, KC_TILD);
+            // } else if (mods & MOD_MASK_CTRL) {
+            //     SMTD_TAP_16(false, S(KC_TAB));
             } else {
                 SMTD_TAP_16(false, KC_BSPC);
             }
@@ -272,8 +201,10 @@ void on_backspace_action(smtd_action action, const uint8_t tap_count, const uint
                     unregister_mods(MOD_MASK_SHIFT);
                     SMTD_REGISTER_16(false, KC_DEL);
                     delkey_registered = true;
-                } else if (mods & MOD_MASK_GUI) {
-                    SMTD_REGISTER_16(false, KC_TILD);
+                // } else if (mods & MOD_MASK_GUI) {
+                //     SMTD_REGISTER_16(false, KC_TILD);
+                // } else if (mods & MOD_MASK_CTRL) {
+                //     SMTD_REGISTER_16(false, S(KC_TAB));
                 } else {
                     SMTD_REGISTER_16(false, KC_BSPC);
                 }
@@ -288,8 +219,10 @@ void on_backspace_action(smtd_action action, const uint8_t tap_count, const uint
                     delkey_registered = false;
                     SMTD_UNREGISTER_16(false, KC_DEL);
                     register_mods(shift_mod);
-                } else if (mods & MOD_MASK_GUI) {
-                    SMTD_UNREGISTER_16(false, KC_TILD);
+                // } else if (mods & MOD_MASK_GUI) {
+                //     SMTD_UNREGISTER_16(false, KC_TILD);
+                // } else if (mods & MOD_MASK_CTRL) {
+                //     SMTD_UNREGISTER_16(false, S(KC_TAB));
                 } else {
                     SMTD_UNREGISTER_16(false, KC_BSPC);
                 }
@@ -344,17 +277,6 @@ void on_smtd_action(uint16_t keycode, smtd_action action, uint8_t tap_count) {
         SMTD_CUSTOM_LT(CKC_TAB, KC_TAB, _SYM);
         SMTD_CUSTOM_LT(CKC_BKTAB, S(KC_TAB), _FUN);
         SMTD_CUSTOM_LT(CKC_SPC, KC_SPC, _NUM);
-
-        SMTD_MORPH_KP(CKC_NMB1, KC_BTN1, MOD_MASK_CSAG, KC_TRNS, mods);
-        SMTD_MORPH_KP(CKC_NMB2, KC_BTN2, MOD_MASK_CSAG, KC_TRNS, mods);
-        SMTD_MORPH_KP(CKC_NMB3, KC_BTN3, MOD_MASK_CSAG, KC_TRNS, mods);
-        SMTD_MORPH_KP(CKC_NMB4, KC_BTN4, MOD_MASK_CSAG, KC_TRNS, mods);
-        SMTD_MORPH_KP(CKC_NMB5, KC_BTN5, MOD_MASK_CSAG, KC_TRNS, mods);
-
-        SMTD_MORPH_KP(CKC_NMSN2, SV_SNIPER_2, MOD_MASK_CSAG, KC_TRNS, mods);
-        SMTD_MORPH_KP(CKC_NMSN3, SV_SNIPER_3, MOD_MASK_CSAG, KC_TRNS, mods);
-        SMTD_MORPH_KP(CKC_NMSN5, SV_SNIPER_5, MOD_MASK_CSAG, KC_TRNS, mods);
-        SMTD_MORPH_KP(CKC_BRKGRV, KC_LBRC, MOD_MASK_GUI, KC_TILD, mods);
 
         case CKC_BSPC:
             on_backspace_action(action, tap_count, mods);
