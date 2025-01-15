@@ -48,8 +48,7 @@
 #define HR_MOD_RIGHT_MODIFIER_4 MOD_RCTL
 
 enum custom_keycodes {
-    SMTD_KEYCODES_BEGIN = RANGE_START,
-    CKC_A, // reads as C(ustom) + KC_A, but you may give any name here
+    CKC_A = RANGE_START, // reads as C(ustom) + KC_A, but you may give any name here
     CKC_R,
     CKC_S,
     CKC_T,
@@ -62,7 +61,6 @@ enum custom_keycodes {
     CKC_TAB,
     CKC_BKTAB,
     CKC_SMART_SFT,
-    SMTD_KEYCODES_END,
 };
 
 #endif // QMK_USERSPACE_TOWNK_KEYMAPS_H
