@@ -17,9 +17,6 @@
 #ifndef QMK_USERSPACE_TOWNK_KEYMAPS_H
 #define QMK_USERSPACE_TOWNK_KEYMAPS_H
 
-#include "modifiers.h"
-#include "quantum_keycodes.h"
-
 #ifdef SVALBOARD
 #    include "keymap_support.h"
 #    define RANGE_START SV_SAFE_RANGE
@@ -48,19 +45,15 @@
 #define HR_MOD_RIGHT_MODIFIER_4 MOD_RCTL
 
 enum custom_keycodes {
-    CKC_A = RANGE_START, // reads as C(ustom) + KC_A, but you may give any name here
-    CKC_R,
-    CKC_S,
-    CKC_T,
-    CKC_N,
-    CKC_E,
-    CKC_I,
-    CKC_O,
-    CKC_BSPC,
+    CKC_BSPC = RANGE_START,
     CKC_SPC,
     CKC_TAB,
     CKC_BKTAB,
     CKC_SMART_SFT,
+    MB_SFT, // BTN1 or Shift
+    MB_ALT, // BTN2 or Alt
+    MB_GUI, // BTN3 or Gui
+    MB_CTL, // BTN4 or Ctrl
 };
 
 #endif // QMK_USERSPACE_TOWNK_KEYMAPS_H

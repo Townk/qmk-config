@@ -1,0 +1,3 @@
+[submodule "modules/stasmarkin"]
+	path = modules/stasmarkin
+	url = https://github.com/stasmarkin/sm_td

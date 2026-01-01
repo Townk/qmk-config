@@ -14,13 +14,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef QMK_USERSPACE_TOWNK_FEATURE_SMTD_H
-#define QMK_USERSPACE_TOWNK_FEATURE_SMTD_H
+#ifndef QMK_USERSPACE_TOWNK_MOUSE_H
+#define QMK_USERSPACE_TOWNK_MOUSE_H
 
-#include <stdbool.h>
-#include <stdint.h>
 #include "action.h"
 
-bool process_smtd(uint16_t keycode, keyrecord_t *record);
+#define MOUSE_DPI_200 0
+#define MOUSE_DPI_400 1
+#define MOUSE_DPI_800 2
+#define MOUSE_DPI_1200 3
+#define MOUSE_DPI_1600 4
+#define MOUSE_DPI_2400 5
+#define MOUSE_LAYER_TIMEOUT_200_MS 0
+#define MOUSE_LAYER_TIMEOUT_300_MS 1
+#define MOUSE_LAYER_TIMEOUT_400_MS 2
+#define MOUSE_LAYER_TIMEOUT_500_MS 3
+#define MOUSE_LAYER_TIMEOUT_800_MS 4
+#define MOUSE_LAYER_TIMEOUT_NONE 5
 
-#endif  // QMK_USERSPACE_TOWNK_FEATURE_SMTD_H
+bool process_special_mouse_keys(uint16_t keycode, keyrecord_t *record);
+
+#endif // QMK_USERSPACE_TOWNK_MOUSE_H
