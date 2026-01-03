@@ -97,7 +97,16 @@ bool process_special_mouse_keys(uint16_t keycode, keyrecord_t *record) {
             state->is_held = true;
             state->used_as_modifier = false;
             state->converted_to_mouse = false;
-            state->mods_on_press = (get_mods() != 0);
+
+            // Check if there are external modifiers (not from our special keys)
+            uint8_t current_mods = get_mods();
+            uint8_t our_mods = 0;
+            for (int i = 0; i < 4; i++) {
+                if (mb_states[i].is_held && !mb_states[i].mods_on_press) {
+                    our_mods |= get_modifier(i);
+                }
+            }
+            state->mods_on_press = ((current_mods & ~our_mods) != 0);
             state->should_exit_mouse_mode = false;
 
             if (state->mods_on_press) {
