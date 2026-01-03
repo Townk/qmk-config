@@ -105,6 +105,51 @@
 	 "shortName": "Turbo\nScan",
 	 "title": "Change the scan mode of the keyboard.",
 	 "name": "SV_TURBO_SCAN"
+      },
+      {
+        "shortName": "Nav\n⌫ / ⌦",
+        "title": "Toggle Navigation layer when held, backspace when tapped, delete when tapped with shift held",
+        "name": "CKC_BSPC"
+      },
+      {
+        "shortName": "Num\n␣",
+        "title": "Toggle Numbers layer when held, space when tapped",
+        "name": "CKC_SPC"
+      },
+      {
+        "shortName": "Sym\n⇥",
+        "title": "Toggle Symbols layer when held, tab when tapped",
+        "name": "CKC_TAB"
+      },
+      {
+        "shortName": "Fn\n⇤",
+        "title": "Toggle Function keys layer when held, back-tab (Shift+Tab) when tapped",
+        "name": "CKC_BKTAB"
+      },
+      {
+        "shortName": "Smart\nShift",
+        "title": "Hold: Shift, Tap: One-shot Shift, Double-Tap: Caps-Word",
+        "name": "CKC_SMSFT"
+      },
+      {
+        "shortName": "Btn1 L\n⇧",
+        "title": "Left mouse button when clicked, Shift when held",
+        "name": "MB_SFT"
+      },
+      {
+        "shortName": "Btn2 R\n⌥",
+        "title": "Right mouse button when clicked, Alt when held",
+        "name": "MB_ALT"
+      },
+      {
+        "shortName": "Btn3 M\n⌘",
+        "title": "Middle mouse button when clicked, Gui when held",
+        "name": "MB_GUI"
+      },
+      {
+        "shortName": "Btn4\n⌃",
+        "title": "Mouse button 4 when clicked, Ctrl when held",
+        "name": "MB_CTL"
       }
     ],
     "layouts": {

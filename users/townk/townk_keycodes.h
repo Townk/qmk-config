@@ -19,16 +19,22 @@
 
 #ifdef SVALBOARD
 #    include "keymap_support.h"
-#    define RANGE_START SV_SAFE_RANGE
+// Can't use the proper safe range number here if I want my custom keys to show
+// up on Vial or Keybard.
+#    define RANGE_START QK_KB_20
 #else
 #    define RANGE_START SAFE_RANGE
 #endif
 
-#define MKC_BKTAB   S(KC_TAB)      // Back Tab
-#define MKC_APPWIN  C(G(KC_DOWN))  // Show windows from current app
-#define MKC_ALLWIN  C(G(KC_UP))    // Show all windows from all apps
-#define MKC_DKTN    C(G(KC_RGHT))  // Next Desktop
-#define MKC_DKTP    C(G(KC_LEFT))  // Previous Desktop
+#define MKC_BKTAB   S(KC_TAB)      // Back Tab (⇧ ⇥)
+#define MKC_APPWIN  C(G(KC_DOWN))  // Show windows from current app (⌃ ⌘ ↓)
+#define MKC_ALLWIN  C(G(KC_UP))    // Show all windows from all apps (Mission Control) (⌃ ⌘ ↑)
+#define MKC_DKTN    C(G(KC_RGHT))  // Next Desktop (⌃ ⌘ →)
+#define MKC_DKTP    C(G(KC_LEFT))  // Previous Desktop (⌃ ⌘ ←)
+#define MKC_SHDKT   A(G(KC_DOWN))  // Show Desktop (⌥ ⌘ ↓)
+#define MKC_SHNOT   A(G(KC_UP))    // Show Notification Center (⌥ ⌘ ↑)
+#define MKC_SPAPP   A(G(KC_LEFT))  // Spotlight Apps (⌥ ⌘ ←)
+#define MKC_SPFND   A(G(KC_RIGHT)) // Spotlight Find (⌥ ⌘ →)
 
 enum custom_keycodes {
     CKC_BSPC = RANGE_START,

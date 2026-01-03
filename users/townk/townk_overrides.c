@@ -44,8 +44,19 @@ const vial_key_override_entry_t rparen_key_override = {
     .options=custom_ko_options
 };
 
+const vial_key_override_entry_t exclam_key_override = {
+    .trigger_mods=MOD_MASK_SHIFT,
+    .trigger=KC_EXLM,
+    .replacement=KC_CIRC,
+    .layers=~0,
+    .suppressed_mods=MOD_MASK_SHIFT,
+    .negative_mod_mask=0,
+    .options=custom_ko_options
+};
+
 void setup_dynamic_keymap(void) {
     dynamic_keymap_set_key_override(0, &lparen_key_override);
     dynamic_keymap_set_key_override(1, &rparen_key_override);
+    dynamic_keymap_set_key_override(2, &exclam_key_override);
 }
 
