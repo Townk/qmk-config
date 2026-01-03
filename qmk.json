@@ -1,4 +1,7 @@
 {
     "userspace_version": "1.0",
-    "build_targets": []
+    "build_targets": [
+        ["svalboard/trackball/pmw3389/left", "townk"],
+        ["svalboard/trackball/pmw3389/right", "townk"]
+    ]
 }

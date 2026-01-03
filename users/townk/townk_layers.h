@@ -1,4 +1,4 @@
-/* Copyright (C) 2024 Thiago Alves (https://github.com/townk)
+/* Copyright (C) 2025 Thiago Alves (https://github.com/townk)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,14 +29,32 @@
 extern const rgblight_segment_t* const rgb_layers[];
 
 enum layer_names {
-    _BASE,
-    _NAV,
-    _NUM,
-    _SYM,
-    _FUN,
-    _MBO = LAST_LAYER,
+    _BASE,                 ///< The default keyboard layer.
+    _NAV,                  ///< Navigation layer. Has keys used to move around the OS.
+    _NUM,                  ///< Numbers layer. Has all digits and some math operations.
+    _SYM,                  ///< Symbols layer. Has all symbols organized ergonomically.
+    _FUN,                  ///< Function keys layer. Has all `F?` keys available.
+    _MED,                  ///< Media layer. Has keys to control muiti-media in the OS.
+    _SYS = LAST_LAYER - 1, ///< Svalboard specific keys layer.
+    _MBO = LAST_LAYER,     ///< Mouse buttons layer.
 };
 
+/**
+ * @brief Initialize RGB lighting layer indicators
+ *
+ * This function sets up the RGB lighting system to use layer-based color
+ * indicators. It must be called during keyboard initialization (typically from
+ * keyboard_post_init_user()) to register the rgb_layers array with QMK's RGB
+ * lighting subsystem.
+ *
+ * After this function is called, the RGB LEDs will automatically change colors
+ * based on the active layer, as defined in the rgb_layers array.
+ *
+ * @note This function should be called once during keyboard initialization.
+ *
+ * @see keyboard_post_init_user() in keymap.c where this function is called.
+ * @see rgb_layers array for the layer color definitions.
+ */
 void setup_rgb_light_layer(void);
 
 #endif // QMK_USERSPACE_TOWNK_LAYERS_H

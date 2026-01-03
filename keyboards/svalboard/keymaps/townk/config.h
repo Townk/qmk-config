@@ -1,4 +1,4 @@
-/* Copyright (C) 2024 Thiago Alves (https://github.com/townk)
+/* Copyright (C) 2025 Thiago Alves (https://github.com/townk)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,21 +18,6 @@
 #define QMK_USERSPACE_TOWNK_SVALBOARD_CONFIG_H
 
 #define VIAL_KEYBOARD_UID {0x1B, 0x18, 0x7D, 0xF2, 0x21, 0xF6, 0x29, 0x48}
-
-// Vial security combos, depending on which unit this is...
-#ifdef INIT_EE_HANDS_RIGHT
-// right thumb lock
-#    define VIAL_UNLOCK_COMBO_ROWS {5, 5}
-#    define VIAL_UNLOCK_COMBO_COLS {0, 1}
-#elif INIT_EE_HANDS_LEFT
-// left thumb lock
-#    define VIAL_UNLOCK_COMBO_ROWS {0, 0}
-#    define VIAL_UNLOCK_COMBO_COLS {0, 1}
-#else
-// both thumb locks
-#    define VIAL_UNLOCK_COMBO_ROWS {0, 0, 5, 5}
-#    define VIAL_UNLOCK_COMBO_COLS {2, 5, 2, 5}
-#endif
 
 // Shorten the unlock timeout (needs mod in `quantum/vial.c`; without
 // it the override doesn't work)

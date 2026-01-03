@@ -1,4 +1,4 @@
-/* Copyright (C) 2024 Thiago Alves (https://github.com/townk)
+/* Copyright (C) 2025 Thiago Alves (https://github.com/townk)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,24 +25,207 @@
 #include "townk_mouse.h"
 #include "townk_overrides.h"
 
-void keyboard_post_init_user(void) {
-    // Customise these values if you need to debug the matrix
-    // debug_enable=true;
-    // debug_matrix=true;
-    // debug_keyboard=true;
-    // debug_mouse=true;
-    setup_rgb_light_layer();
-    setup_dynamic_keymap();
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * DISCLAIMER                                                                *
+ * ----------                                                                *
+ * This layout docs use several charcters only found on the NerdFonts fonts  *
+ * (https://www.nerdfonts.com), so, to proper visualize this file, use one   *
+ * of the NerdFonts fonts and TURN-OFF the auto-line-wrap on your editor.    *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-    // Initial configuration
-    global_saved_values.left_scroll       = true;
-    global_saved_values.right_scroll      = false;
-    global_saved_values.left_dpi_index    = MOUSE_DPI_400;
-    global_saved_values.right_dpi_index   = MOUSE_DPI_1200;
-    global_saved_values.mh_timer_index    = MOUSE_LAYER_TIMEOUT_NONE;
-}
+/*
+ * To understand this keymap, you need to understand the terminology used on
+ * Svalboard.
+ *
+ * The following schema is a cheat-sheet of the terms laid out on a keyboard
+ * representation.
+ *
+ *       L4           L3           L2           L1      ┊      R4           R3           R2           R1
+ *     ╭───╮        ╭───╮        ╭───╮        ╭───╮     ┊     ╭───╮        ╭───╮        ╭───╮        ╭───╮
+ *     │ N │        │ N │        │ N │        │ N │     ┊     │ N │        │ N │        │ N │        │ N │
+ * ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮ ┊ ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮
+ * │ W │ C │ E ││ W │ C │ E ││ W │ C │ E ││ W │ C │ E │ ┊ │ W │ C │ E ││ W │ C │ E ││ W │ C │ E ││ W │ C │ E │
+ * ╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯ ┊ ╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯
+ *     │ S │        │ S │        │ S │        │ S │     ┊     │ S │        │ S │        │ S │        │ S │
+ *     ├───┤        ├───┤        ├───┤        ├───┤     ┊     ├───┤        ├───┤        ├───┤        ├───┤
+ *     │D-S│        │D-S│        │D-S│        │D-S│     ┊     │D-S│        │D-S│        │D-S│        │D-S│
+ *     ╰───╯        ╰───╯        ╰───╯        ╰───╯     ┊     ╰───╯        ╰───╯        ╰───╯        ╰───╯
+ *                                                      ┊
+ *                                   LT (Left Thumbs)   ┊   RT (Right Thumbs)
+ *                                 ╭─────╭────╮──────╮  ┊  ╭──────╭────╮─────╮
+ *                                 │ Pad ││DD││ Nail │  ┊  │ Nail ││DD││ Pad │
+ *                                 ╰─────│╰──╯│──────╯  ┊  ╰──────│╰──╯│─────╯
+ *                                  │ Up │    │───────╮ ┊ ╭───────│    │ Up │
+ *                                  ╰────│Down│Knuckle│ ┊ │Knuckle│Down│────╯
+ *                                       ╰────╯───────╯ ┊ ╰───────╰────╯
+ *
+ * Each half of a Svalboard has a "finger cluster" and a "thumb cluster".
+ *
+ * Finger clusters are labeled by a letter (`L` or `R`) indicating which half
+ * of the keyboard they belong to, and a number (`1`, `2`, `3`, or `4`)
+ * indicating which finger is used to activate keys in the cluster, numbered
+ * from the inside to the outside when your palms are facing down.
+ *
+ * Keys on finger clusters are named after their physical position on the
+ * keyboard:
+ *
+ * - `C` (_Center Key_): Activated with a downward press of the finger.
+ * - `N` (_North Key_): Activated with an upward flick of the finger.
+ * - `E` (_East Key_): Activated with a lateral movement to the right.
+ * - `S` (_South Key_): Activated with a downward flick (like scratching) of
+ *   the finger.
+ * - `W` (_West Key_): Activated with a lateral movement to the left.
+ * - `D-S` (_Double-South Key_): Positioned behind the South Key and activated
+ *   the same way.
+ *
+ * The thumb cluster keys are named after the part of the thumb used to
+ * activate them:
+ *
+ * - `Pad`: Activated with an inward motion of the thumb.
+ * - `Nail`: Activated with an outward motion of the thumb.
+ * - `Knuckle`: Activated with an outward motion of the thumb knuckle.
+ * - `Up`: Activated with an upward motion of the thumb.
+ * - `Down`: Activated with a downward motion of the thumb.
+ * - `DD` (_Double-Down Key_): Activated by pressing the Down Key further after
+ *   its initial activation.
+ */
 
+/**
+ * KEYMAP OVERVIEW
+ * ===============
+ *
+ * This keymap implements a highly optimized COLEMAK-DH layout with ergonomic
+ * layer design inspired by the Miryoku layout philosophy. It emphasizes minimal
+ * finger travel, comfortable chording, and logical key grouping across six
+ * layers.
+ *
+ * LAYOUT PHILOSOPHY
+ * -----------------
+ *
+ * **Miryoku-Inspired Layer Activation:**
+ * Layers follow a single-hand activation pattern. When you hold a layer key on
+ * one hand, all functional keys for that layer appear on the opposite hand.
+ * This allows you to activate a layer and use it without complex finger
+ * gymnastics or same-hand stretching.
+ *
+ * Example: Hold left thumb on CKC_BSPC → NAV layer keys appear on right hand.
+ *
+ * **Home Row Modifiers:**
+ * The base layer places all four primary modifiers (⌃ ⌥ ⌘ ⇧) on the Double-
+ * South keys of each finger cluster, accessible via a comfortable downward
+ * flick. Modifiers mirror across both hands for convenience.
+ *
+ * **Dual-Function Thumb Keys:**
+ * Thumb cluster keys serve double duty with tap/hold behavior:
+ *   - CKC_BSPC: Backspace on tap, Navigation layer on hold
+ *   - CKC_SPC:  Space on tap, Numbers layer on hold
+ *   - CKC_TAB:  Tab on tap, Symbols layer on hold
+ *   - CKC_BKTAB: Back-tab (⇧⇥) on tap, Function keys layer on hold
+ *   - CKC_SMSFT: One-shot Shift on tap, Shift on hold, Caps Word on double-tap
+ *
+ * LAYER STRUCTURE
+ * ---------------
+ *
+ * ⓿ BASE Layer (COLEMAK-DH):
+ *   The primary typing layer featuring the COLEMAK-DH letter layout with
+ *   frequently used symbols placed on the Center and side keys for easy access
+ *   without leaving the base layer. Punctuation and brackets are positioned for
+ *   programming efficiency.
+ *
+ * ➊ NAV Layer (Navigation):
+ *   Activated by left thumb (CKC_BSPC hold). Contains all navigation keys on
+ *   the right hand in Vim-style arrangement:
+ *     - Arrow keys: H(←) J(↓) K(↑) L(→) following Vim conventions
+ *     - Page navigation: Page Up/Down, Home/End
+ *     - macOS window management: Mission Control, App Windows, Desktop
+ *       switching
+ *     - Word/line navigation with modifier combos (⌃←/→, ⌥←/→)
+ *
+ * ➋ NUM Layer (Numbers):
+ *   Activated by right thumb (CKC_SPC hold). Numeric keypad layout on left hand
+ *   with mathematical operators:
+ *     - Numbers arranged from 1-9 (bottom-to-top, outside-to-inside)
+ *     - 0 positioned for thumb access
+ *     - Arithmetic operators (+, -, *, /) on North keys
+ *     - Parentheses and equals sign for formula entry
+ *
+ * ➌ SYM Layer (Symbols):
+ *   Activated by left thumb (CKC_TAB hold). Programming symbols on right hand,
+ *   organized in logical pairs to facilitate chording:
+ *     - Brackets: {}, [], ()
+ *     - Comparison: <, >, =
+ *     - Logic: &, |, !
+ *     - Special: @, #, $, %, ^, *, /, \, _, :
+ *   Symbols are arranged to minimize finger travel for common programming
+ *   patterns (e.g., {} for blocks, [] for arrays, () for functions).
+ *
+ * ➍ FUN Layer (Function Keys):
+ *   Activated by right thumb (CKC_BKTAB hold). All function keys F1-F20 on
+ *   left hand:
+ *     - F1-F4: South keys (bottom row)
+ *     - F5-F9: Center and North keys (standard function keys)
+ *     - F10-F20: Extended function keys for advanced workflows
+ *   Arranged from bottom-to-top, outside-to-inside for systematic access.
+ *
+ * MBO Layer (Mouse Buttons):
+ *   Auto-activated by trackball movement (if auto_mouse is enabled). Provides
+ *   mouse button access with modifier keys:
+ *     - MB_SFT, MB_ALT, MB_GUI, MB_CTL: Dual-function modifier/mouse buttons
+ *     - Allows clicking with modifiers held (⌘-click, ⌃-click, etc.)
+ *     - Sniper mode available for precision pointing
+ *
+ * KEY ORGANIZATION PRINCIPLES
+ * ---------------------------
+ *
+ * - Numbers/Functions: Arranged bottom-to-top (1→9, F1→F9), outside-to-inside
+ * - Symbols: Paired logically for chording (e.g., {} and [] adjacent)
+ * - Navigation: Vim-style HJKL arrangement with contextual modifiers
+ * - Modifiers: Symmetrically placed on both hands for flexibility
+ * - Frequent keys: Placed on strong fingers (index, middle)
+ *
+ * SPECIAL FEATURES
+ * ----------------
+ *
+ * - Dual trackball support with independent DPI settings
+ * - RGB layer indicators (colors change per active layer)
+ * - Auto mouse layer activation on trackball movement
+ * - Caps Word support (type in CAPS without holding shift)
+ * - Repeat key (QK_REP) for efficient character repetition
+ * - Dynamic keymap support for runtime customization via Vial/Keybard
+ *
+ * REFERENCES
+ * ----------
+ *
+ * - Miryoku Layout: https://github.com/manna-harbour/miryoku
+ * - COLEMAK-DH: https://colemakmods.github.io/mod-dh/
+ * - Svalboard: https://svalboard.com
+ *
+ * @see townk_keycodes.h for custom keycode definitions
+ * @see townk_layers.h for layer enumeration and RGB configuration
+ * @see townk_mouse.h for trackball and mouse layer behavior
+ */
 const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_COLS] = {
+    /*
+     * COLEMAK-DH Layer (⓿ BASE)
+     *      L4           L3           L2           L1       ┊      R4           R3           R2           R1
+     *     ╭───╮        ╭───╮        ╭───╮        ╭───╮     ┊     ╭───╮        ╭───╮        ╭───╮        ╭───╮
+     *     │ Q │        │ W │        │ F │        │ P │     ┊     │ L │        │ U │        │ Y │        │ ; │
+     * ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮ ┊ ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮
+     * │ [ │ A │ ( ││ \ │ R │ V ││ ` │ S │ B ││ ' │ T │ G │ ┊ │ M │ N │ - ││ J │ E │ = ││ K │ I │ ! ││ ) │ O │ ] │
+     * ╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯ ┊ ╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯
+     *     │ Z │        │ X │        │ C │        │ D │     ┊     │ H │        │ , │        │ . │        │ / │
+     *     ├───┤        ├───┤        ├───┤        ├───┤     ┊     ├───┤        ├───┤        ├───┤        ├───┤
+     *     │ ⌃ │        │ ⌥ │        │ ⌘ │        │ ⇧ │     ┊     │ ⇧ │        │ ⌘ │        │ ⌥ │        │ ⌃ │
+     *     ╰───╯        ╰───╯        ╰───╯        ╰───╯     ┊     ╰───╯        ╰───╯        ╰───╯        ╰───╯
+     *                                                      ┊
+     *                                    LT (Left Thumbs)  ┊  RT (Right Thumbs)
+     *                                   ╭─────╭────╮─────╮ ┊ ╭─────╭────╮─────╮
+     *                                   │⌫|⌦|➊││⇧W││ ⇥|➌ │ ┊ │ ⇤|➍ ││⇧W││ ␣|➋ │
+     *                                   ╰─────│╰──╯│─────╯ ┊ ╰─────│╰──╯│─────╯
+     *                                     │ 󰑓 │    │─────╮ ┊ ╭─────│    │ ⎋ │
+     *                                     ╰───│ ⇧ │  ➌  │ ┊ │  ➍  │ ⏎  │───╯
+     *                                         ╰────╯─────╯ ┊ ╰─────╰────╯
+     */
     [_BASE] = LAYOUT(
         /*     Center      North      East      South       West       Double-South */
         /*R1*/ KC_N,       KC_L,      KC_MINS,  KC_H,       KC_M,      KC_RIGHT_SHIFT,
@@ -60,6 +243,28 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
         /*LT*/ CKC_SMSFT,  CKC_BSPC,  QK_REP,   CKC_TAB,    MO(_SYM),  QK_CAPS_WORD_TOGGLE
         ),
 
+    /*
+     * Navigation Layer (➊ NAV)
+     *
+     *      L4           L3           L2           L1       ┊      R4           R3           R2           R1
+     *     ╭───╮        ╭───╮        ╭───╮        ╭───╮     ┊     ╭───╮        ╭───╮        ╭───╮        ╭───╮
+     *     │   │        │   │        │   │        │   │     ┊     │⌃⌘←│        │⌃⌘↓│        │⌃⌘↑│        │⌃⌘→│
+     * ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮ ┊ ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮
+     * │   │   │   ││   │   │   ││   │   │   ││   │   │   │ ┊ │ ↖ │ ← │ ↘ ││⌥ ←│ ↓ │⌥ →││⌃ ←│ ↑ │⌃ →││ ⇞ │ → │ ⇟ │
+     * ╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯ ┊ ╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯
+     *     │   │        │   │        │   │        │   │     ┊     │⌥⌘←│        │⌥⌘↓│        │⌥⌘↑│        │⌥⌘→│
+     *     ├───┤        ├───┤        ├───┤        ├───┤     ┊     ├───┤        ├───┤        ├───┤        ├───┤
+     *     │ ⌃ │        │ ⌥ │        │ ⌘ │        │ ⇧ │     ┊     │ ⇧ │        │ ⌘ │        │ ⌥ │        │ ⌃ │
+     *     ╰───╯        ╰───╯        ╰───╯        ╰───╯     ┊     ╰───╯        ╰───╯        ╰───╯        ╰───╯
+     *                                                      ┊
+     *                                    LT (Left Thumbs)  ┊  RT (Right Thumbs)
+     *                                   ╭─────╭────╮─────╮ ┊ ╭─────╭────╮─────╮
+     *                                   │ 🮖🮖🮖 ││  ││     │ ┊ │  ⇤  ││  ││  ␣  │
+     *                                   ╰─────│╰──╯│─────╯ ┊ ╰─────│╰──╯│─────╯
+     *                                     │   │    │─────╮ ┊ ╭─────│    │ ⎋ │
+     *                                     ╰───│    │     │ ┊ │     │  ⏎ │───╯
+     *                                         ╰────╯─────╯ ┊ ╰─────╰────╯
+     */
     [_NAV] = LAYOUT(
         /*     Center     North        East         South      West         Double-South */
         /*R1*/ KC_LEFT,   MKC_DKTP,    KC_END,      MKC_SPAPP, KC_HOME,     _______,
@@ -67,22 +272,43 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
         /*R3*/ KC_UP,     MKC_ALLWIN,  C(KC_RGHT),  MKC_SHNOT, C(KC_LEFT),  _______,
         /*R4*/ KC_RIGHT,  MKC_DKTN,    KC_PGDN,     MKC_SPFND, KC_PGUP,     _______,
 
-        /*L1*/ KC_LSFT,   XXXXXXX,     XXXXXXX,     XXXXXXX,   XXXXXXX,     _______,
-        /*L2*/ KC_LGUI,   XXXXXXX,     XXXXXXX,     XXXXXXX,   XXXXXXX,     _______,
-        /*L3*/ KC_LALT,   XXXXXXX,     XXXXXXX,     XXXXXXX,   XXXXXXX,     _______,
-        /*L4*/ KC_LCTL,   XXXXXXX,     XXXXXXX,     XXXXXXX,   XXXXXXX,     _______,
+        /*L1*/ XXXXXXX,   XXXXXXX,     XXXXXXX,     XXXXXXX,   XXXXXXX,     _______,
+        /*L2*/ XXXXXXX,   XXXXXXX,     XXXXXXX,     XXXXXXX,   XXXXXXX,     _______,
+        /*L3*/ XXXXXXX,   XXXXXXX,     XXXXXXX,     XXXXXXX,   XXXXXXX,     _______,
+        /*L4*/ XXXXXXX,   XXXXXXX,     XXXXXXX,     XXXXXXX,   XXXXXXX,     _______,
 
         /*     Down       Pad          Up           Nail       Knuckle      Double Down  */
-        /*RT*/ _______,   _______,     _______,     XXXXXXX,   _______,     XXXXXXX,
-        /*LT*/ XXXXXXX,   _______,     _______,     XXXXXXX,   _______,     XXXXXXX
+        /*RT*/ _______,   KC_SPC,      _______,     MKC_BKTAB, XXXXXXX,     XXXXXXX,
+        /*LT*/ XXXXXXX,   XXXXXXX,     XXXXXXX,     XXXXXXX,   XXXXXXX,     XXXXXXX
         ),
 
+    /*
+     * Numbers Layer (➋ NUM)
+     *      L4           L3           L2           L1       ┊      R4           R3           R2           R1
+     *     ╭───╮        ╭───╮        ╭───╮        ╭───╮     ┊     ╭───╮        ╭───╮        ╭───╮        ╭───╮
+     *     │ / │        │ * │        │ - │        │ + │     ┊     │   │        │   │        │   │        │   │
+     * ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮ ┊ ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮
+     * │ 0 │ 5 │ , ││ ^ │ 6 │ = ││ ( │ 7 │ ) ││ . │ 8 │ 9 │ ┊ │   │   │   ││   │   │   ││   │   │   ││   │   │   │
+     * ╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯ ┊ ╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯
+     *     │ 1 │        │ 2 │        │ 3 │        │ 4 │     ┊     │   │        │   │        │   │        │   │
+     *     ├───┤        ├───┤        ├───┤        ├───┤     ┊     ├───┤        ├───┤        ├───┤        ├───┤
+     *     │ ⌃ │        │ ⌥ │        │ ⌘ │        │ ⇧ │     ┊     │ ⇧ │        │ ⌘ │        │ ⌥ │        │ ⌃ │
+     *     ╰───╯        ╰───╯        ╰───╯        ╰───╯     ┊     ╰───╯        ╰───╯        ╰───╯        ╰───╯
+     *                                                      ┊
+     *                                    LT (Left Thumbs)  ┊  RT (Right Thumbs)
+     *                                   ╭─────╭────╮─────╮ ┊ ╭─────╭────╮─────╮
+     *                                   │  ⌫  ││  ││     │ ┊ │     ││  ││ 🮖🮖🮖 │
+     *                                   ╰─────│╰──╯│─────╯ ┊ ╰─────│╰──╯│─────╯
+     *                                     │ 󰑓 │    │─────╮ ┊ ╭─────│    │   │
+     *                                     ╰───│ ⌅  │     │ ┊ │     │    │───╯
+     *                                         ╰────╯─────╯ ┊ ╰─────╰────╯
+     */
     [_NUM] = LAYOUT(
         /*     Center    North     East      South     West      Double-South */
-        /*R1*/ KC_RSFT,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  _______,
-        /*R2*/ KC_RGUI,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  _______,
-        /*R3*/ KC_RALT,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  _______,
-        /*R4*/ KC_RCTL,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  _______,
+        /*R1*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  _______,
+        /*R2*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  _______,
+        /*R3*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  _______,
+        /*R4*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  _______,
 
         /*L1*/ KC_KP_8,  KC_PPLS,  KC_KP_9,  KC_KP_4,  KC_PDOT,  _______,
         /*L2*/ KC_KP_7,  KC_PMNS,  KC_RPRN,  KC_KP_3,  KC_LPRN,  _______,
@@ -90,44 +316,110 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
         /*L4*/ KC_KP_5,  KC_PSLS,  KC_COMM,  KC_KP_1,  KC_KP_0,  _______,
 
         /*     Down      Pad       Up        Nail      Knuckle   Double Down  */
-        /*RT*/ _______,  _______,  _______,  _______,  _______,  XXXXXXX,
-        /*LT*/ KC_PENT,  _______,  _______,  _______,  _______,  XXXXXXX
+        /*RT*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,
+        /*LT*/ KC_PENT,  KC_BSPC,  _______,  KC_TAB,   XXXXXXX,  XXXXXXX
         ),
 
+    /*
+     * Symbols Layer (➌ SYM)
+     *
+     *      L4           L3           L2           L1       ┊      R4           R3           R2           R1
+     *     ╭───╮        ╭───╮        ╭───╮        ╭───╮     ┊     ╭───╮        ╭───╮        ╭───╮        ╭───╮
+     *     │   │        │   │        │   │        │   │     ┊     │ < │        │ = │        │ > │        │ _ │
+     * ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮ ┊ ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮
+     * │   │   │   ││   │   │   ││   │   │   ││   │   │   │ ┊ │ ^ │ { │ $ ││ & │ : │ | ││ ! │ } │ % ││ / │ @ │ \ │
+     * ╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯ ┊ ╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯
+     *     │   │        │   │        │   │        │   │     ┊     │ [ │        │ * │        │ ] │        │ # │
+     *     ├───┤        ├───┤        ├───┤        ├───┤     ┊     ├───┤        ├───┤        ├───┤        ├───┤
+     *     │ ⌃ │        │ ⌥ │        │ ⌘ │        │ ⇧ │     ┊     │ ⇧ │        │ ⌘ │        │ ⌥ │        │ ⌃ │
+     *     ╰───╯        ╰───╯        ╰───╯        ╰───╯     ┊     ╰───╯        ╰───╯        ╰───╯        ╰───╯
+     *                                                      ┊
+     *                                    LT (Left Thumbs)  ┊  RT (Right Thumbs)
+     *                                   ╭─────╭────╮─────╮ ┊ ╭─────╭────╮─────╮
+     *                                   │     ││  ││ 🮖🮖🮖 │ ┊ │  ⇤  ││  ││  ␣  │
+     *                                   ╰─────│╰──╯│─────╯ ┊ ╰─────│╰──╯│─────╯
+     *                                     │   │    │─────╮ ┊ ╭─────│    │ ⎋ │
+     *                                     ╰───│    │     │ ┊ │     │  ⏎ │───╯
+     *                                         ╰────╯─────╯ ┊ ╰─────╰────╯
+     */
     [_SYM] = LAYOUT(
-        /*     Center    North      East      South     West      Double-South */
-        /*R1*/ KC_LCBR,  KC_LT,     KC_DLR,   KC_LBRC,  KC_CIRC,  _______,
-        /*R2*/ KC_COLN,  KC_EQUAL,  KC_PIPE,  KC_ASTR,  KC_AMPR,  _______,
-        /*R3*/ KC_RCBR,  KC_GT,     KC_PERC,  KC_RBRC,  KC_EXLM,  _______,
-        /*R4*/ KC_AT,    KC_UNDS,   KC_BSLS,  KC_HASH,  KC_SLSH,  _______,
+        /*     Center    North      East      South      West      Double-South */
+        /*R1*/ KC_LCBR,  KC_LT,     KC_DLR,   KC_LBRC,   KC_CIRC,  _______,
+        /*R2*/ KC_COLN,  KC_EQUAL,  KC_PIPE,  KC_ASTR,   KC_AMPR,  _______,
+        /*R3*/ KC_RCBR,  KC_GT,     KC_PERC,  KC_RBRC,   KC_EXLM,  _______,
+        /*R4*/ KC_AT,    KC_UNDS,   KC_BSLS,  KC_HASH,   KC_SLSH,  _______,
 
-        /*L1*/ KC_LSFT,  XXXXXXX,   XXXXXXX,  XXXXXXX,  XXXXXXX,  _______,
-        /*L2*/ KC_LGUI,  XXXXXXX,   XXXXXXX,  XXXXXXX,  XXXXXXX,  _______,
-        /*L3*/ KC_LALT,  XXXXXXX,   XXXXXXX,  XXXXXXX,  XXXXXXX,  _______,
-        /*L4*/ KC_LCTL,  XXXXXXX,   XXXXXXX,  XXXXXXX,  XXXXXXX,  _______,
+        /*L1*/ XXXXXXX,  XXXXXXX,   XXXXXXX,  XXXXXXX,   XXXXXXX,  _______,
+        /*L2*/ XXXXXXX,  XXXXXXX,   XXXXXXX,  XXXXXXX,   XXXXXXX,  _______,
+        /*L3*/ XXXXXXX,  XXXXXXX,   XXXXXXX,  XXXXXXX,   XXXXXXX,  _______,
+        /*L4*/ XXXXXXX,  XXXXXXX,   XXXXXXX,  XXXXXXX,   XXXXXXX,  _______,
 
-        /*     Down      Pad        Up        Nail      Knuckle   Double Down  */
-        /*RT*/ _______,  _______,   _______,  XXXXXXX,  _______,  XXXXXXX,
-        /*LT*/ XXXXXXX,  _______,   _______,  XXXXXXX,  _______,  XXXXXXX
+        /*     Down      Pad        Up        Nail       Knuckle   Double Down  */
+        /*RT*/ _______,  KC_SPC,    _______,  MKC_BKTAB, XXXXXXX,  XXXXXXX,
+        /*LT*/ XXXXXXX,  XXXXXXX,   XXXXXXX,  XXXXXXX,   XXXXXXX,  XXXXXXX
         ),
 
+    /*
+     * Function Keys Layer (➍ FUN)
+     *
+     *      L4           L3           L2           L1       ┊      R4           R3           R2           R1
+     *     ╭───╮        ╭───╮        ╭───╮        ╭───╮     ┊     ╭───╮        ╭───╮        ╭───╮        ╭───╮
+     *     │F11│        │F12│        │F13│        │F14│     ┊     │   │        │   │        │   │        │   │
+     * ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮ ┊ ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮
+     * │F10│F5 │F15││F16│F6 │F17││F18│F7 │F19││F20│F8 │F9 │ ┊ │   │   │   ││   │   │   ││   │   │   ││   │   │   │
+     * ╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯ ┊ ╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯
+     *     │F1 │        │F2 │        │F3 │        │F4 │     ┊     │   │        │   │        │   │        │   │
+     *     ├───┤        ├───┤        ├───┤        ├───┤     ┊     ├───┤        ├───┤        ├───┤        ├───┤
+     *     │ ⌃ │        │ ⌥ │        │ ⌘ │        │ ⇧ │     ┊     │ ⇧ │        │ ⌘ │        │ ⌥ │        │ ⌃ │
+     *     ╰───╯        ╰───╯        ╰───╯        ╰───╯     ┊     ╰───╯        ╰───╯        ╰───╯        ╰───╯
+     *                                                      ┊
+     *                                    LT (Left Thumbs)  ┊  RT (Right Thumbs)
+     *                                   ╭─────╭────╮─────╮ ┊ ╭─────╭────╮─────╮
+     *                                   │     ││  ││     │ ┊ │ 🮖🮖🮖 ││  ││     │
+     *                                   ╰─────│╰──╯│─────╯ ┊ ╰─────│╰──╯│─────╯
+     *                                     │   │    │─────╮ ┊ ╭─────│    │   │
+     *                                     ╰───│    │     │ ┊ │     │    │───╯
+     *                                         ╰────╯─────╯ ┊ ╰─────╰────╯
+     */
     [_FUN] = LAYOUT(
         /*     Center    North     East      South     West      Double-South */
-        /*R1*/ KC_RSFT,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  _______,
-        /*R2*/ KC_RGUI,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  _______,
-        /*R3*/ KC_RALT,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  _______,
-        /*R4*/ KC_RCTL,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  _______,
+        /*R1*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  _______,
+        /*R2*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  _______,
+        /*R3*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  _______,
+        /*R4*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  _______,
 
-        /*L1*/ KC_F8,    KC_F14,   KC_F9,    KC_F1,   KC_F20,    _______,
-        /*L2*/ KC_F7,    KC_F13,   KC_F19,   KC_F2,   KC_F18,    _______,
-        /*L3*/ KC_F6,    KC_F12,   KC_F17,   KC_F3,   KC_F16,    _______,
-        /*L4*/ KC_F5,    KC_F11,   KC_F15,   KC_F4,   KC_F10,    _______,
+        /*L1*/ KC_F8,    KC_F14,   KC_F9,    KC_F1,    KC_F20,    _______,
+        /*L2*/ KC_F7,    KC_F13,   KC_F19,   KC_F2,    KC_F18,    _______,
+        /*L3*/ KC_F6,    KC_F12,   KC_F17,   KC_F3,    KC_F16,    _______,
+        /*L4*/ KC_F5,    KC_F11,   KC_F15,   KC_F4,    KC_F10,    _______,
 
         /*     Down      Pad       Up        Nail      Knuckle   Double Down  */
-        /*RT*/ _______,  _______,  _______,  XXXXXXX,  _______,  XXXXXXX,
-        /*LT*/ XXXXXXX,  _______,  _______,  XXXXXXX,  _______,  XXXXXXX
+        /*RT*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,
+        /*LT*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX
         ),
 
+    /*
+     * Mouse Buttons Layer (MBO)
+     *
+     *      L4           L3           L2           L1       ┊      R4           R3           R2           R1
+     *     ╭───╮        ╭───╮        ╭───╮        ╭───╮     ┊     ╭───╮        ╭───╮        ╭───╮        ╭───╮
+     *     │ ⛛ │        │ ⛛ │        │ ⛛ │        │ ⛛ │     ┊     │ ⛛ │        │ ⛛ │        │ ⛛ │        │ ⛛ │
+     * ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮ ┊ ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮
+     * │ ⛛ │ ⛛ │ ⛛ ││ ⛛ │ ⛛ │ ⛛ ││ ⛛ │ ⛛ │ ⛛ ││ ⛛ │ ⛛ │ ⛛ │ ┊ │ ⛛ │ ⛛ │ ⛛ ││ ⛛ │ ⛛ │ ⛛ ││ ⛛ │ ⛛ │ ⛛ ││ ⛛ │ ⛛ │ ⛛ │
+     * ╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯ ┊ ╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯
+     *     │ ⛛ │        │ ⛛ │        │ ⛛ │        │ ⛛ │     ┊     │ ⛛ │        │ ⛛ │        │ ⛛ │        │ ⛛ │
+     *     ├───┤        ├───┤        ├───┤        ├───┤     ┊     ├───┤        ├───┤        ├───┤        ├───┤
+     *     │ ⌃ │        │ ⌥ │        │ ⌘ │        │ ⇧ │     ┊     │ ⇧ │        │ ⌘ │        │ ⌥ │        │ ⌃ │
+     *     ╰───╯        ╰───╯        ╰───╯        ╰───╯     ┊     ╰───╯        ╰───╯        ╰───╯        ╰───╯
+     *                                                      ┊
+     *                                    LT (Left Thumbs)  ┊  RT (Right Thumbs)
+     *                                   ╭─────╭────╮─────╮ ┊ ╭─────╭────╮─────╮
+     *                                   │⌫|⌦|➊││⇧W││ ⇥|➌ │ ┊ │ ⇤|➍ ││⇧W││ ␣|➋ │
+     *                                   ╰─────│╰──╯│─────╯ ┊ ╰─────│╰──╯│─────╯
+     *                                     │ ⌥ │    │─────╮ ┊ ╭─────│    │ ⓿ │
+     *                                     ╰───│ ⇧  │ 󰓾 3 │ ┊ │ 󰓾 5 │ ⏎  │───╯
+     *                                         ╰────╯─────╯ ┊ ╰─────╰────╯
+     */
     [_MBO] = LAYOUT(
         /*     Center     North    East      South       West          Double-South  */
         /*R1*/ _______,   _______, _______,  _______,    _______,      KC_RIGHT_SHIFT,
@@ -145,3 +437,155 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
         /*LT*/ KC_LSFT,  CKC_BSPC, KC_LALT,  CKC_TAB,    SV_SNIPER_3,  _______
         )
 };
+
+/**
+ * @brief User-level keyboard initialization hook
+ *
+ * This function is called after QMK's keyboard initialization is complete. It
+ * configures the default values for the Svalboard's persistent settings, and
+ * initializes RGB lighting and dynamic keymap support.
+ *
+ * **Configuration:**
+ * - Left trackball: Scroll mode enabled, 400 DPI.
+ * - Right trackball: Scroll mode disabled, 1200 DPI.
+ * - Auto mouse layer: Enabled (automatically activates mouse layer).
+ * - Mouse hold timer: Disabled (mouse layer stays active indefinitely).
+ *
+ * @note These are initialization values only. The actual values used at
+ *       runtime are loaded from EEPROM by the keyboard-level initialization in
+ *       svalboard.c
+ *
+ * @see keyboard_post_init_kb() in svalboard.c for EEPROM loading.
+ * @see setup_rgb_light_layer() in townk_layers.c for initialization of the RGB
+ *      layer system.
+ */
+void keyboard_post_init_user(void) {
+    /**
+     * @var struct saved_values::left_scroll
+     * @brief Enables/disables scroll mode for the left trackball/pointing
+     *        device.
+     *
+     * When enabled, moving the left trackball scrolls instead of moving the
+     * cursor.
+     */
+    global_saved_values.left_scroll = true;
+
+    /**
+     * @var struct saved_values::right_scroll
+     * @brief Enables/disables scroll mode for the right trackball/pointing
+     *        device.
+     *
+     * When enabled, moving the right trackball scrolls instead of moving the
+     * cursor.
+     */
+    global_saved_values.right_scroll = false;
+
+    /**
+     * @var struct saved_values::auto_mouse
+     * @brief Enables/disables automatic mouse layer activation.
+     *
+     * When enabled, the keyboard automatically switches to mouse layer when
+     * pointer device is used.
+     */
+    global_saved_values.auto_mouse = true;
+
+    /**
+     * @var struct saved_values::left_dpi_index
+     * @brief Index into the DPI (dots per inch) choices array
+     *        (`DPI_CHOICES_LENGTH`) for the left trackball.
+     *
+     * It controls the sensitivity/speed of the left pointing device.
+     *
+     * Valid values:
+     *
+     * - MOUSE_DPI_200 (0)
+     * - MOUSE_DPI_400 (1)
+     * - MOUSE_DPI_800 (2)
+     * - MOUSE_DPI_1200 (3)
+     * - MOUSE_DPI_1600 (4)
+     * - MOUSE_DPI_2400 (5)
+     */
+    global_saved_values.left_dpi_index = MOUSE_DPI_400;
+
+    /**
+     * @var struct saved_values::right_dpi_index
+     * @brief Index into the DPI (dots per inch) choices array
+     *        (`DPI_CHOICES_LENGTH`) for the right trackball
+     *
+     * It controls the sensitivity/speed of the right pointing device.
+     *
+     * Valid values:
+     *
+     * - MOUSE_DPI_200 (0)
+     * - MOUSE_DPI_400 (1)
+     * - MOUSE_DPI_800 (2)
+     * - MOUSE_DPI_1200 (3)
+     * - MOUSE_DPI_1600 (4)
+     * - MOUSE_DPI_2400 (5)
+     */
+    global_saved_values.right_dpi_index = MOUSE_DPI_1200;
+
+    /**
+     * @var struct saved_values::mh_timer_index
+     * @brief Index into the mouse-hold timer choices array
+     *        (`mh_timer_choices`)
+     *
+     * Controls auto-exit timeout for the mouse mode. Determines how long the
+     * mouse layer stays active after last mouse movement.
+     *
+     * Valid values:
+     *
+     * - MOUSE_LAYER_TIMEOUT_200_MS (0)
+     * - MOUSE_LAYER_TIMEOUT_300_MS (1)
+     * - MOUSE_LAYER_TIMEOUT_400_MS (2)
+     * - MOUSE_LAYER_TIMEOUT_500_MS (3)
+     * - MOUSE_LAYER_TIMEOUT_800_MS (4)
+     * - MOUSE_LAYER_TIMEOUT_NONE (5)
+     */
+    global_saved_values.mh_timer_index = MOUSE_LAYER_TIMEOUT_NONE;
+
+    setup_rgb_light_layer();
+    setup_dynamic_keymap();
+}
+
+/**
+ * @brief User-level key event processing hook
+ *
+ * This QMK hook is called for every key press and release event before the
+ * default QMK key processing occurs. It allows for custom key behavior by
+ * intercepting and potentially handling keys before they reach the standard
+ * QMK processing pipeline.
+ *
+ * The function currently delegates all key processing to the special mouse
+ * keys handler, which implements dual-function modifier/mouse button behavior
+ * for certain keys (MB_SFT, MB_ALT, MB_GUI, MB_CTL).
+ *
+ * **Processing Flow:**
+ * 1. Check if the key is a special mouse button key.
+ * 2. If handled by special mouse keys, stop further processing.
+ * 3. Otherwise, allow standard QMK processing to continue.
+ *
+ * @param keycode The keycode that was pressed or released.
+ * @param record Pointer to the key event record containing:
+ *               - event.pressed: true on press, false on release.
+ *               - event.key: the matrix position of the key.
+ *               - event.time: timestamp of the event.
+ *
+ * @return true to continue processing this key with QMK defaults, false to
+ *         stop processing (key was fully handled).
+ *
+ * @note This is a QMK user-level hook that gets called automatically by the
+ *       firmware for every key event.
+ *
+ * @note The content of this function is not all the work done when keys are
+ *       pressed and released. Modules in this userspace can add their own
+ *       behavior that is controlled by the QMK firmware automatically.
+ *
+ * @see process_special_mouse_keys() in townk_mouse.c for special key handling.
+ */
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    if (!process_special_mouse_keys(keycode, record)) {
+        return false;
+    }
+    return true;
+}

@@ -1,4 +1,4 @@
-# Copyright (C) 2024 Thiago Alves (https://github.com/townk)
+# Copyright (C) 2025 Thiago Alves (https://github.com/townk)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,6 +16,3 @@
 VIA_ENABLE = yes
 VIAL_ENABLE = yes
 VIAL_INSECURE ?= yes
-
-# sm_td
-DEFERRED_EXEC_ENABLE = yes

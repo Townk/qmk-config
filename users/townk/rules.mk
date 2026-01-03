@@ -1,4 +1,4 @@
-# Copyright (C) 2024 Thiago Alves (https://github.com/townk)
+# Copyright (C) 2025 Thiago Alves (https://github.com/townk)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@ SRC += townk_layers.c
 SRC += townk_mouse.c
 SRC += townk_overrides.c
 SRC += townk_smtd.c
-SRC += process_record.c
 
 CFLAGS += -fcommon
 CFLAGS += -Wno-error=unused-variable
