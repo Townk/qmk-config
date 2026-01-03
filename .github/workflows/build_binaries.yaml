@@ -1,4 +1,4 @@
-name: Build QMK firmware
+name: Build Vial-QMK firmware
 
 on: [push, workflow_dispatch]
 
@@ -7,14 +7,88 @@ permissions:
 
 jobs:
     build:
-        name: "QMK Userspace Build"
-        uses: qmk/.github/.github/workflows/qmk_userspace_build.yml@main
-        with:
-            qmk_repo: svalboard/vial-qmk
-            qmk_ref: vial
+        name: "Vial-QMK Userspace Build"
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Set up Python 3.9
+              uses: actions/setup-python@v5
+              with:
+                  python-version: '3.9'
+
+            - name: Checkout userspace
+              uses: actions/checkout@v4
+              with:
+                  submodules: recursive
+
+            - name: Checkout vial-qmk
+              uses: actions/checkout@v4
+              with:
+                  repository: svalboard/vial-qmk
+                  ref: vial
+                  path: vial-qmk
+                  submodules: recursive
+
+            - name: Install QMK CLI and vial-qmk dependencies
+              run: |
+                  python3 -m pip install --upgrade pip
+                  python3 -m pip install qmk
+                  python3 -m pip install -r vial-qmk/requirements.txt
+
+                  qmk config user.qmk_home="$GITHUB_WORKSPACE/vial-qmk"
+                  qmk config user.overlay_dir="$GITHUB_WORKSPACE"
+
+                  qmk setup -y
+
+            - name: Build firmware
+              run: |
+                  # Build each target from qmk.json
+                  qmk userspace-compile
+
+            - name: Rename firmware files
+              run: |
+                  mv svalboard_trackball_pmw3389_left_townk.uf2 svalboard-colemak-left-townk.uf2
+                  mv svalboard_trackball_pmw3389_right_townk.uf2 svalboard-colemak-right-townk.uf2
+
+            - name: Upload firmware artifacts
+              uses: actions/upload-artifact@v4
+              with:
+                  name: svalboard-colemak-townk
+                  path: |
+                      *.uf2
+                      *.hex
+                      *.bin
+                  if-no-files-found: error
 
     publish:
-        name: "QMK Userspace Publish"
-        uses: qmk/.github/.github/workflows/qmk_userspace_publish.yml@main
+        name: "Publish Firmware"
+        runs-on: ubuntu-latest
         if: always() && !cancelled()
         needs: build
+
+        steps:
+            - name: Download firmware artifacts
+              uses: actions/download-artifact@v4
+              with:
+                  name: svalboard-colemak-townk
+                  path: firmware
+
+            - name: Generate release tag
+              id: tag
+              run: |
+                  echo "tag=build-$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_OUTPUT
+                  echo "sha_short=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+
+            - name: Create release
+              uses: softprops/action-gh-release@v1
+              with:
+                  tag_name: ${{ steps.tag.outputs.tag }}
+                  name: "Firmware Build ${{ steps.tag.outputs.sha_short }}"
+                  body: |
+                      Automated firmware build from commit ${{ github.sha }}
+
+                      **Branch:** ${{ github.ref_name }}
+                      **Commit:** ${{ github.sha }}
+                  files: firmware/*
+                  draft: false
+                  prerelease: false
