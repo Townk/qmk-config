@@ -24,32 +24,18 @@
 #    define RANGE_START SAFE_RANGE
 #endif
 
-// Left side
-#define HR_MOD_LEFT_1 KC_LEFT_SHIFT
-#define HR_MOD_LEFT_2 KC_LEFT_GUI
-#define HR_MOD_LEFT_3 KC_LEFT_ALT
-#define HR_MOD_LEFT_4 KC_LEFT_CTRL
-#define HR_MOD_LEFT_MODIFIER_1 MOD_LSFT
-#define HR_MOD_LEFT_MODIFIER_2 MOD_LGUI
-#define HR_MOD_LEFT_MODIFIER_3 MOD_LALT
-#define HR_MOD_LEFT_MODIFIER_4 MOD_LCTL
-
-// Right side
-#define HR_MOD_RIGHT_1 KC_RIGHT_SHIFT
-#define HR_MOD_RIGHT_2 KC_RIGHT_GUI
-#define HR_MOD_RIGHT_3 KC_RIGHT_ALT
-#define HR_MOD_RIGHT_4 KC_RIGHT_CTRL
-#define HR_MOD_RIGHT_MODIFIER_1 MOD_RSFT
-#define HR_MOD_RIGHT_MODIFIER_2 MOD_RGUI
-#define HR_MOD_RIGHT_MODIFIER_3 MOD_RALT
-#define HR_MOD_RIGHT_MODIFIER_4 MOD_RCTL
+#define MKC_BKTAB   S(KC_TAB)      // Back Tab
+#define MKC_APPWIN  C(G(KC_DOWN))  // Show windows from current app
+#define MKC_ALLWIN  C(G(KC_UP))    // Show all windows from all apps
+#define MKC_DKTN    C(G(KC_RGHT))  // Next Desktop
+#define MKC_DKTP    C(G(KC_LEFT))  // Previous Desktop
 
 enum custom_keycodes {
     CKC_BSPC = RANGE_START,
     CKC_SPC,
     CKC_TAB,
-    CKC_BKTAB,
-    CKC_SMART_SFT,
+    CKC_BKTAB, // Back Tab
+    CKC_SMSFT, // Smart Shift
     MB_SFT, // BTN1 or Shift
     MB_ALT, // BTN2 or Alt
     MB_GUI, // BTN3 or Gui

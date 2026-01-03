@@ -34,7 +34,6 @@ enum layer_names {
     _NUM,
     _SYM,
     _FUN,
-    _SYS = LAST_LAYER - 1,
     _MBO = LAST_LAYER,
 };
 
