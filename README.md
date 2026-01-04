@@ -22,6 +22,12 @@ trackballs, COLEMAK-DH layout, and Miryoku-inspired layer design.
 - **6 Thoughtfully Designed Layers**: BASE, NAV, NUM, SYM, FUN, and
   auto-activated mouse layer
 
+## Documentation
+
+- **[Layer Reference](docs/layer-reference.md)** - Complete visual guide to all 6 keyboard layers
+- **[Advanced Features](docs/advanced-features.md)** - Home row modifiers, special mouse keys, trackball config, and more
+- **[Changelog](CHANGELOG.md)** - Version history and release notes
+
 ## Layer Overview
 
 | Layer | Name | Activation | Purpose |
@@ -33,9 +39,7 @@ trackballs, COLEMAK-DH layout, and Miryoku-inspired layer design.
 | 4 | FUN | Hold right thumb (Back-tab) | Function keys F1-F20 |
 | 5 | MBO | Auto on trackball movement | Mouse buttons with modifiers |
 
-For detailed layer diagrams and key positions, see the comprehensive
-documentation in
-[`keyboards/svalboard/keymaps/townk/keymap.c`](keyboards/svalboard/keymaps/townk/keymap.c).
+For detailed layer diagrams with all key positions, see the [Layer Reference](docs/layer-reference.md).
 
 ## Quick Start
 
@@ -101,7 +105,8 @@ This repository is configured to automatically build firmware on every push:
 2. Enable GitHub Actions in your fork's settings
 3. Push your changes
 4. Download built firmware from the Actions artifacts tab
-5. For tagged releases (e.g., `v1.0.0`), firmware is published to the Releases page
+5. Firmware is automatically published to the Releases page with semantic
+   versioning (v1.0.1, v1.0.2, etc.)
 
 ## Customization
 
@@ -134,20 +139,25 @@ qmk userspace-compile
 
 ### Trackball Configuration
 
-Default settings (configured in `keymap.c`):
+Default settings:
 
 - **Left Trackball**: Scroll mode enabled, 400 DPI
 - **Right Trackball**: Cursor mode, 1200 DPI
 - **Auto Mouse Layer**: Enabled
 - **DPI Options**: 200, 400, 800, 1200, 1600, 2400
 
-These can be adjusted via Vial/Keybard or by modifying
-`keyboard_post_init_user()` in `keymap.c`.
+For detailed configuration instructions and Sniper mode documentation, see
+[Advanced Features - Trackball
+Configuration](docs/advanced-features.md#trackball-configuration).
 
 ## Project Structure
 
 ```txt
 .
+├── docs/                               # Documentation
+│   ├── layer-reference.md              # Complete layer visual reference
+│   └── advanced-features.md            # Special features and configuration
+│
 ├── keyboards/svalboard/keymaps/townk/  # Keyboard-specific keymap
 │   ├── keymap.c                        # Main layer definitions
 │   ├── config.h                        # Hardware configuration
@@ -164,6 +174,8 @@ These can be adjusted via Vial/Keybard or by modifying
 ├── modules/stasmarkin/sm_td/           # SM_TD library (submodule)
 ├── .github/workflows/                  # CI/CD configuration
 ├── .devcontainer/                      # Docker dev environment
+├── VERSION                             # Semantic version (major.minor)
+├── CHANGELOG.md                        # Version history
 └── qmk.json                            # Build targets
 ```
 
@@ -171,24 +183,33 @@ These can be adjusted via Vial/Keybard or by modifying
 
 ### Home Row Modifiers
 
-This configuration uses the SM_TD (Stasmarkin Tap Dance) library for reliable
-home row modifiers. Modifiers are placed on the Double-South keys (accessible
-via downward flick) and work correctly even during fast typing.
+Reliable home row modifiers using the SM_TD (Stasmarkin Tap Dance) library,
+placed on Double-South keys. Works correctly even during fast typing.
+
+[Learn more →](docs/advanced-features.md#home-row-modifiers)
 
 ### Special Mouse Button Keys
 
-The `MB_SFT`, `MB_ALT`, `MB_GUI`, and `MB_CTL` keys have intelligent dual behavior:
+The `MB_SFT`, `MB_ALT`, `MB_GUI`, and `MB_CTL` keys provide intelligent dual
+behavior for mouse operations with modifiers. They act as mouse buttons,
+keyboard modifiers, or held mouse buttons depending on context.
 
-- **Tap alone**: Acts as mouse button click
-- **Hold + press other key**: Acts as keyboard modifier
-- **Hold + move trackball**: Converts to held mouse button (for dragging)
-- **With external modifiers**: Acts as mouse button (for Cmd+Click, etc.)
+[Learn more →](docs/advanced-features.md#special-mouse-button-keys)
 
 ### Caps Word
 
 Double-tap the Double-Down thumb key to enable Caps Word - type in CAPS without
 holding shift. Automatically deactivates on space, punctuation, or layer
 change.
+
+[Learn more →](docs/advanced-features.md#caps-word)
+
+### RGB Layer Indicators
+
+RGB lighting automatically changes color based on the active layer, providing
+instant visual feedback.
+
+[Learn more →](docs/advanced-features.md#rgb-layer-indicators)
 
 ## Development
 
