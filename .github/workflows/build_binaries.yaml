@@ -9,6 +9,8 @@ jobs:
     build:
         name: "Vial-QMK Userspace Build"
         runs-on: ubuntu-latest
+        outputs:
+            version: ${{ steps.version.outputs.version }}
 
         steps:
             - name: Set up Python 3.9
@@ -20,6 +22,24 @@ jobs:
               uses: actions/checkout@v4
               with:
                   submodules: recursive
+
+            - name: Determine version from releases
+              id: version
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  # Read major.minor from VERSION file
+                  BASE_VERSION=$(cat VERSION)
+
+                  # Count existing releases matching this major.minor version
+                  RELEASE_COUNT=$(gh release list --limit 1000 --json tagName --jq "[.[] | select(.tagName | startswith(\"v${BASE_VERSION}.\"))] | length")
+
+                  # Patch number is count + 1 (first release will be .1)
+                  PATCH=$((RELEASE_COUNT + 1))
+                  BUILD_VERSION="${BASE_VERSION}.${PATCH}"
+
+                  echo "version=${BUILD_VERSION}" >> $GITHUB_OUTPUT
+                  echo "Building version: ${BUILD_VERSION} (found ${RELEASE_COUNT} existing releases)"
 
             - name: Checkout vial-qmk
               uses: actions/checkout@v4
@@ -47,8 +67,9 @@ jobs:
 
             - name: Rename firmware files
               run: |
-                  mv svalboard_trackball_pmw3389_left_townk.uf2 svalboard-colemak-left-townk.uf2
-                  mv svalboard_trackball_pmw3389_right_townk.uf2 svalboard-colemak-right-townk.uf2
+                  VERSION="${{ steps.version.outputs.version }}"
+                  mv svalboard_trackball_pmw3389_left_townk.uf2 "svalboard-colemak-dh-townk-${VERSION}.left.uf2"
+                  mv svalboard_trackball_pmw3389_right_townk.uf2 "svalboard-colemak-dh-townk-${VERSION}.right.uf2"
 
             - name: Upload firmware artifacts
               uses: actions/upload-artifact@v4
@@ -63,7 +84,7 @@ jobs:
     publish:
         name: "Publish Firmware"
         runs-on: ubuntu-latest
-        if: always() && !cancelled()
+        if: success()
         needs: build
 
         steps:
@@ -73,19 +94,13 @@ jobs:
                   name: svalboard-colemak-townk
                   path: firmware
 
-            - name: Generate release tag
-              id: tag
-              run: |
-                  echo "tag=build-$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_OUTPUT
-                  echo "sha_short=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
-
             - name: Create release
               uses: softprops/action-gh-release@v1
               with:
-                  tag_name: ${{ steps.tag.outputs.tag }}
-                  name: "Firmware Build ${{ steps.tag.outputs.sha_short }}"
+                  tag_name: v${{ needs.build.outputs.version }}
+                  name: "Firmware v${{ needs.build.outputs.version }}"
                   body: |
-                      Automated firmware build from commit ${{ github.sha }}
+                      Firmware build version ${{ needs.build.outputs.version }}
 
                       **Branch:** ${{ github.ref_name }}
                       **Commit:** ${{ github.sha }}
