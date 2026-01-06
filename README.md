@@ -1,14 +1,14 @@
-# Svalboard QMK Configuration - COLEMAK-DH Layout
+# Svalboard QMK Configuration - COLEMAK Layout
 
 [![Build Vial-QMK firmware](https://github.com/Townk/qmk-config/actions/workflows/build_binaries.yaml/badge.svg)](https://github.com/Townk/qmk-config/actions/workflows/build_binaries.yaml)
 
 A highly optimized [QMK](https://qmk.fm) firmware configuration for the
 [Svalboard](https://svalboard.com) split ergonomic keyboard featuring dual
-trackballs, COLEMAK-DH layout, and Miryoku-inspired layer design.
+trackballs, COLEMAK layout, and Miryoku-inspired layer design.
 
 ## Features
 
-- **COLEMAK-DH Layout**: Modern, ergonomic letter arrangement optimized for
+- **COLEMAK Layout**: Modern, ergonomic letter arrangement optimized for
   finger rolls
 - **Miryoku-Inspired Layers**: Single-hand layer activation with all functional
   keys on the opposite hand
@@ -23,6 +23,8 @@ trackballs, COLEMAK-DH layout, and Miryoku-inspired layer design.
 - **8 Thoughtfully Designed Layers**: `BASE`, `NAV`, `NUM`, `SYM`, `FUN`,
   `MED`, `SYS`, and auto-activated mouse layer
 
+![](docs/keymap-overview.png)
+
 ## Documentation
 
 - **[Layer Reference](docs/layer-reference.md)** - Complete visual guide to all
@@ -35,7 +37,7 @@ trackballs, COLEMAK-DH layout, and Miryoku-inspired layer design.
 
 | Layer | Name | Activation | Purpose |
 | ----- | ---- | ---------- | ------- |
-| 0 | BASE | Default | COLEMAK-DH letters with common symbols |
+| 0 | BASE | Default | COLEMAK letters with common symbols |
 | 1 | NAV | Hold left thumb inward (Backspace) | Vim-style navigation and window management |
 | 2 | NUM | Hold right thumb inward (Space) | Numeric keypad with operators |
 | 3 | SYM | Hold left thumb outward (Tab) | Programming symbols and brackets |
@@ -263,7 +265,7 @@ docker run -v $(pwd):/workspace ghcr.io/qmk/qmk_cli
 - **Base Firmware**: [vial-qmk](https://github.com/svalboard/vial-qmk)
   (Svalboard fork)
 - **Keyboard**: Svalboard with PMW3389 dual-trackballs
-- **Layout**: COLEMAK-DH (46-key split)
+- **Layout**: COLEMAK (46-key split)
 - **Features**: Vial, RGB Lighting, Pointing Device, Mouse Keys
 
 ## Resources
@@ -271,7 +273,7 @@ docker run -v $(pwd):/workspace ghcr.io/qmk/qmk_cli
 - [Svalboard Official Site](https://svalboard.com)
 - [QMK Documentation](https://docs.qmk.fm)
 - [Vial Documentation](https://get.vial.today)
-- [COLEMAK-DH Layout](https://colemakmods.github.io/mod-dh/)
+- [COLEMAK Layout](https://colemakmods.github.io/mod-dh/)
 - [Miryoku Layout Philosophy](https://github.com/manna-harbour/miryoku)
 - [SM_TD Library](https://github.com/stasmarkin/sm_td)
 
