@@ -40,7 +40,7 @@
  * The following schema is a cheat-sheet of the terms laid out on a keyboard
  * representation.
  *
- *       L4           L3           L2           L1      ┊      R4           R3           R2           R1
+ *       L4           L3           L2           L1      ┊      R1           R2           R3           R4
  *     ╭───╮        ╭───╮        ╭───╮        ╭───╮     ┊     ╭───╮        ╭───╮        ╭───╮        ╭───╮
  *     │ N │        │ N │        │ N │        │ N │     ┊     │ N │        │ N │        │ N │        │ N │
  * ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮ ┊ ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮
@@ -207,7 +207,7 @@
 const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_COLS] = {
     /*
      * COLEMAK-DH Layer (⓿ BASE)
-     *      L4           L3           L2           L1       ┊      R4           R3           R2           R1
+     *      L4           L3           L2           L1       ┊      R1           R2           R3           R4
      *     ╭───╮        ╭───╮        ╭───╮        ╭───╮     ┊     ╭───╮        ╭───╮        ╭───╮        ╭───╮
      *     │ Q │        │ W │        │ F │        │ P │     ┊     │ L │        │ U │        │ Y │        │ ; │
      * ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮ ┊ ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮
@@ -223,7 +223,7 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
      *                                   │⌫|⌦|➊││⇧W││ ⇥|➌ │ ┊ │ ⇤|➍ ││⇧W││ ␣|➋ │
      *                                   ╰─────│╰──╯│─────╯ ┊ ╰─────│╰──╯│─────╯
      *                                     │ 󰑓 │    │─────╮ ┊ ╭─────│    │ ⎋ │
-     *                                     ╰───│ ⇧ │  ➌  │ ┊ │  ➍  │ ⏎  │───╯
+     *                                     ╰───│ ⇧ │  ➎  │ ┊ │  ➏  │ ⏎  │───╯
      *                                         ╰────╯─────╯ ┊ ╰─────╰────╯
      */
     [_BASE] = LAYOUT(
@@ -239,14 +239,14 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
         /*L4*/ KC_A,       KC_Q,      KC_LPRN,  KC_Z,       KC_LBRC,   KC_LEFT_CTRL,
 
         /*     Down        Pad        Up        Nail        Knuckle    Double Down  */
-        /*RT*/ KC_ENTER,   CKC_SPC,   KC_ESC,   CKC_BKTAB,  MO(_FUN),  QK_CAPS_WORD_TOGGLE,
-        /*LT*/ CKC_SMSFT,  CKC_BSPC,  QK_REP,   CKC_TAB,    MO(_SYM),  QK_CAPS_WORD_TOGGLE
+        /*RT*/ KC_ENTER,   CKC_SPC,   KC_ESC,   CKC_BKTAB,  MO(_SYS),  QK_CAPS_WORD_TOGGLE,
+        /*LT*/ CKC_SMSFT,  CKC_BSPC,  QK_REP,   CKC_TAB,    MO(_MED),  QK_CAPS_WORD_TOGGLE
         ),
 
     /*
      * Navigation Layer (➊ NAV)
      *
-     *      L4           L3           L2           L1       ┊      R4           R3           R2           R1
+     *      L4           L3           L2           L1       ┊      R1           R2           R3           R4
      *     ╭───╮        ╭───╮        ╭───╮        ╭───╮     ┊     ╭───╮        ╭───╮        ╭───╮        ╭───╮
      *     │   │        │   │        │   │        │   │     ┊     │⌃⌘←│        │⌃⌘↓│        │⌃⌘↑│        │⌃⌘→│
      * ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮ ┊ ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮
@@ -259,10 +259,10 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
      *                                                      ┊
      *                                    LT (Left Thumbs)  ┊  RT (Right Thumbs)
      *                                   ╭─────╭────╮─────╮ ┊ ╭─────╭────╮─────╮
-     *                                   │ 🮖🮖🮖 ││  ││     │ ┊ │  ⇤  ││  ││  ␣  │
+     *                                   │ 🮖🮖🮖 ││  ││     │ ┊ │  ⇤  ││  ││  ⇥  │
      *                                   ╰─────│╰──╯│─────╯ ┊ ╰─────│╰──╯│─────╯
-     *                                     │   │    │─────╮ ┊ ╭─────│    │ ⎋ │
-     *                                     ╰───│    │     │ ┊ │     │  ⏎ │───╯
+     *                                     │   │    │─────╮ ┊ ╭─────│    │   │
+     *                                     ╰───│    │     │ ┊ │     │    │───╯
      *                                         ╰────╯─────╯ ┊ ╰─────╰────╯
      */
     [_NAV] = LAYOUT(
@@ -278,13 +278,13 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
         /*L4*/ XXXXXXX,   XXXXXXX,     XXXXXXX,     XXXXXXX,   XXXXXXX,     _______,
 
         /*     Down       Pad          Up           Nail       Knuckle      Double Down  */
-        /*RT*/ _______,   KC_SPC,      _______,     MKC_BKTAB, XXXXXXX,     XXXXXXX,
+        /*RT*/ XXXXXXX,   KC_TAB,      XXXXXXX,     MKC_BKTAB, XXXXXXX,     XXXXXXX,
         /*LT*/ XXXXXXX,   XXXXXXX,     XXXXXXX,     XXXXXXX,   XXXXXXX,     XXXXXXX
         ),
 
     /*
      * Numbers Layer (➋ NUM)
-     *      L4           L3           L2           L1       ┊      R4           R3           R2           R1
+     *      L4           L3           L2           L1       ┊      R1           R2           R3           R4
      *     ╭───╮        ╭───╮        ╭───╮        ╭───╮     ┊     ╭───╮        ╭───╮        ╭───╮        ╭───╮
      *     │ / │        │ * │        │ - │        │ + │     ┊     │   │        │   │        │   │        │   │
      * ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮ ┊ ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮
@@ -297,10 +297,10 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
      *                                                      ┊
      *                                    LT (Left Thumbs)  ┊  RT (Right Thumbs)
      *                                   ╭─────╭────╮─────╮ ┊ ╭─────╭────╮─────╮
-     *                                   │  ⌫  ││  ││     │ ┊ │     ││  ││ 🮖🮖🮖 │
+     *                                   │  ⌫  ││  ││  ␣  │ ┊ │     ││  ││ 🮖🮖🮖 │
      *                                   ╰─────│╰──╯│─────╯ ┊ ╰─────│╰──╯│─────╯
      *                                     │ 󰑓 │    │─────╮ ┊ ╭─────│    │   │
-     *                                     ╰───│ ⌅  │     │ ┊ │     │    │───╯
+     *                                     ╰───│ ⌅  │  ⇥  │ ┊ │     │    │───╯
      *                                         ╰────╯─────╯ ┊ ╰─────╰────╯
      */
     [_NUM] = LAYOUT(
@@ -317,13 +317,13 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
 
         /*     Down      Pad       Up        Nail      Knuckle   Double Down  */
         /*RT*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,
-        /*LT*/ KC_PENT,  KC_BSPC,  _______,  KC_TAB,   XXXXXXX,  XXXXXXX
+        /*LT*/ KC_PENT,  KC_BSPC,  _______,  KC_SPC,   KC_TAB,   XXXXXXX
         ),
 
     /*
      * Symbols Layer (➌ SYM)
      *
-     *      L4           L3           L2           L1       ┊      R4           R3           R2           R1
+     *      L4           L3           L2           L1       ┊      R1           R2           R3           R4
      *     ╭───╮        ╭───╮        ╭───╮        ╭───╮     ┊     ╭───╮        ╭───╮        ╭───╮        ╭───╮
      *     │   │        │   │        │   │        │   │     ┊     │ < │        │ = │        │ > │        │ _ │
      * ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮ ┊ ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮
@@ -355,14 +355,14 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
         /*L4*/ XXXXXXX,  XXXXXXX,   XXXXXXX,  XXXXXXX,   XXXXXXX,  _______,
 
         /*     Down      Pad        Up        Nail       Knuckle   Double Down  */
-        /*RT*/ _______,  KC_SPC,    _______,  MKC_BKTAB, XXXXXXX,  XXXXXXX,
+        /*RT*/ _______,  KC_SPC,    QK_REP,   KC_BSPC,   KC_TAB,   XXXXXXX,
         /*LT*/ XXXXXXX,  XXXXXXX,   XXXXXXX,  XXXXXXX,   XXXXXXX,  XXXXXXX
         ),
 
     /*
      * Function Keys Layer (➍ FUN)
      *
-     *      L4           L3           L2           L1       ┊      R4           R3           R2           R1
+     *      L4           L3           L2           L1       ┊      R1           R2           R3           R4
      *     ╭───╮        ╭───╮        ╭───╮        ╭───╮     ┊     ╭───╮        ╭───╮        ╭───╮        ╭───╮
      *     │F11│        │F12│        │F13│        │F14│     ┊     │   │        │   │        │   │        │   │
      * ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮ ┊ ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮
@@ -399,9 +399,87 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
         ),
 
     /*
+     * Muiti-Media Layer (➎ MED)
+     *
+     *      L4           L3           L2           L1       ┊      R1           R2           R3           R4
+     *     ╭───╮        ╭───╮        ╭───╮        ╭───╮     ┊     ╭───╮        ╭───╮        ╭───╮        ╭───╮
+     *     │   │        │   │        │   │        │   │     ┊     │ 󰝝 │        │ 󰒭 │        │   │        │   │
+     * ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮ ┊ ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮
+     * │   │   │   ││   │   │   ││   │   │   ││   │   │   │ ┊ │   │ 󰖁 │   ││ 󰑟 │ 󰐎 │ 󰈑 ││   │   │   ││   │   │   │
+     * ╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯ ┊ ╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯
+     *     │   │        │   │        │   │        │   │     ┊     │ 󰝞 │        │ 󰒮 │        │   │        │   │
+     *     ├───┤        ├───┤        ├───┤        ├───┤     ┊     ├───┤        ├───┤        ├───┤        ├───┤
+     *     │ ⌃ │        │ ⌥ │        │ ⌘ │        │ ⇧ │     ┊     │ ⇧ │        │ ⌘ │        │ ⌥ │        │ ⌃ │
+     *     ╰───╯        ╰───╯        ╰───╯        ╰───╯     ┊     ╰───╯        ╰───╯        ╰───╯        ╰───╯
+     *                                                      ┊
+     *                                    LT (Left Thumbs)  ┊  RT (Right Thumbs)
+     *                                   ╭─────╭────╮─────╮ ┊ ╭─────╭────╮─────╮
+     *                                   │     ││  ││     │ ┊ │     ││  ││     │
+     *                                   ╰─────│╰──╯│─────╯ ┊ ╰─────│╰──╯│─────╯
+     *                                     │   │    │─────╮ ┊ ╭─────│    │   │
+     *                                     ╰───│    │ 🮖🮖🮖 │ ┊ │     │    │───╯
+     *                                         ╰────╯─────╯ ┊ ╰─────╰────╯
+     */
+    [_MED] = LAYOUT(
+        /*     Center    North     East      South     West      Double-South */
+        /*R1*/ KC_MUTE,  KC_VOLU,  XXXXXXX,  KC_VOLD,  XXXXXXX,  _______,
+        /*R2*/ KC_MPLY,  KC_MFFD,  KC_MNXT,  KC_MRWD,  KC_MPRV,  _______,
+        /*R3*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  _______,
+        /*R4*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  _______,
+
+        /*L1*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  _______,
+        /*L2*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  _______,
+        /*L3*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  _______,
+        /*L4*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  _______,
+
+        /*     Down      Pad       Up        Nail      Knuckle   Double Down  */
+        /*RT*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,
+        /*LT*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX
+        ),
+
+    /*
+     * System Layer (➏ SYS)
+     *
+     *      L4           L3           L2           L1       ┊      R1           R2           R3           R4
+     *     ╭───╮        ╭───╮        ╭───╮        ╭───╮     ┊     ╭───╮        ╭───╮        ╭───╮        ╭───╮
+     *     │   │        │L󱕑 │        │R󱕑 │        │+󰃠 │     ┊     │   │        │   │        │   │        │   │
+     * ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮ ┊ ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮
+     * │   │  │   ││   │   │   ││   │   │   ││   │   │   │ ┊ │   │   │   ││   │   │   ││   │   │   ││   │   │   │
+     * ╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯ ┊ ╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯
+     *     │   │        │L󱕐 │        │R󱕐 │        │-󰃞 │     ┊     │   │        │   │        │   │        │   │
+     *     ├───┤        ├───┤        ├───┤        ├───┤     ┊     ├───┤        ├───┤        ├───┤        ├───┤
+     *     │ ⌃ │        │ ⌥ │        │ ⌘ │        │ ⇧ │     ┊     │ ⇧ │        │ ⌘ │        │ ⌥ │        │ ⌃ │
+     *     ╰───╯        ╰───╯        ╰───╯        ╰───╯     ┊     ╰───╯        ╰───╯        ╰───╯        ╰───╯
+     *                                                      ┊
+     *                                    LT (Left Thumbs)  ┊  RT (Right Thumbs)
+     *                                   ╭─────╭────╮─────╮ ┊ ╭─────╭────╮─────╮
+     *                                   │     ││  ││     │ ┊ │     ││  ││     │
+     *                                   ╰─────│╰──╯│─────╯ ┊ ╰─────│╰──╯│─────╯
+     *                                     │   │    │─────╮ ┊ ╭─────│    │   │
+     *                                     ╰───│ 󱇗  │     │ ┊ │ 🮖🮖🮖 │    │───╯
+     *                                         ╰────╯─────╯ ┊ ╰─────╰────╯
+     */
+    [_SYS] = LAYOUT(
+        /*     Center    North     East      South     West      Double-South */
+        /*R1*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  _______,
+        /*R2*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  _______,
+        /*R3*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  _______,
+        /*R4*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  _______,
+
+        /*L1*/ XXXXXXX,  KC_BRIU,  XXXXXXX,  KC_BRID,  XXXXXXX,  _______,
+        /*L2*/ XXXXXXX,  SV_LDPU,  XXXXXXX,  SV_RDPD,  XXXXXXX,  _______,
+        /*L3*/ XXXXXXX,  SV_LDPU,  XXXXXXX,  SV_LDPD,  XXXXXXX,  _______,
+        /*L4*/ KC_PWR,   XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  _______,
+
+        /*     Down      Pad       Up        Nail      Knuckle   Double Down  */
+        /*RT*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,
+        /*LT*/ SV_SOUT,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX
+        ),
+
+    /*
      * Mouse Buttons Layer (MBO)
      *
-     *      L4           L3           L2           L1       ┊      R4           R3           R2           R1
+     *      L4           L3           L2           L1       ┊      R1           R2           R3           R4
      *     ╭───╮        ╭───╮        ╭───╮        ╭───╮     ┊     ╭───╮        ╭───╮        ╭───╮        ╭───╮
      *     │ ⛛ │        │ ⛛ │        │ ⛛ │        │ ⛛ │     ┊     │ ⛛ │        │ ⛛ │        │ ⛛ │        │ ⛛ │
      * ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮ ┊ ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮
@@ -414,27 +492,27 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
      *                                                      ┊
      *                                    LT (Left Thumbs)  ┊  RT (Right Thumbs)
      *                                   ╭─────╭────╮─────╮ ┊ ╭─────╭────╮─────╮
-     *                                   │⌫|⌦|➊││⇧W││ ⇥|➌ │ ┊ │ ⇤|➍ ││⇧W││ ␣|➋ │
+     *                                   │⌫|⌦|➊││3󰓾││ ⇥|➌ │ ┊ │ ⇤|➍ ││5󰓾││ ␣|➋ │
      *                                   ╰─────│╰──╯│─────╯ ┊ ╰─────│╰──╯│─────╯
-     *                                     │ ⌥ │    │─────╮ ┊ ╭─────│    │ ⓿ │
-     *                                     ╰───│ ⇧  │ 󰓾 3 │ ┊ │ 󰓾 5 │ ⏎  │───╯
+     *                                     │ ⌥ │    │─────╮ ┊ ╭─────│    │ ⎋ │
+     *                                     ╰───│ ⇧  │     │ ┊ │     │ ⏎  │───╯
      *                                         ╰────╯─────╯ ┊ ╰─────╰────╯
      */
     [_MBO] = LAYOUT(
-        /*     Center     North    East      South       West          Double-South  */
-        /*R1*/ _______,   _______, _______,  _______,    _______,      KC_RIGHT_SHIFT,
-        /*R2*/ _______,   _______, _______,  _______,    _______,      KC_RIGHT_GUI,
-        /*R3*/ _______,   _______, _______,  _______,    _______,      KC_RIGHT_ALT,
-        /*R4*/ _______,   _______, _______,  _______,    _______,      KC_RIGHT_CTRL,
+        /*     Center     North    East      South       West      Double-South  */
+        /*R1*/ _______,   _______, _______,  _______,    _______,  KC_RIGHT_SHIFT,
+        /*R2*/ _______,   _______, _______,  _______,    _______,  KC_RIGHT_GUI,
+        /*R3*/ _______,   _______, _______,  _______,    _______,  KC_RIGHT_ALT,
+        /*R4*/ _______,   _______, _______,  _______,    _______,  KC_RIGHT_CTRL,
 
-        /*L1*/ _______,  _______,  _______,  _______,    _______,      MB_SFT,
-        /*L2*/ _______,  _______,  _______,  _______,    _______,      MB_GUI,
-        /*L3*/ _______,  _______,  _______,  _______,    _______,      MB_ALT,
-        /*L4*/ _______,  _______,  _______,  _______,    _______,      MB_CTL,
+        /*L1*/ _______,  _______,  _______,  _______,    _______,  MB_SFT,
+        /*L2*/ _______,  _______,  _______,  _______,    _______,  MB_GUI,
+        /*L3*/ _______,  _______,  _______,  _______,    _______,  MB_ALT,
+        /*L4*/ _______,  _______,  _______,  _______,    _______,  MB_CTL,
 
-        /*     Down      Pad       Up        Nail        Knuckle       Double Down   */
-        /*RT*/ _______,  CKC_SPC,  TO(0),    CKC_BKTAB,  SV_SNIPER_5,  _______,
-        /*LT*/ KC_LSFT,  CKC_BSPC, KC_LALT,  CKC_TAB,    SV_SNIPER_3,  _______
+        /*     Down      Pad       Up        Nail        Knuckle   Double Down   */
+        /*RT*/ _______,  CKC_SPC,  _______,  CKC_BKTAB,  _______,  SV_SNIPER_5,
+        /*LT*/ KC_LSFT,  CKC_BSPC, KC_LALT,  CKC_TAB,    _______,  SV_SNIPER_3
         )
 };
 

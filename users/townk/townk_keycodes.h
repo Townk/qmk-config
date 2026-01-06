@@ -23,28 +23,32 @@
 // Can't use the proper safe range number here (which should be
 // `SV_SAFE_RANGE`) if I want my custom keys to show up on Vial or Keybard.
 // This overrides two custom key codes defined by Svalboard (`KC_NORMAL_HOLD`
-// and `KC_FUNC_HOLD`),but since I'm not using them I believe it's safe to do
-// so.
+// and `KC_FUNC_HOLD`), but since I'm not using them I believe it's safe to
+// do so.
 #    define RANGE_START QK_KB_20
 
 #else
 #    define RANGE_START SAFE_RANGE
 #endif
 
-#define MKC_BKTAB   S(KC_TAB)      ///< Back Tab (⇧ ⇥)
-#define MKC_APPWIN  C(G(KC_DOWN))  ///< Show windows from current app (⌃ ⌘ ↓)
-#define MKC_ALLWIN  C(G(KC_UP))    ///< Show all windows from all apps (Mission Control) (⌃ ⌘ ↑)
-#define MKC_DKTN    C(G(KC_RGHT))  ///< Next Desktop (⌃ ⌘ →)
-#define MKC_DKTP    C(G(KC_LEFT))  ///< Previous Desktop (⌃ ⌘ ←)
-#define MKC_SHDKT   A(G(KC_DOWN))  ///< Show Desktop (⌥ ⌘ ↓)
-#define MKC_SHNOT   A(G(KC_UP))    ///< Show Notification Center (⌥ ⌘ ↑)
-#define MKC_SPAPP   A(G(KC_LEFT))  ///< Spotlight Apps (⌥ ⌘ ←)
-#define MKC_SPFND   A(G(KC_RIGHT)) ///< Spotlight Find (⌥ ⌘ →)
+#define MKC_BKTAB   S(KC_TAB)        ///< Back Tab (⇧ ⇥)
+#define MKC_APPWIN  C(G(KC_DOWN))    ///< Show windows from current app (⌃ ⌘ ↓)
+#define MKC_ALLWIN  C(G(KC_UP))      ///< Show all windows from all apps (Mission Control) (⌃ ⌘ ↑)
+#define MKC_DKTN    C(G(KC_RGHT))    ///< Next Desktop (⌃ ⌘ →)
+#define MKC_DKTP    C(G(KC_LEFT))    ///< Previous Desktop (⌃ ⌘ ←)
+#define MKC_SHDKT   A(G(KC_DOWN))    ///< Show Desktop (⌥ ⌘ ↓)
+#define MKC_SHNOT   A(G(KC_UP))      ///< Show Notification Center (⌥ ⌘ ↑)
+#define MKC_SPAPP   A(G(KC_LEFT))    ///< Spotlight Apps (⌥ ⌘ ←)
+#define MKC_SPFND   A(G(KC_RIGHT))   ///< Spotlight Find (⌥ ⌘ →)
+
+#define SV_LDPU    SV_LEFT_DPI_INC   ///< Short version of left side mouse DPI increase
+#define SV_LDPD    SV_LEFT_DPI_DEC   ///< Short version of left side mouse DPI decrease
+#define SV_RDPU    SV_RIGHT_DPI_INC  ///< Short version of right side mouse DPI increase
+#define SV_RDPD    SV_RIGHT_DPI_DEC  ///< Short version of right side mouse DPI decrease
+#define SV_SOUT    SV_OUTPUT_STATUS  ///< Short version of Svalboard Status Output
 
 enum custom_keycodes {
-    /**
-     * Backspace on tap, delete on Shift+Tap, navigation layer on hold.
-     */
+    /** Backspace on tap, delete on Shift+Tap, navigation layer on hold. */
     CKC_BSPC = RANGE_START,
     CKC_SPC,   ///< Space on tap, numbers layer on hold.
     CKC_TAB,   ///< Tab on tap, symbols layer on hold.

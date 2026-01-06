@@ -8,11 +8,13 @@ the Svalboard COLEMAK-DH configuration.
 | Layer | Name | Activation | Purpose |
 | ----- | ---- | ---------- | ------- |
 | 0 | BASE | Default | COLEMAK-DH letters with common symbols |
-| 1 | NAV | Hold left thumb (Backspace) | Vim-style navigation and window management |
-| 2 | NUM | Hold right thumb (Space) | Numeric keypad with operators |
-| 3 | SYM | Hold left thumb (Tab) | Programming symbols and brackets |
-| 4 | FUN | Hold right thumb (Back-tab) | Function keys F1-F20 |
-| 5 | MBO | Auto on trackball movement | Mouse buttons with modifiers |
+| 1 | NAV | Hold left thumb inward (Backspace) | Vim-style navigation and window management |
+| 2 | NUM | Hold right thumb inward (Space) | Numeric keypad with operators |
+| 3 | SYM | Hold left thumb outward (Tab) | Programming symbols and brackets |
+| 4 | FUN | Hold right thumb outward (Back-tab) | Function keys F1-F20 |
+| 5 | MED | Hold left thumb knuckle outward | Multimedia keys |
+| 6 | SYS | Hold right thumb knuckle outward | System keys (keyboard firmware and OS) |
+| 7 | MBO | Auto on trackball movement | Mouse buttons with modifiers |
 
 ## Svalboard Key Terminology
 
@@ -30,7 +32,7 @@ Keys are named by physical position:
 - **E** (East): Right lateral movement
 - **S** (South): Downward flick (scratching motion)
 - **W** (West): Left lateral movement
-- **D-S** (Double-South): Behind South key, same activation
+- **DS** (Double-South): Behind South key, same activation
 
 ### Thumb Clusters
 
@@ -45,54 +47,34 @@ Thumb keys are named by the thumb part used:
 
 ---
 
-## Layer 0: BASE (COLEMAK-DH)
+## Layer 0: BASE
 
 The primary typing layer with COLEMAK-DH letter arrangement and frequently used
 symbols.
 
-```
-     L4           L3           L2           L1       ┊      R4           R3           R2           R1
-    ╭───╮        ╭───╮        ╭───╮        ╭───╮     ┊     ╭───╮        ╭───╮        ╭───╮        ╭───╮
-    │ Q │        │ W │        │ F │        │ P │     ┊     │ L │        │ U │        │ Y │        │ ; │
-╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮ ┊ ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮
-│ [ │ A │ ( ││ \ │ R │ V ││ ` │ S │ B ││ ' │ T │ G │ ┊ │ M │ N │ - ││ J │ E │ = ││ K │ I │ ! ││ ) │ O │ ] │
-╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯ ┊ ╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯
-    │ Z │        │ X │        │ C │        │ D │     ┊     │ H │        │ , │        │ . │        │ / │
-    ├───┤        ├───┤        ├───┤        ├───┤     ┊     ├───┤        ├───┤        ├───┤        ├───┤
-    │ ⌃ │        │ ⌥ │        │ ⌘ │        │ ⇧ │     ┊     │ ⇧ │        │ ⌘ │        │ ⌥ │        │ ⌃ │
-    ╰───╯        ╰───╯        ╰───╯        ╰───╯     ┊     ╰───╯        ╰───╯        ╰───╯        ╰───╯
-                                                     ┊
-                                   LT (Left Thumbs)  ┊  RT (Right Thumbs)
-                                  ╭─────╭────╮─────╮ ┊ ╭─────╭────╮─────╮
-                                  │⌫|⌦|➊││⇧W││ ⇥|➌ │ ┊ │ ⇤|➍ ││⇧W││ ␣|➋ │
-                                  ╰─────│╰──╯│─────╯ ┊ ╰─────│╰──╯│─────╯
-                                    │ 󰑓 │    │─────╮ ┊ ╭─────│    │ ⎋ │
-                                    ╰───│ ⇧  │  ➌  │ ┊ │  ➍  │ ⏎  │───╯
-                                        ╰────╯─────╯ ┊ ╰─────╰────╯
-```
+![](keymap-0.png)
 
 ### Key Features
 
 - **COLEMAK-DH letter layout** optimized for finger rolls
 - **Home row modifiers** on Double-South keys (⌃ ⌥ ⌘ ⇧) accessible via downward
   flick
-- **Common symbols** placed on Center and side keys for programming efficiency
 - **Dual-function thumb keys** for layer access (hold) and common keys (tap)
 
 ### Thumb Key Functions
 
-- **Left Pad**: Backspace (tap) / NAV layer (hold)
-- **Left Nail**: Tab (tap) / SYM layer (hold)
+- **Left Pad**: Backspace (tap) / `NAV` layer (hold)
+- **Left Nail**: Tab (tap) / `SYM` layer (hold)
 - **Left Down**: Shift (one-shot tap, hold, or Caps Word on double-tap)
-- **Left Knuckle**: SYM layer
+- **Left Knuckle**: `MED` layer
 - **Left Up**: Repeat last key
-- **Left DD**: Caps Word toggle
-- **Right Pad**: Space (tap) / NUM layer (hold)
-- **Right Nail**: Back-tab (⇧⇥) (tap) / FUN layer (hold)
+- **Left Double-Down**: Caps Word toggle
+- **Right Pad**: Space (tap) / `NUM` layer (hold)
+- **Right Nail**: Back-tab (⇧⇥) (tap) / `FUN` layer (hold)
 - **Right Down**: Enter
-- **Right Knuckle**: FUN layer
+- **Right Knuckle**: `SYS` layer
 - **Right Up**: Escape
-- **Right DD**: Caps Word toggle
+- **Right Double-Down**: Caps Word toggle
 
 ---
 
@@ -100,26 +82,7 @@ symbols.
 
 Vim-style navigation and macOS window management on the right hand.
 
-```
-     L4           L3           L2           L1       ┊      R4           R3           R2           R1
-    ╭───╮        ╭───╮        ╭───╮        ╭───╮     ┊     ╭───╮        ╭───╮        ╭───╮        ╭───╮
-    │   │        │   │        │   │        │   │     ┊     │⌃⌘←│        │⌃⌘↓│        │⌃⌘↑│        │⌃⌘→│
-╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮ ┊ ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮
-│   │   │   ││   │   │   ││   │   │   ││   │   │   │ ┊ │ ↖ │ ← │ ↘ ││⌥ ←│ ↓ │⌥ →││⌃ ←│ ↑ │⌃ →││ ⇞ │ → │ ⇟ │
-╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯ ┊ ╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯
-    │   │        │   │        │   │        │   │     ┊     │⌥⌘←│        │⌥⌘↓│        │⌥⌘↑│        │⌥⌘→│
-    ├───┤        ├───┤        ├───┤        ├───┤     ┊     ├───┤        ├───┤        ├───┤        ├───┤
-    │ ⌃ │        │ ⌥ │        │ ⌘ │        │ ⇧ │     ┊     │ ⇧ │        │ ⌘ │        │ ⌥ │        │ ⌃ │
-    ╰───╯        ╰───╯        ╰───╯        ╰───╯     ┊     ╰───╯        ╰───╯        ╰───╯        ╰───╯
-                                                     ┊
-                                   LT (Left Thumbs)  ┊  RT (Right Thumbs)
-                                  ╭─────╭────╮─────╮ ┊ ╭─────╭────╮─────╮
-                                  │ 🮖🮖🮖 ││  ││     │ ┊ │  ⇤  ││  ││  ␣  │
-                                  ╰─────│╰──╯│─────╯ ┊ ╰─────│╰──╯│─────╯
-                                    │   │    │─────╮ ┊ ╭─────│    │ ⎋ │
-                                    ╰───│    │     │ ┊ │     │  ⏎ │───╯
-                                        ╰────╯─────╯ ┊ ╰─────╰────╯
-```
+![](keymap-1.png)
 
 ### Key Features
 
@@ -138,33 +101,15 @@ Hold **Left Pad** (Backspace key) to activate.
 
 Numeric keypad layout with mathematical operators on the left hand.
 
-```
-     L4           L3           L2           L1       ┊      R4           R3           R2           R1
-    ╭───╮        ╭───╮        ╭───╮        ╭───╮     ┊     ╭───╮        ╭───╮        ╭───╮        ╭───╮
-    │ / │        │ * │        │ - │        │ + │     ┊     │   │        │   │        │   │        │   │
-╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮ ┊ ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮
-│ 0 │ 5 │ , ││ ^ │ 6 │ = ││ ( │ 7 │ ) ││ . │ 8 │ 9 │ ┊ │   │   │   ││   │   │   ││   │   │   ││   │   │   │
-╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯ ┊ ╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯
-    │ 1 │        │ 2 │        │ 3 │        │ 4 │     ┊     │   │        │   │        │   │        │   │
-    ├───┤        ├───┤        ├───┤        ├───┤     ┊     ├───┤        ├───┤        ├───┤        ├───┤
-    │ ⌃ │        │ ⌥ │        │ ⌘ │        │ ⇧ │     ┊     │ ⇧ │        │ ⌘ │        │ ⌥ │        │ ⌃ │
-    ╰───╯        ╰───╯        ╰───╯        ╰───╯     ┊     ╰───╯        ╰───╯        ╰───╯        ╰───╯
-                                                     ┊
-                                   LT (Left Thumbs)  ┊  RT (Right Thumbs)
-                                  ╭─────╭────╮─────╮ ┊ ╭─────╭────╮─────╮
-                                  │  ⌫  ││  ││     │ ┊ │     ││  ││ 🮖🮖🮖 │
-                                  ╰─────│╰──╯│─────╯ ┊ ╰─────│╰──╯│─────╯
-                                    │ 󰑓 │    │─────╮ ┊ ╭─────│    │   │
-                                    ╰───│ ⌅  │     │ ┊ │     │    │───╯
-                                        ╰────╯─────╯ ┊ ╰─────╰────╯
-```
+![](keymap-2.png)
 
 ### Key Features
 
-- **Numbers 1-9** arranged bottom-to-top, outside-to-inside
+- **Numbers 1-8** arranged bottom-to-top, outside-to-inside
+- **Number 0** positioned on the _left side_ of `1`
+- **Number 9** positioned on the _right side_ of `8`
 - **Arithmetic operators** (+, -, *, /) on North keys
 - **Parentheses** and **equals sign** for formula entry
-- **Number 0** positioned for thumb access
 
 ### Activation
 
@@ -176,27 +121,7 @@ Hold **Right Pad** (Space key) to activate.
 
 Programming symbols and brackets on the right hand, organized for efficient chording.
 
-
-```
-     L4           L3           L2           L1       ┊      R4           R3           R2           R1
-    ╭───╮        ╭───╮        ╭───╮        ╭───╮     ┊     ╭───╮        ╭───╮        ╭───╮        ╭───╮
-    │   │        │   │        │   │        │   │     ┊     │ < │        │ = │        │ > │        │ _ │
-╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮ ┊ ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮
-│   │   │   ││   │   │   ││   │   │   ││   │   │   │ ┊ │ ^ │ { │ $ ││ & │ : │ | ││ ! │ } │ % ││ / │ @ │ \ │
-╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯ ┊ ╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯
-    │   │        │   │        │   │        │   │     ┊     │ [ │        │ * │        │ ] │        │ # │
-    ├───┤        ├───┤        ├───┤        ├───┤     ┊     ├───┤        ├───┤        ├───┤        ├───┤
-    │ ⌃ │        │ ⌥ │        │ ⌘ │        │ ⇧ │     ┊     │ ⇧ │        │ ⌘ │        │ ⌥ │        │ ⌃ │
-    ╰───╯        ╰───╯        ╰───╯        ╰───╯     ┊     ╰───╯        ╰───╯        ╰───╯        ╰───╯
-                                                     ┊
-                                   LT (Left Thumbs)  ┊  RT (Right Thumbs)
-                                  ╭─────╭────╮─────╮ ┊ ╭─────╭────╮─────╮
-                                  │     ││  ││ 🮖🮖🮖 │ ┊ │  ⇤  ││  ││  ␣  │
-                                  ╰─────│╰──╯│─────╯ ┊ ╰─────│╰──╯│─────╯
-                                    │   │    │─────╮ ┊ ╭─────│    │ ⎋ │
-                                    ╰───│    │     │ ┊ │     │  ⏎ │───╯
-                                        ╰────╯─────╯ ┊ ╰─────╰────╯
-```
+![](keymap-3.png)
 
 ### Key Features
 
@@ -213,34 +138,15 @@ Hold **Left Nail** (Tab key) to activate.
 
 ## Layer 4: FUN (Function Keys)
 
-All function keys F1-F20 on the left hand.
+All function keys `F1`-`F20` on the left hand.
 
-```
-     L4           L3           L2           L1       ┊      R4           R3           R2           R1
-    ╭───╮        ╭───╮        ╭───╮        ╭───╮     ┊     ╭───╮        ╭───╮        ╭───╮        ╭───╮
-    │F11│        │F12│        │F13│        │F14│     ┊     │   │        │   │        │   │        │   │
-╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮ ┊ ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮
-│F10│F5 │F15││F16│F6 │F17││F18│F7 │F19││F20│F8 │F9 │ ┊ │   │   │   ││   │   │   ││   │   │   ││   │   │   │
-╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯ ┊ ╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯
-    │F1 │        │F2 │        │F3 │        │F4 │     ┊     │   │        │   │        │   │        │   │
-    ├───┤        ├───┤        ├───┤        ├───┤     ┊     ├───┤        ├───┤        ├───┤        ├───┤
-    │ ⌃ │        │ ⌥ │        │ ⌘ │        │ ⇧ │     ┊     │ ⇧ │        │ ⌘ │        │ ⌥ │        │ ⌃ │
-    ╰───╯        ╰───╯        ╰───╯        ╰───╯     ┊     ╰───╯        ╰───╯        ╰───╯        ╰───╯
-                                                     ┊
-                                   LT (Left Thumbs)  ┊  RT (Right Thumbs)
-                                  ╭─────╭────╮─────╮ ┊ ╭─────╭────╮─────╮
-                                  │     ││  ││     │ ┊ │ 🮖🮖🮖 ││  ││     │
-                                  ╰─────│╰──╯│─────╯ ┊ ╰─────│╰──╯│─────╯
-                                    │   │    │─────╮ ┊ ╭─────│    │   │
-                                    ╰───│    │     │ ┊ │     │    │───╯
-                                        ╰────╯─────╯ ┊ ╰─────╰────╯
-```
+![](keymap-4.png)
 
 ### Key Features
 
-- **F1-F4** on South keys (bottom row)
-- **F5-F9** on Center and North keys (standard function keys)
-- **F10-F20** extended function keys for advanced workflows
+- **F1-F9** follow the same convention as the numbers layer
+- **F10** positioned where the number `0` is on the numbers layer
+- **F11-F14** on North keys following the number increase pattern
 - Arranged bottom-to-top, outside-to-inside for systematic access
 
 ### Activation
@@ -249,53 +155,76 @@ Hold **Right Nail** (Back-tab key) to activate.
 
 ---
 
-## Layer 5: MBO (Mouse Buttons)
+## Layer 5: MED (Multimedia Keys)
 
-Auto-activated mouse layer with special mouse button keys and modifiers.
+Media playback and volume control on the right hand.
 
-```
-     L4           L3           L2           L1       ┊      R4           R3           R2           R1
-    ╭───╮        ╭───╮        ╭───╮        ╭───╮     ┊     ╭───╮        ╭───╮        ╭───╮        ╭───╮
-    │ ⛛ │        │ ⛛ │        │ ⛛ │        │ ⛛ │     ┊     │ ⛛ │        │ ⛛ │        │ ⛛ │        │ ⛛ │
-╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮ ┊ ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮
-│ ⛛ │ ⛛ │ ⛛ ││ ⛛ │ ⛛ │ ⛛ ││ ⛛ │ ⛛ │ ⛛ ││ ⛛ │ ⛛ │ ⛛ │ ┊ │ ⛛ │ ⛛ │ ⛛ ││ ⛛ │ ⛛ │ ⛛ ││ ⛛ │ ⛛ │ ⛛ ││ ⛛ │ ⛛ │ ⛛ │
-╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯ ┊ ╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯
-    │ ⛛ │        │ ⛛ │        │ ⛛ │        │ ⛛ │     ┊     │ ⛛ │        │ ⛛ │        │ ⛛ │        │ ⛛ │
-    ├───┤        ├───┤        ├───┤        ├───┤     ┊     ├───┤        ├───┤        ├───┤        ├───┤
-    │⌃MB│        │⌥MB│        │⌘MB│        │⇧MB│     ┊     │ ⇧ │        │ ⌘ │        │ ⌥ │        │ ⌃ │
-    ╰───╯        ╰───╯        ╰───╯        ╰───╯     ┊     ╰───╯        ╰───╯        ╰───╯        ╰───╯
-                                                     ┊
-                                   LT (Left Thumbs)  ┊  RT (Right Thumbs)
-                                  ╭─────╭────╮─────╮ ┊ ╭─────╭────╮─────╮
-                                  │⌫|⌦|➊││⇧W││ ⇥|➌ │ ┊ │ ⇤|➍ ││⇧W││ ␣|➋ │
-                                  ╰─────│╰──╯│─────╯ ┊ ╰─────│╰──╯│─────╯
-                                    │ ⌥ │    │─────╮ ┊ ╭─────│    │ ⓿ │
-                                    ╰───│ ⇧  │ 󰓾 3 │ ┊ │ 󰓾 5 │ ⏎  │───╯
-                                        ╰────╯─────╯ ┊ ╰─────╰────╯
-```
+![](keymap-5.png)
 
 ### Key Features
 
-- **Special mouse button keys** on left Double-South positions (MB_SFT, MB_ALT,
-  MB_GUI, MB_CTL)
-- **Regular modifiers** on right Double-South for Cmd+Click, etc.
-- **Sniper mode** on thumb Knuckle keys for precision pointing
-- **Return to BASE** via Right Up key
+- **Volume control**: Volume Up/Down, Mute/Unmute
+- **Playback control**: Play/Pause, Next/Previous track
+- **Seek control**: Fast Forward, Rewind
+- **Media keys** positioned on strong fingers for easy one-handed access
 
 ### Activation
 
-Automatically activated when you move either trackball (if auto_mouse is enabled).
+Hold **Left Knuckle** to activate.
+
+---
+
+## Layer 6: SYS (System Keys)
+
+System-level controls for display brightness, trackball DPI adjustment, and
+power management on the left hand.
+
+![](keymap-6.png)
+
+### Key Features
+
+- **Display brightness**: Brightness Up/Down on `L1`
+- **Trackball DPI control**: Independent DPI adjustment for both trackballs
+  - Left trackball DPI: Up/Down on `L3`
+  - Right trackball DPI: Up/Down on `L2`
+- **Power control**: Power button on `L4` Center
+- **Firmware mode**: Svalboard Output key for firmware state logging
+
+### Activation
+
+Hold **Right Knuckle** to activate.
+
+---
+
+## Layer 7: MBO (Mouse Buttons)
+
+Auto-activated mouse layer with special mouse button keys and modifiers.
+
+![](keymap-7.png)
+
+### Key Features
+
+- **Special mouse button keys** on left Double-South positions (`MB_SFT`,
+  `MB_ALT`, `MB_GUI`, `MB_CTL`)
+- **Regular modifiers** on right Double-South for Cmd+Click, etc.
+- **Sniper mode** on thumb Double-Down keys for precision pointing
+- **Return to BASE** when pressing any key that is not a mouse button
+
+### Activation
+
+Automatically activated when you move either trackball.
 
 ### Special Mouse Button Keys (Left Double-South)
 
 These keys have intelligent dual behavior:
 
-- **MB_SFT** (Shift+Mouse): Left L1 D-S
-- **MB_GUI** (Cmd+Mouse): Left L2 D-S
-- **MB_ALT** (Option+Mouse): Left L3 D-S
-- **MB_CTL** (Control+Mouse): Left L4 D-S
+- **MB_SFT**: Shift or mouse left click
+- **MB_GUI**: Cmd or mouse middle click
+- **MB_ALT**: Option or mouse right click
+- **MB_CTL**: Control or mouse button 4 click
 
-See [Advanced Features](advanced-features.md#special-mouse-button-keys) for detailed behavior.
+See [Advanced Features](advanced-features.md#special-mouse-button-keys) for
+detailed behavior.
 
 ---
 
@@ -307,12 +236,15 @@ Layers use a single-hand activation pattern: hold a layer key on one hand, and
 all functional keys appear on the opposite hand. This eliminates same-hand
 stretching and complex finger gymnastics.
 
-Example: Hold left thumb Backspace → NAV layer keys appear on right hand only.
+Example: Hold left thumb Backspace → `NAV` layer keys appear on right hand only.
+
+The modifiers keys are still available on the same key that activated the layer
+so you can combine them with the active layer's keys.
 
 ### Key Organization Principles
 
-- **Numbers/Functions**: Bottom-to-top (1→9, F1→F9), outside-to-inside
-- **Symbols**: Paired logically for chording ({} and [] adjacent)
+- **Numbers/Functions**: Bottom-to-top (`1`→`9`, `F1`→`F9`), outside-to-inside
+- **Symbols**: Paired logically for chording (`{}` and `[]` adjacent)
 - **Navigation**: Vim-style HJKL with contextual modifiers
 - **Modifiers**: Symmetrically placed on both hands for flexibility
 - **Frequent keys**: Placed on strong fingers (index, middle)

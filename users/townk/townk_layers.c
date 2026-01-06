@@ -27,20 +27,21 @@
  * - Layer 1 (_NAV): Orange
  * - Layer 2 (_NUM): Azure
  * - Layer 3 (_SYM): Coral
- * - Layer 4 (_FUN): Yellow
- * - Layer 5: Teal
- * - Layer 6-7: Red
- * - Layer 8: Pink
- * - Layer 9: Purple
- * - Layer 10: Coral
- * - Layer 11: Spring Green
- * - Layer 12: Teal
- * - Layer 13: Turquoise
- * - Layer 14: Yellow
+ * - Layer 4 (_FUN): Purple
+ * - Layer 5 (_MED): Yellow
+ * - Layer 6: Pink
+ * - Layer 7: Red
+ * - Layer 8: Magenta
+ * - Layer 9: Teal
+ * - Layer 10: Spring Green
+ * - Layer 11: Turquoise
+ * - Layer 12: Green
+ * - Layer 13: Azure
+ * - Layer 14 (_SYS): Red
  * - Layer 15 (_MBO): Magenta
  *
  * @author Thiago Alves
- * @date 2024
+ * @date 2025
  */
 
 #include "townk_layers.h"
@@ -48,21 +49,21 @@
 #include "color.h"
 
 #define LAYER_COLOR(name, color) rgblight_segment_t const (name)[] = RGBLIGHT_LAYER_SEGMENTS({0, 2, color})
-LAYER_COLOR(layer0_colors, HSV_GREEN); // Base layer
+LAYER_COLOR(layer0_colors, HSV_GREEN);  // Base layer
 LAYER_COLOR(layer1_colors, HSV_ORANGE); // Navigation
-LAYER_COLOR(layer2_colors, HSV_AZURE); // Numbers
-LAYER_COLOR(layer3_colors, HSV_CORAL); // Symbols
-LAYER_COLOR(layer4_colors, HSV_YELLOW); // Fn Keys
-LAYER_COLOR(layer5_colors, HSV_TEAL);
-LAYER_COLOR(layer6_colors, HSV_RED);
+LAYER_COLOR(layer2_colors, HSV_AZURE);  // Numbers
+LAYER_COLOR(layer3_colors, HSV_CORAL);  // Symbols
+LAYER_COLOR(layer4_colors, HSV_PURPLE); // Fn Keys
+LAYER_COLOR(layer5_colors, HSV_YELLOW); // Multi-Media
+LAYER_COLOR(layer6_colors, HSV_PINK);
 LAYER_COLOR(layer7_colors, HSV_RED);
-LAYER_COLOR(layer8_colors, HSV_PINK);
-LAYER_COLOR(layer9_colors, HSV_PURPLE);
-LAYER_COLOR(layer10_colors, HSV_CORAL);
-LAYER_COLOR(layer11_colors, HSV_SPRINGGREEN);
-LAYER_COLOR(layer12_colors, HSV_TEAL);
-LAYER_COLOR(layer13_colors, HSV_TURQUOISE);
-LAYER_COLOR(layer14_colors, HSV_YELLOW);
+LAYER_COLOR(layer8_colors, HSV_MAGENTA);
+LAYER_COLOR(layer9_colors, HSV_TEAL);
+LAYER_COLOR(layer10_colors, HSV_SPRINGGREEN);
+LAYER_COLOR(layer11_colors, HSV_TURQUOISE);
+LAYER_COLOR(layer12_colors, HSV_GREEN);
+LAYER_COLOR(layer13_colors, HSV_AZURE);
+LAYER_COLOR(layer14_colors, HSV_RED);     // System
 LAYER_COLOR(layer15_colors, HSV_MAGENTA); // Mouse layer
 #undef LAYER_COLOR
 
