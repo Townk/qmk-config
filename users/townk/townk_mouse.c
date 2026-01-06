@@ -171,9 +171,13 @@ bool process_special_mouse_keys(uint16_t keycode, keyrecord_t *record) {
 
             // Check if there are external modifiers (not from our special
             // keys)
-            uint8_t current_mods = get_mods();
+            // Check all modifier sources: normal, oneshot, and weak mods
+            uint8_t current_mods = get_mods() | get_oneshot_mods() | get_weak_mods();
             uint8_t our_mods = 0;
             for (int i = 0; i < 4; i++) {
+                // Skip the key being pressed to avoid false detection
+                if (i == mb_index) continue;
+
                 if (mb_states[i].is_held && !mb_states[i].mods_on_press) {
                     our_mods |= get_modifier(i);
                 }
