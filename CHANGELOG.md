@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Comprehensive documentation structure
-  - `docs/layer-reference.md` - Complete visual reference for all 6 keyboard layers
+  - `docs/layer-reference.md` - Complete visual reference for all 8 keyboard layers
   - `docs/advanced-features.md` - Deep dive into special features and configuration
 - Semantic versioning system with release-based patch tracking
 - VERSION file for major.minor version management (patch auto-increments from
@@ -36,14 +36,17 @@ Initial release of the Svalboard COLEMAK-DH firmware configuration.
 ### Added
 
 - COLEMAK-DH base layer with ergonomic letter arrangement
-- Miryoku-inspired layer system with 6 layers:
+- Miryoku-inspired layer system with 8 layers:
   - BASE: COLEMAK-DH letters and common symbols
   - NAV: Vim-style navigation and macOS window management
   - NUM: Numeric keypad with arithmetic operators
   - SYM: Programming symbols and brackets
   - FUN: Function keys F1-F20
+  - MED: Multimedia keys
+  - SYS: System keys (keyboard firmware and OS)
   - MBO: Auto-activated mouse layer with special mouse keys
-- Advanced home row modifiers using SM_TD tap dance library
+- Home row modifiers using standard QMK modifiers on Double-South keys
+- Dual-function layer keys using SM_TD tap dance library for intelligent tap/hold behavior
 - Special mouse button keys (MB_SFT, MB_ALT, MB_GUI, MB_CTL) with intelligent
   dual behavior
 - Dual trackball support (PMW3389) with independent DPI settings
@@ -61,7 +64,8 @@ Initial release of the Svalboard COLEMAK-DH firmware configuration.
 - Right trackball: Cursor mode, 1200 DPI
 - Auto mouse layer: Enabled
 - RGB layer indicators: Enabled
-- Home row modifiers: SM_TD implementation on Double-South keys
+- Home row modifiers: Standard QMK implementation on Double-South keys
+- Dual-function layer keys: SM_TD implementation on thumb cluster keys
 
 ### Development
 

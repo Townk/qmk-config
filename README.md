@@ -1,5 +1,7 @@
 # Svalboard QMK Configuration - COLEMAK-DH Layout
 
+[![Build Vial-QMK firmware](https://github.com/Townk/qmk-config/actions/workflows/build_binaries.yaml/badge.svg)](https://github.com/Townk/qmk-config/actions/workflows/build_binaries.yaml)
+
 A highly optimized [QMK](https://qmk.fm) firmware configuration for the
 [Svalboard](https://svalboard.com) split ergonomic keyboard featuring dual
 trackballs, COLEMAK-DH layout, and Miryoku-inspired layer design.
@@ -10,22 +12,23 @@ trackballs, COLEMAK-DH layout, and Miryoku-inspired layer design.
   finger rolls
 - **Miryoku-Inspired Layers**: Single-hand layer activation with all functional
   keys on the opposite hand
-- **Dual Trackball Support**: Independent PMW3389 sensors with configurable DPI
+- **Dual Trackball Support**: Independent sensors with configurable DPI
   (200-2400)
-- **Advanced Home Row Modifiers**: Powered by
-  [SM_TD](https://github.com/stasmarkin/sm_td) for reliable modifier behavior
-  during fast typing
+- **Home Row Modifiers**: Standard QMK modifiers on Double-South keys for
+  instant, reliable modifier access without tap-dance interference
 - **Special Mouse Keys**: Dual-function modifier/mouse button keys with
   intelligent context switching
 - **RGB Layer Indicators**: Visual feedback for active layers
 - **Vial/Keybard Support**: Runtime customization without reflashing
-- **6 Thoughtfully Designed Layers**: BASE, NAV, NUM, SYM, FUN, and
-  auto-activated mouse layer
+- **8 Thoughtfully Designed Layers**: `BASE`, `NAV`, `NUM`, `SYM`, `FUN`,
+  `MED`, `SYS`, and auto-activated mouse layer
 
 ## Documentation
 
-- **[Layer Reference](docs/layer-reference.md)** - Complete visual guide to all 6 keyboard layers
-- **[Advanced Features](docs/advanced-features.md)** - Home row modifiers, special mouse keys, trackball config, and more
+- **[Layer Reference](docs/layer-reference.md)** - Complete visual guide to all
+  8 keyboard layers
+- **[Advanced Features](docs/advanced-features.md)** - Home row modifiers,
+  special mouse keys, trackball configuration, and more
 - **[Changelog](CHANGELOG.md)** - Version history and release notes
 
 ## Layer Overview
@@ -33,11 +36,13 @@ trackballs, COLEMAK-DH layout, and Miryoku-inspired layer design.
 | Layer | Name | Activation | Purpose |
 | ----- | ---- | ---------- | ------- |
 | 0 | BASE | Default | COLEMAK-DH letters with common symbols |
-| 1 | NAV | Hold left thumb (Backspace) | Vim-style navigation and window management |
-| 2 | NUM | Hold right thumb (Space) | Numeric keypad with operators |
-| 3 | SYM | Hold left thumb (Tab) | Programming symbols and brackets |
-| 4 | FUN | Hold right thumb (Back-tab) | Function keys F1-F20 |
-| 5 | MBO | Auto on trackball movement | Mouse buttons with modifiers |
+| 1 | NAV | Hold left thumb inward (Backspace) | Vim-style navigation and window management |
+| 2 | NUM | Hold right thumb inward (Space) | Numeric keypad with operators |
+| 3 | SYM | Hold left thumb outward (Tab) | Programming symbols and brackets |
+| 4 | FUN | Hold right thumb outward (Back-tab) | Function keys F1-F20 |
+| 5 | MED | Hold left thumb knuckle outward | Multimedia keys |
+| 6 | SYS | Hold right thumb knuckle outward | System keys (keyboard firmware and OS) |
+| 7 | MBO | Auto on trackball movement | Mouse buttons with modifiers |
 
 For detailed layer diagrams with all key positions, see the [Layer Reference](docs/layer-reference.md).
 
@@ -78,10 +83,10 @@ Build firmware for both keyboard halves:
 qmk userspace-compile
 ```
 
-This generates:
+This generates versioned firmware files:
 
-- `svalboard-colemak-left-townk.uf2` - Left half firmware
-- `svalboard-colemak-right-townk.uf2` - Right half firmware
+- `svalboard-colemak-dh-townk-{VERSION}.left.uf2` - Left half firmware
+- `svalboard-colemak-dh-townk-{VERSION}.right.uf2` - Right half firmware
 
 Or build a specific half:
 
@@ -112,12 +117,10 @@ This repository is configured to automatically build firmware on every push:
 
 ### Runtime Customization (No Reflashing Required)
 
-This firmware supports [Vial](https://get.vial.today/) for runtime configuration:
-
-1. Install [Keybard](https://github.com/svalboard/keybard) (Vial-based
-   configurator for Svalboard)
-2. Connect your keyboard
-3. Modify layers, keys, and settings in real-time
+This firmware supports [Vial](https://vial.rocks/) and
+[Keybard](https://captdeaf.github.io/keybard/) (recommended) for runtime
+configuration. Just access one of these web applications using a Chrome-based
+browser to connect your keyboard and modify its layers and keys.
 
 ### Code Customization
 
@@ -183,10 +186,20 @@ Configuration](docs/advanced-features.md#trackball-configuration).
 
 ### Home Row Modifiers
 
-Reliable home row modifiers using the SM_TD (Stasmarkin Tap Dance) library,
-placed on Double-South keys. Works correctly even during fast typing.
+Standard QMK modifiers placed on Double-South keys (accessible via downward
+flick). Provides instant modifier activation without tap-dance timing delays
+that can interfere with fast typing.
 
 [Learn more →](docs/advanced-features.md#home-row-modifiers)
+
+### Dual-Function Layer Keys
+
+Thumb cluster keys use the [SM_TD](https://github.com/stasmarkin/sm_td)
+(Stasmarkin Tap Dance) library for intelligent tap/hold behavior: tap for a key
+(Backspace, Tab, Space, etc.), hold to activate a layer (`NAV`, `SYM`, `NUM`,
+`FUN`). SM_TD adapts to your typing speed to prevent false triggers.
+
+[Learn more →](docs/advanced-features.md#dual-function-layer-keys)
 
 ### Special Mouse Button Keys
 
@@ -249,9 +262,9 @@ docker run -v $(pwd):/workspace ghcr.io/qmk/qmk_cli
 - **QMK Userspace Version**: 1.0
 - **Base Firmware**: [vial-qmk](https://github.com/svalboard/vial-qmk)
   (Svalboard fork)
-- **Keyboard**: Svalboard with PMW3389 trackballs
+- **Keyboard**: Svalboard with PMW3389 dual-trackballs
 - **Layout**: COLEMAK-DH (46-key split)
-- **Features**: VIA, Vial, RGB Lighting, Pointing Device, Mouse Keys
+- **Features**: Vial, RGB Lighting, Pointing Device, Mouse Keys
 
 ## Resources
 

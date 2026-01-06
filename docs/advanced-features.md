@@ -108,6 +108,16 @@ SM_TD solves this by:
 3. **Providing consistent layer activation** without missed taps or accidental
    holds
 
+>[!NOTE] Note on SM_TD
+> While SM_TD has a reputation in the QMK community for reimplementing existing
+> features, the library's unique adaptive timing algorithm requires functionality
+> not available in standard QMK. After extensively testing all available QMK
+> tap-hold solutions, SM_TD provides significantly superior results for fast
+> typing (>50 wpm) with dual-function keys.
+>
+> The performance difference is substantial enough to justify the additional
+> complexity for this configuration's thumb cluster layer activation.
+
 ### Smart Shift
 
 The left thumb Down key (`CKC_SMSFT`) has special behavior:
