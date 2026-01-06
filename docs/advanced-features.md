@@ -108,7 +108,7 @@ SM_TD solves this by:
 3. **Providing consistent layer activation** without missed taps or accidental
    holds
 
->[!NOTE] Note on SM_TD
+> [!NOTE]
 > While SM_TD has a reputation in the QMK community for reimplementing existing
 > features, the library's unique adaptive timing algorithm requires functionality
 > not available in standard QMK. After extensively testing all available QMK
