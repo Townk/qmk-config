@@ -1,0 +1,264 @@
+layers:
+  - name: COLEMAK
+    labels:
+      #  Center  North  East  South  West  Double-South
+      - ["N",    "L",   "-",  "H",   "M",  "%%nf-md-apple_keyboard_shift"]    # R1
+      - ["E",    "U",   "=",  ",",   "J",  "%%nf-md-apple_keyboard_command"]  # R2
+      - ["I",    "Y",   "!",  ".",   "K",  "%%nf-md-apple_keyboard_option"]   # R3
+      - ["O",    ";",   "\\", "]",   ")",  "%%nf-md-apple_keyboard_control"]  # R4
+
+      #  Center  North  East  South  West  Double-South
+      - ["T",    "P",   "G",  "D",   "'",  "%%nf-md-apple_keyboard_shift"]    # L1
+      - ["S",    "F",   "B",  "C",   "`",  "%%nf-md-apple_keyboard_command"]  # L2
+      - ["R",    "W",   "V",  "X",   "\\", "%%nf-md-apple_keyboard_option"]   # L3
+      - ["A",    "Q",   "(",  "Z",   "[",  "%%nf-md-apple_keyboard_control"]  # L4
+
+      #  Down                                          Pad                                Up                    Nail                            Knuckle  Double-Down
+      - ["%%nf-md-keyboard_return",                    "%%nf-md-keyboard_space",          "ESC ⎋",              "%%nf-md-keyboard_tab_reverse", "",      "%%nf-md-apple_keyboard_caps"] # TR
+      - ["%%nf-md-brain %%nf-md-apple_keyboard_shift", "%%nf-md-brain %%nf-md-backspace", "%%nf-fa-repeat REP", "%%nf-md-keyboard_tab",         "",      "%%nf-md-apple_keyboard_caps"] # TL
+
+    colors:
+      - "#012523"
+      - "#175547"
+      - "#347156"
+      - "#4C8863"
+      - "#66A271"
+      - "#81BB7F"
+      - "#70768B"
+
+    primaryColor: 1
+    secondaryColor: 6
+    layerToggles:
+      - [null, 2, null, 4, 6, null]
+      - [null, 1, null, 3, 5, null]
+      
+  - name: Navigation
+    labels:
+      #  Center                 North                                                                                East                                                 South                                                                                West                                                  Double-South
+      - ["%%nf-fa-arrow_left",  "%%nf-md-apple_keyboard_control %%nf-md-apple_keyboard_command %%nf-fa-arrow_left",  "↘",                                                 "%%nf-md-apple_keyboard_option %%nf-md-apple_keyboard_command %%nf-fa-arrow_left",   "↖",                                                  "%%nf-md-apple_keyboard_shift"]   # R1
+      - ["%%nf-fa-arrow_down",  "%%nf-md-apple_keyboard_control %%nf-md-apple_keyboard_command %%nf-fa-arrow_down",  "%%nf-md-apple_keyboard_option %%nf-fa-arrow_left",  "%%nf-md-apple_keyboard_option %%nf-md-apple_keyboard_command %%nf-fa-arrow_down",   "%%nf-md-apple_keyboard_option %%nf-fa-arrow_right",  "%%nf-md-apple_keyboard_command"] # R2
+      - ["%%nf-fa-arrow_up",    "%%nf-md-apple_keyboard_control %%nf-md-apple_keyboard_command %%nf-fa-arrow_up",    "%%nf-md-apple_keyboard_control %%nf-fa-arrow_left", "%%nf-md-apple_keyboard_option %%nf-md-apple_keyboard_command %%nf-fa-arrow_up",     "%%nf-md-apple_keyboard_control %%nf-fa-arrow_right", "%%nf-md-apple_keyboard_option"]  # R3
+      - ["%%nf-fa-arrow_right", "%%nf-md-apple_keyboard_control %%nf-md-apple_keyboard_command %%nf-fa-arrow_right", "⇟",                                                 "%%nf-md-apple_keyboard_option %%nf-md-apple_keyboard_command %%nf-fa-arrow_right",  "⇞",                                                  "%%nf-md-apple_keyboard_control"] # R4
+                                                                                                                                                                                                                                                                                                                                                        
+      #  Center  North  East  South  West  Double-South                                                                                                                                                                                                                                                                                                 
+      - ["",     "",    "",   "",    "",   "%%nf-md-apple_keyboard_shift"]   # L1
+      - ["",     "",    "",   "",    "",   "%%nf-md-apple_keyboard_command"] # L2
+      - ["",     "",    "",   "",    "",   "%%nf-md-apple_keyboard_option"]  # L3
+      - ["",     "",    "",   "",    "",   "%%nf-md-apple_keyboard_control"] # L4
+
+      #  Down  Pad                      Up   Nail                             Knuckle  Double-Down
+      - ["",   "%%nf-md-keyboard_tab",  "",  "%%nf-md-keyboard_tab_reverse",  "",      ""]          # RT
+      - ["",   "",                      "",  "",                              "",      ""]          # LT
+
+    colors:
+      - "#412000"
+      - "#62370D"
+      - "#89511C"
+      - "#B26E2D"
+      - "#D5863B"
+      - "#FFA34C"
+      - "#70768B"
+      
+    primaryColor: 3
+    secondaryColor: 6
+    layerToggles:
+      - [null, null, null, null, null, null]
+      - [null, null, null, null, null, null]
+
+  - name: Numbers
+    labels:
+      #  Center  North  East  South  West  Double-South
+      - ["",     "",    "",   "",    "",   "%%nf-md-apple_keyboard_shift"]    # R1
+      - ["",     "",    "",   "",    "",   "%%nf-md-apple_keyboard_command"]  # R2
+      - ["",     "",    "",   "",    "",   "%%nf-md-apple_keyboard_option"]   # R3
+      - ["",     "",    "",   "",    "",   "%%nf-md-apple_keyboard_control"]  # R4
+                                                                            
+      #  Center  North  East  South  West  Double-South                     
+      - ["8",    "+",   "9",  "4",   ".",  "%%nf-md-apple_keyboard_shift"]    # L1
+      - ["7",    "-",   "=",  "3",   "^",  "%%nf-md-apple_keyboard_command"]  # L2
+      - ["6",    "*",   ")",  "2",   "(",  "%%nf-md-apple_keyboard_option"]   # L3
+      - ["5",    "/",   ",",  "1",   "0",  "%%nf-md-apple_keyboard_control"]  # L4
+
+      #  Down                       Pad                  Up                    Nail                      Knuckle                  Double-Down
+      - ["",                        "",                  "",                   "",                       "",                      ""]         # RT
+      - ["%%nf-md-keyboard_return", "%%nf-md-backspace", "%%nf-fa-repeat REP", "%%nf-md-keyboard_space", "%%nf-md-keyboard_tab",  ""]         # LT
+
+    colors:
+      - "#1D3151"
+      - "#2B4663"
+      - "#41687E"
+      - "#538395"
+      - "#659EAB"
+      - "#7BC0C7"
+      - "#70768B"
+
+    primaryColor: 2
+    secondaryColor: 6
+    layerToggles:
+      - [null, null, null, null, null, null]
+      - [null, null, null, null, null, null]
+
+  - name: Symbols
+    labels:
+      #  Center  North  East  South  West  Double-South                                                                                                                                                                                                                                                                                                 
+      - ["{",    "<",   "$",  "[",   "^",  "%%nf-md-apple_keyboard_shift"]   # R1
+      - [":",    "=",   "|",  "*",   "&",  "%%nf-md-apple_keyboard_command"] # R2
+      - ["}",    ">",   "%",  "]",   "!",  "%%nf-md-apple_keyboard_option"]  # R3
+      - ["@",    "_",   "\\", "#",   "/",  "%%nf-md-apple_keyboard_control"] # R4
+                                                                              
+      #  Center  North  East  South  West  Double-South                                                                                                                                                                                                                                                                                                  
+      - ["",     "",    "",   "",    "",   "%%nf-md-apple_keyboard_shift"]   # L1
+      - ["",     "",    "",   "",    "",   "%%nf-md-apple_keyboard_command"] # L2
+      - ["",     "",    "",   "",    "",   "%%nf-md-apple_keyboard_option"]  # L3
+      - ["",     "",    "",   "",    "",   "%%nf-md-apple_keyboard_control"] # L4
+      
+      #  Down                       Pad                       Up                    Nail                 Knuckle                 Double-Down
+      - ["%%nf-md-keyboard_return", "%%nf-md-keyboard_space", "REP %%nf-fa-repeat", "%%nf-md-backspace", "%%nf-md-keyboard_tab", ""]          # RT
+      - ["",                        "",                       "",                   "",                  "",                     ""]          # lT
+
+    colors:
+      - "#3A0000"
+      - "#591611"
+      - "#8C3B2C"
+      - "#AE5440"
+      - "#DA7457"
+      - "#FF8F6C"
+      - "#70768B"
+
+    primaryColor: 5
+    secondaryColor: 6
+    layerToggles:
+      - [null, null, null, null, null, null]
+      - [null, null, null, null, null, null]
+
+  - name: Function Keys
+    labels:
+      #  Center  North  East   South  West   Double-South
+      - ["",     "",    "",    "",    "",    "%%nf-md-apple_keyboard_shift"]   # R1
+      - ["",     "",    "",    "",    "",    "%%nf-md-apple_keyboard_command"] # R2
+      - ["",     "",    "",    "",    "",    "%%nf-md-apple_keyboard_option"]  # R3
+      - ["",     "",    "",    "",    "",    "%%nf-md-apple_keyboard_control"] # R4
+                                                                                
+      #  Center  North  East   South  West   Double-South
+      - ["F8",   "F14", "F9",  "F4",  "F20", "%%nf-md-apple_keyboard_shift"]   # L1
+      - ["F7",   "F13", "F19", "F3",  "F18", "%%nf-md-apple_keyboard_command"] # L2
+      - ["F6",   "F12", "F17", "F2",  "F16", "%%nf-md-apple_keyboard_option"]  # L3
+      - ["F5",   "F11", "F15", "F1",  "F10", "%%nf-md-apple_keyboard_control"] # L4
+
+      #  Down  Pad  Up   Nail  Knuckle  Double-Down
+      - ["",   "",  "",  "",   "",      ""]          # RT
+      - ["",   "",  "",  "",   "",      ""]          # LT
+
+    colors:
+      - "#321750"
+      - "#4A3268"
+      - "#5F4B7E"
+      - "#776696"
+      - "#9182AF"
+      - "#A79CC6"
+      - "#70768B"
+
+    primaryColor: 3
+    secondaryColor: 6
+    layerToggles:
+      - [null, null, null, null, null, null]
+      - [null, null, null, null, null, null]
+
+  - name: Multimedia
+    labels:
+      #  Center                  North                   East                  South                 West                      Double-South
+      - ["%%nf-fa-volume_xmark", "%%nf-fa-volume_high",  " ",                  "%%nf-fa-volume_low", " ",                      "%%nf-md-apple_keyboard_shift"]   # R1
+      - ["%%nf-md-play_pause",   "%%nf-md-fast_forward", "%%nf-md-skip_next",  "%%nf-md-rewind",     "%%nf-md-skip_previous",  "%%nf-md-apple_keyboard_command"] # R2
+      - [" ",                    " ",                    " ",                  " ",                  " ",                      "%%nf-md-apple_keyboard_option"]  # R3
+      - [" ",                    " ",                    " ",                  " ",                  " ",                      "%%nf-md-apple_keyboard_control"] # R4
+
+      #  Center                  North                   East                  South                 West                      Double-South
+      - ["",                     "",                     "",                   "",                   "",                       "%%nf-md-apple_keyboard_shift"]   # L1    
+      - ["",                     "",                     "",                   "",                   "",                       "%%nf-md-apple_keyboard_command"] # L2
+      - ["",                     "",                     "",                   "",                   "",                       "%%nf-md-apple_keyboard_option"]  # L3
+      - ["",                     "",                     "",                   "",                   "",                       "%%nf-md-apple_keyboard_control"] # L4
+
+      #  Down  Pad  Up   Nail  Knuckle  Double-Down
+      - ["",   "",  "",  "",   "",      ""]          # RT
+      - ["",   "",  "",  "",   "",      ""]          # LT
+
+    colors:
+      - "#2C1F00"
+      - "#52430D"
+      - "#7E6E1E"
+      - "#A4922C"
+      - "#C3B138"
+      - "#F1DE49"
+      - "#70768B"
+
+    primaryColor: 4
+    secondaryColor: 6
+    layerToggles:
+      - [null, null, null, null, null, null]
+      - [null, null, null, null, null, null]
+
+  - name: System
+    labels:
+      #  Center            North                      East   South                        West   Double-South
+      - ["",               "",                        "",    "",                          "",    "%%nf-md-apple_keyboard_shift"]   # R1
+      - ["",               "",                        "",    "",                          "",    "%%nf-md-apple_keyboard_command"] # R2
+      - ["",               "",                        "",    "",                          "",    "%%nf-md-apple_keyboard_option"]  # R3
+      - ["",               "",                        "",    "",                          "",    "%%nf-md-apple_keyboard_control"] # R4
+
+      #  Center            North                      East   South                        West   Double-South                       
+      - ["",               "%%nf-md-brightness_7",    "",    "%%nf-md-brightness_5",      "",    "%%nf-md-apple_keyboard_shift"]   # L1 
+      - ["",               "R %%nf-md-mouse_move_up", "",    "R %%nf-md-mouse_move_down", "",    "%%nf-md-apple_keyboard_command"] # L2
+      - ["",               "L %%nf-md-mouse_move_up", "",    "L %%nf-md-mouse_move_down", "",    "%%nf-md-apple_keyboard_option"]  # L3
+      - ["%%nf-iec-power", "",                        "",    "",                          "",    "%%nf-md-apple_keyboard_control"] # L4
+
+      #  Down            Pad  Up   Nail  Knuckle  Double-Down
+      - ["",             "",  "",  "",   "",      ""]          # RT
+      - ["%%nf-oct-log", "",  "",  "",   "",      ""]          # LT
+
+    colors:
+      - "#5D0707"
+      - "#7F1918"
+      - "#9C2927"
+      - "#BD3B38"
+      - "#DE4C48"
+      - "#F95B56"
+      - "#70768B"
+
+    primaryColor: 3
+    secondaryColor: 6
+    layerToggles:
+      - [null, null, null, null, null, null]
+      - [null, null, null, null, null, null]
+
+  - name: Mouse
+    labels:
+      #  Center  North  East  South  West  Double-South
+      - ["",     "",    "",   "",    "",   "%%nf-md-apple_keyboard_shift"]   # R1
+      - ["",     "",    "",   "",    "",   "%%nf-md-apple_keyboard_command"] # R2
+      - ["",     "",    "",   "",    "",   "%%nf-md-apple_keyboard_option"]  # R3
+      - ["",     "",    "",   "",    "",   "%%nf-md-apple_keyboard_control"] # R4
+
+      #  Center  North  East  South  West  Double-South                       
+      - ["",     "",    "",   "",    "",   "L%%nf-md-cursor_default_click"]  # L1
+      - ["",     "",    "",   "",    "",   "M%%nf-md-cursor_default_click"]  # L2
+      - ["",     "",    "",   "",    "",   "R%%nf-md-cursor_default_click"]  # L3
+      - ["",     "",    "",   "",    "",   "4%%nf-md-cursor_default_click"]  # L4
+
+      #  Down                            Pad  Up                                   Nail  Knuckle  Double-Down
+      - [""                            , "",  "",                                  "",   "",      "5%%nf-md-target"] # RT
+      - ["%%nf-md-apple_keyboard_shift", "",  "%%nf-md-apple_keyboard_option OPT", "",   "",      "3%%nf-md-target"] # LT
+
+    colors:
+      - "#4A005A"
+      - "#6A1977"
+      - "#8C3396"
+      - "#B04EB7"
+      - "#D56AD8"
+      - "#FF8BFF"
+      - "#70768B"
+
+    primaryColor: 3
+    secondaryColor: 6
+    layerToggles:
+      - [null, null, null, null, null, null]
+      - [null, null, null, null, null, null]
