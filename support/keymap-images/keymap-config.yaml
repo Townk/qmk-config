@@ -1,0 +1,82 @@
+layerIds:
+    _BASE: 0
+    _NAV: 1
+    _NUM: 2
+    _SYM: 3
+    _FUN: 4
+    _MED: 5
+    _SYS: 6
+    _MBO: 7
+keyLayerToggles:
+    CKC_BSPC: 1
+    CKC_SPC: 2
+    CKC_TAB: 3
+    CKC_BKTAB: 4
+keyLabels:
+    # Custom tap-dance keys (CKC_*)
+    CKC_BSPC: "%%nf-md-brain %%nf-md-backspace"
+    CKC_SPC: "%%nf-md-keyboard_space"
+    CKC_TAB: "%%nf-md-keyboard_tab"
+    CKC_BKTAB: "%%nf-md-keyboard_tab_reverse"
+    CKC_SMSFT: "%%nf-md-brain %%nf-md-apple_keyboard_shift"
+
+    # Custom macro keys (MKC_*)
+    MKC_BKTAB: "%%nf-md-keyboard_tab_reverse"
+    MKC_APPWIN: "%%nf-md-apple_keyboard_control %%nf-md-apple_keyboard_command %%nf-fa-arrow_down"
+    MKC_ALLWIN: "%%nf-md-apple_keyboard_control %%nf-md-apple_keyboard_command %%nf-fa-arrow_up"
+    MKC_DKTN: "%%nf-md-apple_keyboard_control %%nf-md-apple_keyboard_command %%nf-fa-arrow_right"
+    MKC_DKTP: "%%nf-md-apple_keyboard_control %%nf-md-apple_keyboard_command %%nf-fa-arrow_left"
+    MKC_SHDKT: "%%nf-md-monitor"
+    MKC_SHNOT: "%%nf-md-bell"
+    MKC_SPAPP: "%%nf-md-magnify %%nf-md-application"
+    MKC_SPFND: "%%nf-md-magnify %%nf-md-file_search"
+    ML_ALT: "%%nf-md-apple_keyboard_option OPT"
+
+    # Mouse button keys (MB_*)
+    MB_SFT: "L%%nf-md-mouse"
+    MB_ALT: "R%%nf-md-mouse"
+    MB_GUI: "M%%nf-md-mouse"
+    MB_CTL: "4%%nf-md-mouse"
+
+    # Svalboard-specific keys (SV_*)
+    SV_LDPU: "L %%nf-md-mouse_move_up"
+    SV_LDPD: "L %%nf-md-mouse_move_down"
+    SV_RDPU: "R %%nf-md-mouse_move_up"
+    SV_RDPD: "R %%nf-md-mouse_move_down"
+    SV_SOUT: "%%nf-oct-log"
+    SV_SNIPER_3: "3%%nf-md-crosshairs"
+    SV_SNIPER_5: "5%%nf-md-crosshairs"
+
+layers:
+    - name: COLEMAK
+      colors: ["#012523", "#175547", "#347156", "#4C8863", "#66A271", "#81BB7F", "#70768B"]
+      primaryColor: 1
+      secondaryColor: 6
+    - name: Navigation
+      colors: ["#412000", "#62370D", "#89511C", "#B26E2D", "#D5863B", "#FFA34C", "#70768B"]
+      primaryColor: 3
+      secondaryColor: 6
+    - name: Numbers
+      colors: ["#1D3151", "#2B4663", "#41687E", "#538395", "#659EAB", "#7BC0C7", "#70768B"]
+      primaryColor: 2
+      secondaryColor: 6
+    - name: Symbols
+      colors: ["#3A0000", "#591611", "#8C3B2C", "#AE5440", "#DA7457", "#FF8F6C", "#70768B"]
+      primaryColor: 5
+      secondaryColor: 6
+    - name: Function Keys
+      colors: ["#321750", "#4A3268", "#5F4B7E", "#776696", "#9182AF", "#A79CC6", "#70768B"]
+      primaryColor: 3
+      secondaryColor: 6
+    - name: Multimedia
+      colors: ["#2C1F00", "#52430D", "#7E6E1E", "#A4922C", "#C3B138", "#F1DE49", "#70768B"]
+      primaryColor: 4
+      secondaryColor: 6
+    - name: System
+      colors: ["#5D0707", "#7F1918", "#9C2927", "#BD3B38", "#DE4C48", "#F95B56", "#70768B"]
+      primaryColor: 3
+      secondaryColor: 6
+    - name: Mouse
+      colors: ["#4A005A", "#6A1977", "#8C3396", "#B04EB7", "#D56AD8", "#FF8BFF", "#70768B"]
+      primaryColor: 3
+      secondaryColor: 6

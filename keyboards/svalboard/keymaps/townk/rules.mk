@@ -16,3 +16,16 @@
 VIA_ENABLE = yes
 VIAL_ENABLE = yes
 VIAL_INSECURE ?= yes
+
+all: generate_keymap_images
+
+generate_keymap_images:
+	@if [ -z "$$CI" ] && [ -z "$$GITHUB_ACTIONS" ]; then \
+		echo ""; \
+		echo "============================================================"; \
+		echo "Generating keymap images..."; \
+		echo "============================================================"; \
+		python3 "$(KEYMAP_PATH)/../../../../support/keymap-images/keymap-generator.py" || true; \
+		echo "============================================================"; \
+		echo ""; \
+	fi

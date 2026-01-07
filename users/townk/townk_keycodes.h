@@ -47,6 +47,8 @@
 #define SV_RDPD    SV_RIGHT_DPI_DEC  ///< Short version of right side mouse DPI decrease
 #define SV_SOUT    SV_OUTPUT_STATUS  ///< Short version of Svalboard Status Output
 
+#define ML_ALT     KC_LALT           ///< Helper key to generate a proper key label on the keymap images
+
 enum custom_keycodes {
     /** Backspace on tap, delete on Shift+Tap, navigation layer on hold. */
     CKC_BSPC = RANGE_START,
