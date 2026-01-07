@@ -47,36 +47,22 @@ keyLabels:
     SV_SNIPER_3: "3%%nf-md-crosshairs"
     SV_SNIPER_5: "5%%nf-md-crosshairs"
 
+secondaryColor: "#70768B"
+
 layers:
     - name: COLEMAK
-      colors: ["#012523", "#175547", "#347156", "#4C8863", "#66A271", "#81BB7F", "#70768B"]
-      primaryColor: 1
-      secondaryColor: 6
+      baseColor: "#347156"
     - name: Navigation
-      colors: ["#412000", "#62370D", "#89511C", "#B26E2D", "#D5863B", "#FFA34C", "#70768B"]
-      primaryColor: 3
-      secondaryColor: 6
+      baseColor: "#89511C"
     - name: Numbers
-      colors: ["#1D3151", "#2B4663", "#41687E", "#538395", "#659EAB", "#7BC0C7", "#70768B"]
-      primaryColor: 2
-      secondaryColor: 6
+      baseColor: "#41687E"
     - name: Symbols
-      colors: ["#3A0000", "#591611", "#8C3B2C", "#AE5440", "#DA7457", "#FF8F6C", "#70768B"]
-      primaryColor: 5
-      secondaryColor: 6
+      baseColor: "#8C3B2C"
     - name: Function Keys
-      colors: ["#321750", "#4A3268", "#5F4B7E", "#776696", "#9182AF", "#A79CC6", "#70768B"]
-      primaryColor: 3
-      secondaryColor: 6
+      baseColor: "#5F4B7E"
     - name: Multimedia
-      colors: ["#2C1F00", "#52430D", "#7E6E1E", "#A4922C", "#C3B138", "#F1DE49", "#70768B"]
-      primaryColor: 4
-      secondaryColor: 6
+      baseColor: "#7E6E1E"
     - name: System
-      colors: ["#5D0707", "#7F1918", "#9C2927", "#BD3B38", "#DE4C48", "#F95B56", "#70768B"]
-      primaryColor: 3
-      secondaryColor: 6
+      baseColor: "#9C2927"
     - name: Mouse
-      colors: ["#4A005A", "#6A1977", "#8C3396", "#B04EB7", "#D56AD8", "#FF8BFF", "#70768B"]
-      primaryColor: 3
-      secondaryColor: 6
+      baseColor: "#8C3396"

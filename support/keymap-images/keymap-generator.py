@@ -7,6 +7,7 @@ and combines it with the keymap-config.yaml to produce a complete keymap.yaml
 file with translated key labels and detected layer toggles.
 """
 
+import argparse
 import json
 import re
 import subprocess
@@ -236,6 +237,282 @@ def build_keycode_mapping(keymap_config: Dict[str, Any]) -> Dict[str, str]:
     return mapping
 
 
+def parse_qmk_colors(color_h_path: Path) -> Dict[str, str]:
+    """
+    Parse QMK's color.h file to extract RGB color definitions.
+
+    Returns:
+        Dictionary mapping color names (lowercase) to hex color strings
+    """
+    colors = {}
+
+    if not color_h_path.exists():
+        print(f"Warning: color.h not found at {color_h_path}", file=sys.stderr)
+        return colors
+
+    with open(color_h_path, 'r') as f:
+        for line in f:
+            # Match lines like: #define RGB_AZURE       0x99, 0xF5, 0xFF
+            match = re.match(r'#define\s+RGB_(\w+)\s+0x([0-9A-Fa-f]{2}),\s*0x([0-9A-Fa-f]{2}),\s*0x([0-9A-Fa-f]{2})', line)
+            if match:
+                name = match.group(1).lower()
+                r = match.group(2)
+                g = match.group(3)
+                b = match.group(4)
+
+                # Construct hex color directly from RGB values
+                hex_color = f"#{r.upper()}{g.upper()}{b.upper()}"
+                colors[name] = hex_color
+
+    return colors
+
+
+def hsv_to_hex(h: int, s: int, v: int) -> str:
+    """
+    Convert HSV in QMK's 0-255 range to hex color.
+
+    Args:
+        h: Hue (0-255)
+        s: Saturation (0-255)
+        v: Value/Brightness (0-255)
+
+    Returns:
+        Hex color string
+    """
+    # Normalize to 0-1 range
+    h_norm = h / 255.0
+    s_norm = s / 255.0
+    v_norm = v / 255.0
+
+    # Convert to RGB
+    r, g, b = hsv_to_rgb_internal(h_norm, s_norm, v_norm)
+
+    # Convert to hex
+    return rgb_to_hex(r, g, b)
+
+
+def hsv_to_rgb_internal(h: float, s: float, v: float) -> Tuple[float, float, float]:
+    """
+    Convert HSV (0-1 range) to RGB (0-1 range).
+
+    This is a different algorithm from hsl_to_rgb, specifically for HSV.
+    """
+    if s == 0:
+        return v, v, v
+
+    h_i = int(h * 6.0)
+    f = h * 6.0 - h_i
+    p = v * (1.0 - s)
+    q = v * (1.0 - f * s)
+    t = v * (1.0 - (1.0 - f) * s)
+
+    if h_i == 0:
+        return v, t, p
+    elif h_i == 1:
+        return q, v, p
+    elif h_i == 2:
+        return p, v, t
+    elif h_i == 3:
+        return p, q, v
+    elif h_i == 4:
+        return t, p, v
+    else:
+        return v, p, q
+
+
+def darken_color(hex_color: str, target_lightness: float = 0.31, target_saturation: float = 0.50) -> str:
+    """
+    Darken and desaturate a color to make it suitable for backgrounds with white text.
+
+    QMK colors are very bright and saturated. This function makes them more subdued
+    and professional-looking while preserving the color characteristic.
+
+    Args:
+        hex_color: Hex color string
+        target_lightness: Target lightness value (0-1), default 0.32 (32%)
+        target_saturation: Target saturation value (0-1), default 0.45 (45%)
+
+    Returns:
+        Darkened and desaturated hex color string
+    """
+    # Convert to RGB then HSL
+    r, g, b = hex_to_rgb(hex_color)
+    h, s, l = rgb_to_hsl(r, g, b)
+
+    # Reduce both saturation and lightness to target values
+    # This makes bright colors like yellow and cyan more muted and readable
+    s_adjusted = min(s, target_saturation)
+    l_adjusted = target_lightness
+
+    # Convert back to RGB then hex
+    r_new, g_new, b_new = hsl_to_rgb(h, s_adjusted, l_adjusted)
+    return rgb_to_hex(r_new, g_new, b_new)
+
+
+def resolve_color(color_input: str, qmk_colors: Dict[str, str]) -> str:
+    """
+    Resolve a color input to a hex color.
+
+    QMK color names are automatically darkened for better text readability.
+    Hex colors are returned as-is.
+
+    Args:
+        color_input: Either a hex color string or a QMK color name
+        qmk_colors: Dictionary of QMK color names to hex colors
+
+    Returns:
+        Hex color string
+    """
+    # Check if it's already a hex color - don't darken user-provided hex colors
+    if color_input.startswith('#'):
+        return color_input
+
+    # Try to resolve as a QMK color name (case-insensitive)
+    color_name = color_input.lower()
+    if color_name in qmk_colors:
+        # Darken QMK colors for better white text readability
+        qmk_color = qmk_colors[color_name]
+        return darken_color(qmk_color)
+
+    # If not found, assume it's a hex color without the # prefix
+    if len(color_input) == 6:
+        return f'#{color_input}'
+
+    # Fallback: return as-is and let the error handling catch it later
+    print(f"Warning: Could not resolve color '{color_input}'", file=sys.stderr)
+    return color_input
+
+
+def hex_to_rgb(hex_color: str) -> Tuple[float, float, float]:
+    """Convert hex color to RGB tuple (0-1 range)."""
+    hex_color = hex_color.lstrip('#')
+    return tuple(int(hex_color[i:i+2], 16) / 255.0 for i in (0, 2, 4))
+
+
+def rgb_to_hsl(r: float, g: float, b: float) -> Tuple[float, float, float]:
+    """Convert RGB (0-1 range) to HSL."""
+    max_c = max(r, g, b)
+    min_c = min(r, g, b)
+    l = (max_c + min_c) / 2.0
+
+    if max_c == min_c:
+        h = s = 0.0
+    else:
+        d = max_c - min_c
+        s = d / (2.0 - max_c - min_c) if l > 0.5 else d / (max_c + min_c)
+
+        if max_c == r:
+            h = (g - b) / d + (6.0 if g < b else 0.0)
+        elif max_c == g:
+            h = (b - r) / d + 2.0
+        else:
+            h = (r - g) / d + 4.0
+        h /= 6.0
+
+    return h, s, l
+
+
+def hsl_to_rgb(h: float, s: float, l: float) -> Tuple[float, float, float]:
+    """Convert HSL to RGB (0-1 range)."""
+    def hue_to_rgb(p: float, q: float, t: float) -> float:
+        if t < 0:
+            t += 1
+        if t > 1:
+            t -= 1
+        if t < 1/6:
+            return p + (q - p) * 6 * t
+        if t < 1/2:
+            return q
+        if t < 2/3:
+            return p + (q - p) * (2/3 - t) * 6
+        return p
+
+    if s == 0:
+        r = g = b = l
+    else:
+        q = l * (1 + s) if l < 0.5 else l + s - l * s
+        p = 2 * l - q
+        r = hue_to_rgb(p, q, h + 1/3)
+        g = hue_to_rgb(p, q, h)
+        b = hue_to_rgb(p, q, h - 1/3)
+
+    return r, g, b
+
+
+def rgb_to_hex(r: float, g: float, b: float) -> str:
+    """Convert RGB (0-1 range) to hex color."""
+    return f"#{int(r * 255):02X}{int(g * 255):02X}{int(b * 255):02X}"
+
+
+def generate_color_gradient(base_color: str, base_index: int = 2) -> List[str]:
+    """
+    Generate a 6-color gradient from a base color.
+
+    The base_color will be positioned at base_index (default: 2),
+    with darker shades before and lighter shades after.
+
+    Args:
+        base_color: Hex color string (e.g., "#347156")
+        base_index: Index where the base color should appear (0-5, default: 2)
+
+    Returns:
+        List of 6 hex color strings forming a gradient
+    """
+    # Convert base color to HSL
+    r, g, b = hex_to_rgb(base_color)
+    h, s, l = rgb_to_hsl(r, g, b)
+
+    # Generate lightness values for 6 colors
+    # We'll create a gradient where the base_index has the original lightness
+    # Indices before are darker, indices after are lighter
+
+    # Calculate lightness multipliers for each position relative to base
+    # For base_index=2: [0.15, 0.50, 1.0, 1.40, 1.85, 2.30]
+    # This creates a smooth progression from very dark to very light
+
+    num_colors = 6
+    lightness_values = []
+
+    # Calculate the range we need to cover
+    # Darker colors: reduce lightness
+    # Lighter colors: increase lightness
+    for i in range(num_colors):
+        if i < base_index:
+            # Darker colors - interpolate from very dark to base
+            # Progress from 0 (darkest) to base_index (base)
+            progress = i / base_index if base_index > 0 else 0
+            # Map to lightness range [0.15*l, l]
+            target_l = l * (0.15 + 0.85 * progress)
+        elif i == base_index:
+            # Base color - keep original lightness
+            target_l = l
+        else:
+            # Lighter colors - interpolate from base to very light
+            # Progress from base_index (base) to num_colors-1 (lightest)
+            remaining = num_colors - 1 - base_index
+            progress = (i - base_index) / remaining if remaining > 0 else 0
+            # Map to lightness range [l, min(0.95, l * 2.3)]
+            max_lightness = min(0.95, l * 2.3)
+            target_l = l + (max_lightness - l) * progress
+
+        lightness_values.append(min(1.0, target_l))
+
+    # Generate colors with adjusted lightness
+    gradient = []
+    for target_l in lightness_values:
+        # Slightly reduce saturation for very light colors to avoid oversaturation
+        adjusted_s = s
+        if target_l > 0.7:
+            saturation_factor = 1.0 - (target_l - 0.7) * 0.5
+            adjusted_s = s * saturation_factor
+
+        r_new, g_new, b_new = hsl_to_rgb(h, adjusted_s, target_l)
+        hex_color = rgb_to_hex(r_new, g_new, b_new)
+        gradient.append(hex_color)
+
+    return gradient
+
+
 def translate_keycode(keycode: str, mapping: Dict[str, str]) -> str:
     """
     Translate a single keycode to display label.
@@ -427,7 +704,7 @@ def detect_layer_toggles(
     return [right_toggles, left_toggles]
 
 
-def generate_keymap_yaml(qmk_json: Dict[str, Any], keymap_config: Dict[str, Any], output_path: Path):
+def generate_keymap_yaml(qmk_json: Dict[str, Any], keymap_config: Dict[str, Any], output_path: Path, color_h_path: Path):
     """
     Main generation logic: combine QMK JSON with keymap-config to produce keymap.yaml.
 
@@ -435,13 +712,18 @@ def generate_keymap_yaml(qmk_json: Dict[str, Any], keymap_config: Dict[str, Any]
         qmk_json: Parsed QMK JSON from c2json
         keymap_config: Parsed keymap-config.yaml
         output_path: Path to write the generated keymap.yaml
+        color_h_path: Path to the QMK color.h file
     """
+    # Parse QMK color definitions
+    qmk_colors = parse_qmk_colors(color_h_path)
+
     # Build keycode mapping
     mapping = build_keycode_mapping(keymap_config)
 
     # Extract layer configuration
     layer_ids = keymap_config.get('layerIds', {})
     key_layer_toggles = keymap_config.get('keyLayerToggles', {})
+    global_secondary_color = keymap_config.get('secondaryColor', '#70768B')
 
     # Generate complete keymap structure
     keymap = {'layers': []}
@@ -466,13 +748,34 @@ def generate_keymap_yaml(qmk_json: Dict[str, Any], keymap_config: Dict[str, Any]
         # Detect layer toggles
         layer_toggles = detect_layer_toggles(layer_keycodes, key_layer_toggles, layer_ids)
 
+        # Generate or use existing colors
+        if 'baseColor' in config_layer:
+            # Resolve base color (supports color names and hex)
+            base_color_input = config_layer['baseColor']
+            base_color = resolve_color(base_color_input, qmk_colors)
+            base_index = config_layer.get('baseColorIndex', 2)
+            colors = generate_color_gradient(base_color, base_index)
+
+            # Always append global secondary color
+            colors.append(global_secondary_color)
+
+            # Primary color is the base color (index 2 by default)
+            # Secondary color is the appended color (index 6 after appending)
+            primary_color = base_index
+            secondary_color = len(colors) - 1
+        else:
+            # Use existing colors array (backward compatibility)
+            colors = config_layer.get('colors', [])
+            primary_color = config_layer.get('primaryColor', 0)
+            secondary_color = config_layer.get('secondaryColor', 0)
+
         # Combine all layer data
         layer_data = {
             'name': config_layer.get('name', f'Layer{layer_idx}'),
             'labels': labels,
-            'colors': config_layer.get('colors', []),
-            'primaryColor': config_layer.get('primaryColor', 0),
-            'secondaryColor': config_layer.get('secondaryColor', 0),
+            'colors': colors,
+            'primaryColor': primary_color,
+            'secondaryColor': secondary_color,
             'layerToggles': layer_toggles,
         }
 
@@ -542,6 +845,17 @@ def main():
     """
     Entry point: Load qmk.json, run qmk c2json, and generate keymap.yaml.
     """
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(
+        description='Generate keymap.yaml from QMK c2json output and keymap-config.yaml'
+    )
+    parser.add_argument(
+        'color_h_path',
+        type=Path,
+        help='Path to the QMK color.h file (e.g., /path/to/qmk/quantum/color.h)'
+    )
+    args = parser.parse_args()
+
     # Determine script and project paths
     script_dir = Path(__file__).parent
     project_root = script_dir.parent.parent
@@ -550,6 +864,12 @@ def main():
     qmk_json_path = project_root / 'qmk.json'
     keymap_config_path = script_dir / 'keymap-config.yaml'
     output_path = script_dir / 'keymap.yaml'
+    color_h_path = args.color_h_path
+
+    # Validate color.h path
+    if not color_h_path.exists():
+        print(f"Error: color.h not found at {color_h_path}", file=sys.stderr)
+        sys.exit(1)
 
     # Load qmk.json to get keyboard and keymap
     print("Loading qmk.json...")
@@ -601,7 +921,7 @@ def main():
 
     # Generate keymap.yaml
     print("Generating keymap.yaml...")
-    generate_keymap_yaml(qmk_json, keymap_config, output_path)
+    generate_keymap_yaml(qmk_json, keymap_config, output_path, color_h_path)
 
     # Generate images with typst
     generate_images_with_typst(project_root)

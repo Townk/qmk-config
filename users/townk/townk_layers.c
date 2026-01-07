@@ -56,13 +56,13 @@ LAYER_COLOR(layer3_colors, HSV_CORAL);  // Symbols
 LAYER_COLOR(layer4_colors, HSV_PURPLE); // Fn Keys
 LAYER_COLOR(layer5_colors, HSV_YELLOW); // Multi-Media
 LAYER_COLOR(layer6_colors, HSV_PINK);
-LAYER_COLOR(layer7_colors, HSV_RED);
-LAYER_COLOR(layer8_colors, HSV_MAGENTA);
+LAYER_COLOR(layer7_colors, HSV_CHARTREUSE);
+LAYER_COLOR(layer8_colors, HSV_GOLD);
 LAYER_COLOR(layer9_colors, HSV_TEAL);
 LAYER_COLOR(layer10_colors, HSV_SPRINGGREEN);
 LAYER_COLOR(layer11_colors, HSV_TURQUOISE);
-LAYER_COLOR(layer12_colors, HSV_GREEN);
-LAYER_COLOR(layer13_colors, HSV_AZURE);
+LAYER_COLOR(layer12_colors, HSV_GOLDENROD);
+LAYER_COLOR(layer13_colors, HSV_BLUE);
 LAYER_COLOR(layer14_colors, HSV_RED);     // System
 LAYER_COLOR(layer15_colors, HSV_MAGENTA); // Mouse layer
 #undef LAYER_COLOR

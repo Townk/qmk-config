@@ -25,7 +25,7 @@ generate_keymap_images:
 		echo "============================================================"; \
 		echo "Generating keymap images..."; \
 		echo "============================================================"; \
-		python3 "$(KEYMAP_PATH)/../../../../support/keymap-images/keymap-generator.py" || true; \
+		python3 "$(USER_PATH)/../../support/keymap-images/keymap-generator.py" "$(BUILD_DIR)/../quantum/color.h" || true; \
 		echo "============================================================"; \
 		echo ""; \
 	fi
