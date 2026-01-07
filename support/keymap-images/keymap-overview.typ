@@ -6,16 +6,17 @@
 #let pageBorderHeight = pageHeight - 2pt
 
 #set page(
-    margin: 0pt,
-    width: pageWidth, height: pageHeight,
-    fill: none,
-    background: rect(
-        width: pageBorderWidth,
-        height: pageBorderHeight,
-        radius: 1cm,
-        fill: white,
-        stroke: (paint: black, thickness: 2pt),
-    ),
+  margin: 0pt,
+  width: pageWidth,
+  height: pageHeight,
+  fill: none,
+  background: rect(
+    width: pageBorderWidth,
+    height: pageBorderHeight,
+    radius: 1cm,
+    fill: white,
+    stroke: (paint: black, thickness: 2pt),
+  ),
 )
 
 #let keymap = yaml("keymap.yaml")
@@ -32,13 +33,14 @@
   tableRows += (
     box(inset: (top: vertInset), width: 370pt)[
       #if i == 7 {
-        box(inset: (left: 15pt),
-          text(
-            font: "Roboto", weight: "black", fill: gray.darken(30%),
-            tracking: 2pt, size: 22pt,
-            "LAYERS"
-          )
-        )
+        box(inset: (left: 15pt), text(
+          font: "Roboto",
+          weight: "black",
+          fill: gray.darken(30%),
+          tracking: 2pt,
+          size: 22pt,
+          "LAYERS",
+        ))
       }
       #rect(
         inset: 15pt,
@@ -46,21 +48,26 @@
         radius: 5pt,
         fill: layerColor,
         text(
-          font: "Roboto", weight: "black", fill: white,
-          tracking: 2pt, size: 22pt,
-          upper[#(i+1) #layerName]
-        )
+          font: "Roboto",
+          weight: "black",
+          fill: white,
+          tracking: 2pt,
+          size: 22pt,
+          upper[#(i + 1) #layerName],
+        ),
       )
       #if layerSubName != none {
-        box(inset: (left: 15pt),
-          text(
-            font: "Roboto", weight: "black", fill: layerColor,
-            tracking: 2pt, size: 22pt,
-            upper(layerSubName)
-          )
-        )
+        box(inset: (left: 15pt), text(
+          font: "Roboto",
+          weight: "black",
+          fill: layerColor,
+          tracking: 2pt,
+          size: 22pt,
+          upper(layerSubName),
+        ))
       }
-    ], minimalLayer(keymap, layer, keymapWidth)
+    ],
+    minimalLayer(keymap, layer, keymapWidth),
   )
 }
 
@@ -71,13 +78,13 @@
     row-gutter: 20pt,
     stroke: none,
     image(width: 300pt, "./images/svalboard-logo.png"),
-    box(inset: (top: 37pt),
-      text(
-        font: "Roboto", weight: "black", fill: gray.darken(70%),
-        size: 32pt,
-        "Colemak Layers Layout"
-      )
-    ),
+    box(inset: (top: 37pt), text(
+      font: "Roboto",
+      weight: "black",
+      fill: gray.darken(70%),
+      size: 32pt,
+      "Colemak Layers Layout",
+    )),
     ..tableRows,
     box(inset: (top: 50pt), width: 370pt)[
       #rect(
@@ -86,20 +93,28 @@
         radius: 5pt,
         fill: black,
         text(
-          font: "Roboto", weight: "black", fill: white,
-          tracking: 2pt, size: 22pt,
-          upper[THUMBS]
-        )
+          font: "Roboto",
+          weight: "black",
+          fill: white,
+          tracking: 2pt,
+          size: 22pt,
+          upper[THUMBS],
+        ),
       )
-    ], align(center)[
+    ],
+    align(center)[
       #thumb-cluster(
-        keymap, keymap.layers.at(0), TCL,
-        size: (keymapWidth * 0.2, keymapWidth * 0.13)
+        keymap,
+        keymap.layers.at(0),
+        TCL,
+        size: (keymapWidth * 0.2, keymapWidth * 0.13),
       )#h(55pt)#thumb-cluster(
-        keymap, keymap.layers.at(0), TCR,
-        size: (keymapWidth * 0.2, keymapWidth * 0.13)
+        keymap,
+        keymap.layers.at(0),
+        TCR,
+        size: (keymapWidth * 0.2, keymapWidth * 0.13),
       )
-    ]
+    ],
   )
 ]
 
