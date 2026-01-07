@@ -1,0 +1,6 @@
+config:
+    no-alt-text: false
+    no-duplicate-heading: false
+    MD013:
+        line_length: 80 # Optional: set your general line length
+        tables: false   # Exclude tables from the line length check

@@ -46,7 +46,8 @@ Initial release of the Svalboard COLEMAK-DH firmware configuration.
   - SYS: System keys (keyboard firmware and OS)
   - MBO: Auto-activated mouse layer with special mouse keys
 - Home row modifiers using standard QMK modifiers on Double-South keys
-- Dual-function layer keys using SM_TD tap dance library for intelligent tap/hold behavior
+- Dual-function layer keys using SM_TD tap dance library for intelligent
+  tap/hold behavior
 - Special mouse button keys (MB_SFT, MB_ALT, MB_GUI, MB_CTL) with intelligent
   dual behavior
 - Dual trackball support (PMW3389) with independent DPI settings

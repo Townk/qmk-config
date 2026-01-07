@@ -52,7 +52,8 @@ For detailed layer diagrams with all key positions, see the [Layer Reference](do
 
 ### Prerequisites
 
-- Python 3.9 or later
+- Python 3.9 (later versions of Python won't work until Svalboard/Vial merge
+  latest changes from QMK)
 - [QMK CLI](https://docs.qmk.fm/#/newbs_getting_started)
 - Git with submodules support
 

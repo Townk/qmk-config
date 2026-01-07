@@ -12,7 +12,7 @@ personal Svalboard COLEMAK firmware configuration.
 - [Caps Word](#caps-word)
 - [RGB Layer Indicators](#rgb-layer-indicators)
 - [Repeat Key](#repeat-key)
-- [Runtime Customization](#runtime-customization)
+- [Additional Resources](#additional-resources)
 
 ---
 
