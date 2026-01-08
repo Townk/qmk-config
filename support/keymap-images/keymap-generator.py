@@ -25,6 +25,13 @@ except ImportError:
     sys.exit(1)
 
 
+try:
+    import typst
+except ImportError:
+    print("Error: typst is required. Install with: pip install typst", file=sys.stderr)
+    sys.exit(1)
+
+
 def str_to_rgb(hex_str: str) -> Tuple[float, float, float]:
     """
     Convert a hex color string to RGB values in 0-1 range.
@@ -563,19 +570,6 @@ class KeymapGenerator:
         overview_source = self._script_dir / "keymap-overview.typ"
         font_path = self._script_dir / "fonts"
 
-        # Generate individual layer map images
-        self._ctx.info("Generating layer map images with typst...")
-        layer_maps_output = output_path / "keymap-{p}.png"
-        cmd_layers = [
-            "typst",
-            "compile",
-            str(layers_source),
-            str(layer_maps_output),
-            "--ppi=120",
-            f"--font-path={font_path}",
-            "--ignore-system-fonts",
-        ]
-
         data_file = self._script_dir / "keymap.yaml"
         # Generate the keymap data file to be used by typst
         with open(data_file, "w") as f:
@@ -589,42 +583,34 @@ class KeymapGenerator:
             )
         self._ctx.info(f"Generated keymap.yaml at {data_file}")
 
-        def clean_data_file():
-            # Clean up intermediate file
-            self._ctx.info("Cleaning up intermediate data file...")
-            if data_file.exists():
-                data_file.unlink()
-                self._ctx.info(f"Deleted {data_file}")
-
-        try:
-            # Run typst
-            subprocess.run(cmd_layers, check=True, capture_output=True, text=True)
-            self._ctx.info(f"Generated layer maps at {output_path}/keymap-*.png")
-        except subprocess.CalledProcessError as e:
-            # If the first generation failed, remove the intermediate data file
-            clean_data_file()
-            self._ctx.error(f"Error generating layer maps: {e}", f"stderr: {e.stderr}")
+        # Generate individual layer map images
+        self._ctx.info("Generating layer map images with typst...")
+        layer_maps_output = output_path / "keymap-{p}.svg"
+        typst.compile(
+            input=layers_source,
+            output=layer_maps_output,
+            ppi=120,
+            font_paths=[font_path],
+            ignore_system_fonts=True,
+        )
+        self._ctx.info(f"Generated layer maps at {output_path}/keymap-*.png")
 
         # Generate overview image
         self._ctx.info("Generating layers overview image with typst...")
-        overview_output = output_path / "keymap-overview.png"
-        cmd_overview = [
-            "typst",
-            "compile",
-            str(overview_source),
-            str(overview_output),
-            "--ppi=120",
-            f"--font-path={font_path}",
-            "--ignore-system-fonts",
-        ]
+        overview_output = output_path / "keymap-overview.svg"
+        typst.compile(
+            input=overview_source,
+            output=overview_output,
+            ppi=120,
+            font_paths=[font_path],
+            ignore_system_fonts=True,
+        )
+        self._ctx.info(f"Generated overview at {overview_output}")
 
-        try:
-            subprocess.run(cmd_overview, check=True, capture_output=True, text=True)
-            self._ctx.info(f"Generated overview at {overview_output}")
-        except subprocess.CalledProcessError as e:
-            self._ctx.error(f"Error generating overview: {e}", f"stderr: {e.stderr}")
-        finally:
-            clean_data_file()
+        self._ctx.info("Cleaning up intermediate data file...")
+        if data_file.exists():
+            data_file.unlink()
+            self._ctx.info(f"Deleted {data_file}")
 
     def _build_standard_mapping(self) -> Dict[str, str]:
         """

@@ -23,7 +23,7 @@ trackballs, COLEMAK layout, and Miryoku-inspired layer design.
 - **8 Thoughtfully Designed Layers**: `BASE`, `NAV`, `NUM`, `SYM`, `FUN`,
   `MED`, `SYS`, and auto-activated mouse layer
 
-![](docs/keymap-overview.png)
+![](docs/keymap-overview.svg)
 
 ## Documentation
 
