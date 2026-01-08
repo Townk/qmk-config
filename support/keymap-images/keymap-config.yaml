@@ -7,11 +7,13 @@ layerIds:
     _MED: 5
     _SYS: 6
     _MBO: 7
+
 keyLayerToggles:
     CKC_BSPC: 1
     CKC_SPC: 2
     CKC_TAB: 3
     CKC_BKTAB: 4
+
 keyLabels:
     # Custom tap-dance keys (CKC_*)
     CKC_BSPC: "%%nf-md-brain; @@KC_BACKSPACE;"
@@ -37,13 +39,11 @@ keyLabels:
     MB_CTL: "@@KC_BTN4;"
 
     # Svalboard-specific keys (SV_*)
-    SV_LDPU: "L %%nf-md-mouse_move_up;"
-    SV_LDPD: "L %%nf-md-mouse_move_down;"
-    SV_RDPU: "R %%nf-md-mouse_move_up;"
-    SV_RDPD: "R %%nf-md-mouse_move_down;"
-    SV_SOUT: "%%nf-oct-log;"
-    SV_SNIPER_3: "%%nf-md-crosshairs;3"
-    SV_SNIPER_5: "%%nf-md-crosshairs;5"
+    SV_LDPU: "@@SV_LEFT_DPI_INC;"
+    SV_LDPD: "@@SV_LEFT_DPI_DEC;"
+    SV_RDPU: "@@SV_RIGHT_DPI_INC;"
+    SV_RDPD: "@@SV_RIGHT_DPI_DEC;"
+    SV_SOUT: "@@SV_OUTPUT_STATUS;"
 
 secondaryColor: "#70768B"
 
