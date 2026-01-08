@@ -267,9 +267,9 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
      */
     [_NAV] = LAYOUT(
         /*     Center     North        East         South      West         Double-South */
-        /*R1*/ KC_LEFT,   MKC_DKTP,    KC_END,      MKC_SPAPP, KC_HOME,     KC_RIGHT_SHIFT,
+        /*R1*/ KC_LEFT,   MKC_DKTP,    KC_END,      KC_LPAD,   KC_HOME,     KC_RIGHT_SHIFT,
         /*R2*/ KC_DOWN,   MKC_APPWIN,  A(KC_RGHT),  MKC_SHDKT, A(KC_LEFT),  KC_RIGHT_GUI,
-        /*R3*/ KC_UP,     MKC_ALLWIN,  C(KC_RGHT),  MKC_SHNOT, C(KC_LEFT),  KC_RIGHT_ALT,
+        /*R3*/ KC_UP,     KC_MCTL,     C(KC_RGHT),  MKC_SHNOT, C(KC_LEFT),  KC_RIGHT_ALT,
         /*R4*/ KC_RIGHT,  MKC_DKTN,    KC_PGDN,     MKC_SPFND, KC_PGUP,     KC_RIGHT_CTRL,
 
         /*L1*/ XXXXXXX,   XXXXXXX,     XXXXXXX,     XXXXXXX,   XXXXXXX,     KC_LEFT_SHIFT,
@@ -403,7 +403,7 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
      *
      *      L4           L3           L2           L1       ┊      R1           R2           R3           R4
      *     ╭───╮        ╭───╮        ╭───╮        ╭───╮     ┊     ╭───╮        ╭───╮        ╭───╮        ╭───╮
-     *     │   │        │   │        │   │        │   │     ┊     │ 󰝝 │        │ 󰒭 │        │   │        │   │
+     *     │   │        │   │        │   │        │   │     ┊     │ 󰝝 │        │ 󰒭 │        │   │        │ ⏏ │
      * ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮ ┊ ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮
      * │   │   │   ││   │   │   ││   │   │   ││   │   │   │ ┊ │   │ 󰖁 │   ││ 󰑟 │ 󰐎 │ 󰈑 ││   │   │   ││   │   │   │
      * ╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯ ┊ ╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯
@@ -425,7 +425,7 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
         /*R1*/ KC_MUTE,  KC_VOLU,  XXXXXXX,  KC_VOLD,  XXXXXXX,  KC_RIGHT_SHIFT,
         /*R2*/ KC_MPLY,  KC_MFFD,  KC_MNXT,  KC_MRWD,  KC_MPRV,  KC_RIGHT_GUI,
         /*R3*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  KC_RIGHT_ALT,
-        /*R4*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  KC_RIGHT_CTRL,
+        /*R4*/ XXXXXXX,  KC_EJCT,  XXXXXXX,  XXXXXXX,  XXXXXXX,  KC_RIGHT_CTRL,
 
         /*L1*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  KC_LEFT_SHIFT,
         /*L2*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  KC_LEFT_GUI,
@@ -446,7 +446,7 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
      * ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮ ┊ ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮
      * │   │  │   ││   │   │   ││   │   │   ││   │   │   │ ┊ │   │   │   ││   │   │   ││   │   │   ││   │   │   │
      * ╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯ ┊ ╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯
-     *     │   │        │L󱕐 │        │R󱕐 │        │-󰃞 │     ┊     │   │        │   │        │   │        │   │
+     *     │ 󰒲 │        │L󱕐 │        │R󱕐 │        │-󰃞 │     ┊     │   │        │   │        │   │        │   │
      *     ├───┤        ├───┤        ├───┤        ├───┤     ┊     ├───┤        ├───┤        ├───┤        ├───┤
      *     │ ⌃ │        │ ⌥ │        │ ⌘ │        │ ⇧ │     ┊     │ ⇧ │        │ ⌘ │        │ ⌥ │        │ ⌃ │
      *     ╰───╯        ╰───╯        ╰───╯        ╰───╯     ┊     ╰───╯        ╰───╯        ╰───╯        ╰───╯
@@ -469,7 +469,7 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
         /*L1*/ XXXXXXX,  KC_BRIU,  XXXXXXX,  KC_BRID,  XXXXXXX,  KC_LEFT_SHIFT,
         /*L2*/ XXXXXXX,  SV_LDPU,  XXXXXXX,  SV_RDPD,  XXXXXXX,  KC_LEFT_GUI,
         /*L3*/ XXXXXXX,  SV_LDPU,  XXXXXXX,  SV_LDPD,  XXXXXXX,  KC_LEFT_ALT,
-        /*L4*/ KC_PWR,   XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  KC_LEFT_CTRL,
+        /*L4*/ KC_PWR,   XXXXXXX,  XXXXXXX,  KC_SLEP,  XXXXXXX,  KC_LEFT_CTRL,
 
         /*     Down      Pad       Up        Nail      Knuckle   Double Down  */
         /*RT*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,

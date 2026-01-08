@@ -52,7 +52,7 @@
       .at(cluster)
       .at(key)
       .replace(
-        regex("%%([^[:blank:]%]+)"),
+        regex("%%([^[:blank:]%]+);"),
         m => nf-icon-string(m.captures.at(0)),
       )
   )]
@@ -570,7 +570,7 @@
       height: cluster_width * 0.33,
       radius: cluster_width * 0.047,
       fill: keyColor(layer, CNORTH),
-      inset: (bottom: cluster_width * 0.04, top: cluster_width * 0.02),
+      inset: (bottom: cluster_width * 0.06, top: cluster_width * 0.02),
     )[
       #set align(center + horizon)
       #text(font: "Roboto", weight: "regular", fill: white, fit-to-width(max-text-size: cluster_width * 0.16, keyLabel(

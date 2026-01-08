@@ -18,7 +18,9 @@ from typing import Dict, List, Any, Optional, Tuple
 try:
     import yaml
 except ImportError:
-    print("Error: PyYAML is required. Install with: pip install PyYAML", file=sys.stderr)
+    print(
+        "Error: PyYAML is required. Install with: pip install PyYAML", file=sys.stderr
+    )
     sys.exit(1)
 
 
@@ -29,10 +31,10 @@ def load_qmk_config(qmk_json_path: Path) -> Tuple[str, str]:
     Returns:
         Tuple of (keyboard, keymap) from the "right" build target
     """
-    with open(qmk_json_path, 'r') as f:
+    with open(qmk_json_path, "r") as f:
         qmk_config = json.load(f)
 
-    build_targets = qmk_config.get('build_targets', [])
+    build_targets = qmk_config.get("build_targets", [])
     if len(build_targets) < 1:
         print("Error: Expected at least 1 build targets in qmk.json", file=sys.stderr)
         sys.exit(1)
@@ -52,168 +54,347 @@ def build_standard_mapping() -> Dict[str, str]:
     mapping = {}
 
     # Letters
-    for letter in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
-        mapping[f'KC_{letter}'] = letter
+    for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
+        mapping[f"KC_{letter}"] = letter
 
     # Numbers
     for num in range(10):
-        mapping[f'KC_{num}'] = str(num)
-
-    # Number row symbols
-    mapping.update({
-        'KC_EXLM': '!',
-        'KC_AT': '@',
-        'KC_HASH': '#',
-        'KC_DLR': '$',
-        'KC_PERC': '%',
-        'KC_CIRC': '^',
-        'KC_AMPR': '&',
-        'KC_ASTR': '*',
-        'KC_LPRN': '(',
-        'KC_RPRN': ')',
-    })
-
-    # Punctuation and symbols
-    mapping.update({
-        'KC_MINS': '-',
-        'KC_EQL': '=',
-        'KC_LBRC': '[',
-        'KC_RBRC': ']',
-        'KC_BSLS': '\\',
-        'KC_SCLN': ';',
-        'KC_QUOT': "'",
-        'KC_GRV': '`',
-        'KC_COMMA': ',',
-        'KC_DOT': '.',
-        'KC_SLASH': '/',
-        'KC_UNDS': '_',
-        'KC_PLUS': '+',
-        'KC_LCBR': '{',
-        'KC_RCBR': '}',
-        'KC_PIPE': '|',
-        'KC_COLN': ':',
-        'KC_DQUO': '"',
-        'KC_TILD': '~',
-        'KC_LT': '<',
-        'KC_GT': '>',
-        'KC_QUES': '?',
-        'KC_SLSH': '/',
-        'KC_EQUAL': '=',
-        'KC_COMM': ',',
-    })
-
-    # Modifiers with NerdFont icons
-    mapping.update({
-        'KC_LEFT_SHIFT': '%%nf-md-apple_keyboard_shift',
-        'KC_RIGHT_SHIFT': '%%nf-md-apple_keyboard_shift',
-        'KC_LSFT': '%%nf-md-apple_keyboard_shift',
-        'KC_RSFT': '%%nf-md-apple_keyboard_shift',
-        'KC_LEFT_CTRL': '%%nf-md-apple_keyboard_control',
-        'KC_RIGHT_CTRL': '%%nf-md-apple_keyboard_control',
-        'KC_LCTL': '%%nf-md-apple_keyboard_control',
-        'KC_RCTL': '%%nf-md-apple_keyboard_control',
-        'KC_LEFT_ALT': '%%nf-md-apple_keyboard_option',
-        'KC_RIGHT_ALT': '%%nf-md-apple_keyboard_option',
-        'KC_LALT': '%%nf-md-apple_keyboard_option',
-        'KC_RALT': '%%nf-md-apple_keyboard_option',
-        'KC_LEFT_GUI': '%%nf-md-apple_keyboard_command',
-        'KC_RIGHT_GUI': '%%nf-md-apple_keyboard_command',
-        'KC_LGUI': '%%nf-md-apple_keyboard_command',
-        'KC_RGUI': '%%nf-md-apple_keyboard_command',
-    })
-
-    # Navigation keys with arrows (both long and short forms)
-    mapping.update({
-        'KC_LEFT': '%%nf-fa-arrow_left',
-        'KC_RIGHT': '%%nf-fa-arrow_right',
-        'KC_UP': '%%nf-fa-arrow_up',
-        'KC_DOWN': '%%nf-fa-arrow_down',
-        'KC_RGHT': '%%nf-fa-arrow_right',  # Short form
-        'KC_HOME': '↖',
-        'KC_END': '↘',
-        'KC_PGUP': '⇞',
-        'KC_PGDN': '⇟',
-    })
-
-    # Editing keys
-    mapping.update({
-        'KC_ENTER': '%%nf-md-keyboard_return',
-        'KC_ESC': 'ESC ⎋',
-        'KC_BSPC': '%%nf-md-backspace',
-        'KC_TAB': '%%nf-md-keyboard_tab',
-        'KC_SPC': '%%nf-md-keyboard_space',
-        'KC_DEL': '%%nf-md-backspace_reverte',
-        'KC_INS': 'Ins',
-    })
+        mapping[f"KC_{num}"] = str(num)
 
     # Function keys
-    for fkey in range(1, 21):
-        mapping[f'KC_F{fkey}'] = f'F{fkey}'
+    for fkey in range(1, 25):
+        mapping[f"KC_F{fkey}"] = f"F{fkey}"
 
-    # Keypad keys
-    for num in range(10):
-        mapping[f'KC_KP_{num}'] = str(num)
+    # Punctuation and symbols
+    mapping.update(
+        {
+            "KC_ENTER": "%%nf-md-keyboard_return;",
+            "KC_ENT": "@@KC_ENTER;",
+            "KC_ESC": "ESC ⎋",
+            "KC_ESCAPE": "@@KC_ESC;",
+            "KC_BACKSPACE": "%%nf-md-backspace;",
+            "KC_BSPC": "@@KC_BACKSPACE;",
+            "KC_TAB": "%%nf-md-keyboard_tab;",
+            "KC_SPACE": "%%nf-md-keyboard_space;",
+            "KC_SPC": "@@KC_SPACE;",
+            "KC_MINUS": "-",
+            "KC_MINS": "@@KC_MINUS;",
+            "KC_EQUAL": "=",
+            "KC_EQL": "@@KC_EQUAL;",
+            "KC_LEFT_BRACKET": "[",
+            "KC_LBRC": "@@KC_LEFT_BRACKET;",
+            "KC_RIGHT_BRACKET": "]",
+            "KC_RBRC": "@@KC_RIGHT_BRACKET;",
+            "KC_BACKSLASH": "\\",
+            "KC_BSLS": "@@KC_BACKSLASH;",
+            "KC_NONUS_HASH": "#",
+            "KC_NUHS": "@@KC_NONUS_HASH;",
+            "KC_SEMICOLON": ";",
+            "KC_SCLN": "@@KC_SEMICOLON;",
+            "KC_QUOTE": "'",
+            "KC_QUOT": "@@KC_QUOTE;",
+            "KC_GRAVE": "`",
+            "KC_GRV": "@@KC_GRAVE;",
+            "KC_COMMA": ",",
+            "KC_COMM": "@@KC_COMMA;",
+            "KC_DOT": ".",
+            "KC_SLASH": "/",
+            "KC_SLSH": "@@KC_SLASH;",
+            "KC_NONUS_BACKSLASH": "\\",
+            "KC_NUBS": "@@KC_NONUS_BACKSLASH;",
+        }
+    )
 
-    mapping.update({
-        'KC_PPLS': '+',
-        'KC_PMNS': '-',
-        'KC_PAST': '*',
-        'KC_PSLS': '/',
-        'KC_PEQL': '=',
-        'KC_PENT': '%%nf-md-keyboard_return',
-        'KC_PDOT': '.',
-        'KC_PCMM': ',',
-    })
+    # Lock keys
+    mapping.update(
+        {
+            "KC_CAPS_LOCK": "%%nf-md-apple_keyboard_caps;",
+            "KC_CAPS": "@@KC_CAPS_LOCK;",
+            "KC_SCROLL_LOCK": "ScrLK",
+            "KC_SCRL": "@@KC_SCROLL_LOCK;",
+            "KC_NUM_LOC": "NumLK",
+            "KC_NUM": "@@KC_NUM_LOC;",
+            "KC_LOCKING_CAPS_LOCK": "LKCaps",
+            "KC_LCAP": "@@KC_LOCKING_CAPS_LOCK;",
+            "KC_LOCKING_NUM_LOCK": "LKNum",
+            "KC_LNUM": "@@KC_LOCKING_NUM_LOCK;",
+            "KC_LOCKING_SCROLL_LOCK": "LKScrLK",
+            "KC_LSCR": "@@KC_LOCKING_SCROLL_LOCK;",
+        }
+    )
+
+    # Modifiers with NerdFont icons
+    mapping.update(
+        {
+            "KC_LEFT_SHIFT": "%%nf-md-apple_keyboard_shift;",
+            "KC_RIGHT_SHIFT": "@@KC_LEFT_SHIFT;",
+            "KC_LSFT": "@@KC_LEFT_SHIFT;",
+            "KC_RSFT": "@@KC_LEFT_SHIFT;",
+            "KC_LEFT_CTRL": "%%nf-md-apple_keyboard_control;",
+            "KC_RIGHT_CTRL": "@@KC_LEFT_CTRL;",
+            "KC_LCTL": "@@KC_LEFT_CTRL;",
+            "KC_RCTL": "@@KC_LEFT_CTRL;",
+            "KC_LEFT_ALT": "%%nf-md-apple_keyboard_option;",
+            "KC_RIGHT_ALT": "@@KC_LEFT_ALT;",
+            "KC_LALT": "@@KC_LEFT_ALT;",
+            "KC_RALT": "@@KC_LEFT_ALT;",
+            "KC_LOPT": "@@KC_LEFT_ALT;",
+            "KC_ROPT": "@@KC_LEFT_ALT;",
+            "KC_LEFT_GUI": "%%nf-md-apple_keyboard_command;",
+            "KC_RIGHT_GUI": "@@KC_LEFT_GUI;",
+            "KC_LGUI": "@@KC_LEFT_GUI;",
+            "KC_RGUI": "@@KC_LEFT_GUI;",
+            "KC_LCMD": "@@KC_LEFT_GUI;",
+            "KC_RCMD": "@@KC_LEFT_GUI;",
+            "KC_LWIN": "@@KC_LEFT_GUI;",
+            "KC_RWIN": "@@KC_LEFT_GUI;",
+        }
+    )
+
+    # Command keys
+    mapping.update(
+        {
+            "KC_PRINT_SCREEN": "%%nf-md-monitor_screenshot;", # Screenshot key
+            "KC_PSCR": "@@KC_PRINT_SCREEN;",
+            "KC_PAUSE": "%%nf-md-pause_circle_outline;",
+            "KC_PAUS": "@@KC_PAUSE;",
+            "KC_BRK": "@@KC_PAUSE;",
+            "KC_INSERT": "Ins",
+            "KC_INS": "@@KC_INSERT;",
+            "KC_HOME": "↖",
+            "KC_PAGE_UP": "⇞",
+            "KC_PGUP": "@@KC_PAGE_UP;",
+            "KC_DELETE": "%%nf-md-backspace_reverse;",
+            "KC_DEL": "@@KC_DELETE;",
+            "KC_END": "↘",
+            "KC_PAGE_DOWN": "⇟",
+            "KC_PGDN": "@@KC_PAGE_DOWN;",
+            "KC_RIGHT": "%%nf-fa-arrow_right;",
+            "KC_RGHT": "%%nf-fa-arrow_right;",  # Short form
+            "KC_LEFT": "%%nf-fa-arrow_left;",
+            "KC_DOWN": "%%nf-fa-arrow_down;",
+            "KC_UP": "%%nf-fa-arrow_up;",
+            "KC_APPLICATION": "%%nf-md-application;",
+            "KC_APP": "%%nf-md-application;",
+            "KC_KB_POWER": "%%nf-md-power_plug;",
+            "KC_EXECUTE": "%%nf-md-run_fast;",
+            "KC_EXEC": "@@KC_EXECUTE;",
+            "KC_HELP": "%%nf-md-help;",
+            "KC_MENU": "%%nf-md-menu;",
+            "KC_SELECT": "%%nf-md-select;",
+            "KC_SLCT": "@@KC_SELECT;",
+            "KC_STOP": "%nf-fa-stop",
+            "KC_AGAIN": "%%nf-md-redo;",
+            "KC_AGIN": "@@KC_AGAIN;",
+            "KC_UNDO": "%%nf-md-undo;",
+            "KC_CUT": "%%nf-md-content_cut;",
+            "KC_COPY": "%%nf-md-content_copy;",
+            "KC_PASTE": "%%nf-md-content_paste;",
+            "KC_PSTE": "@@KC_PASTE;",
+            "KC_FIND": "%%nf-md-file_find;",
+            "KC_KB_MUTE": "%%nf-fa-volume_xmark;",
+            "KC_KB_VOLUME_UP": "%nf-fa-volume_up",
+            "KC_KB_VOLUME_DOWN": "%%nf-fa-volume_down;",
+            "KC_ALTERNATE_ERASE": "%%nf-md-eraser;",
+            "KC_ERAS": "@@KC_ALTERNATE_ERASE;",
+            "KC_SYSTEM_REQUEST": "SysReq",
+            "KC_SYRQ": "@@KC_SYSTEM_REQUEST;",
+            "KC_CANCEL": "%%nf-md-cancel;",
+            "KC_CNCL": "@@KC_CANCEL;",
+            "KC_CLEAR": "%%nf-md-broom;",
+            "KC_CLR": "@@KC_CLEAR;",
+            "KC_PRIOR": "@@KC_PGUP;",
+            "KC_PRIR": "@@KC_PGUP;",
+            "KC_NEXT": "@@KC_PGDN;",
+            "KC_RETURN": "⌅",
+            "KC_RETN": "@@KC_RETURN;",
+            "KC_SEPARATOR": "%%nf-md-decimal;",  # Locale-aware decimal separator
+            "KC_SEPR": "@@KC_SEPARATOR;",
+            "KC_OUT": "%%nf-md-exit_to_app;",
+            "KC_OPER": "%%nf-fa-terminal;",
+            "KC_CLEAR_AGAIN": "@@KC_CLEAR;²",
+            "KC_CLAG": "@@KC_CLEAR_AGAIN;",
+            "KC_CRSEL": "%%nf-md-form_textbox;",
+            "KC_CRSL": "@@KC_CRSEL;",
+            "KC_EXSEL": "%%nf-md-form_textbox;+",
+            "KC_EXSL": "@@KC_EXSEL;+",
+        }
+    )
 
     # Media keys with icons
-    mapping.update({
-        'KC_MUTE': '%%nf-md-volume_mute',
-        'KC_VOLU': '%%nf-md-volume_plus',
-        'KC_VOLD': '%%nf-md-volume_minus',
-        'KC_MPLY': '%%nf-md-play_pause',
-        'KC_MNXT': '%%nf-md-skip_next',
-        'KC_MPRV': '%%nf-md-skip_previous',
-        'KC_MFFD': '%%nf-md-fast_forward',
-        'KC_MRWD': '%%nf-md-rewind',
-        'KC_MSTP': '%%nf-md-stop',
-    })
+    mapping.update(
+        {
+            "KC_SYSTEM_POWER": "%%nf-md-power;",
+            "KC_PWR": "@@KC_SYSTEM_POWER;",
+            "KC_SYSTEM_SLEEP": "%%nf-md-power_sleep;",
+            "KC_SLEP": "@@KC_SYSTEM_SLEEP;",
+            "KC_SYSTEM_WAKE": "%%nf-md-alarm;",
+            "KC_WAKE": "@@KC_SYSTEM_WAKE;",
+            "KC_AUDIO_MUTE": "%%nf-md-volume_mute;",
+            "KC_MUTE": "@@KC_AUDIO_MUTE;",
+            "KC_AUDIO_VOL_UP": "%%nf-md-volume_plus;",
+            "KC_VOLU": "@@KC_AUDIO_VOL_UP;",
+            "KC_AUDIO_VOL_DOWN": "%%nf-md-volume_minus;",
+            "KC_VOLD": "@@KC_AUDIO_VOL_DOWN;",
+            "KC_MEDIA_NEXT_TRACK": "%%nf-md-skip_next;",
+            "KC_MNXT": "@@KC_MEDIA_NEXT_TRACK;",
+            "KC_MEDIA_PREV_TRACK": "%%nf-md-skip_previous;",
+            "KC_MPRV": "@@KC_MEDIA_PREV_TRACK;",
+            "KC_MEDIA_STOP": "%%nf-md-stop;",
+            "KC_MSTP": "@@KC_MEDIA_STOP;",
+            "KC_MEDIA_PLAY_PAUSE": "%%nf-md-play_pause;",
+            "KC_MPLY": "@@KC_MEDIA_PLAY_PAUSE;",
+            "KC_MEDIA_SELECT": "%%nf-oct-file_media;",
+            "KC_MSEL": "@@KC_MEDIA_SELECT;",
+            "KC_MEDIA_EJECT": "%%nf-fa-eject;",
+            "KC_EJCT": "@@KC_MEDIA_EJECT;",
+            "KC_MAIL": "%%nf-cod-mail;",
+            "KC_CALCULATOR": "%%nf-md-calculator;",
+            "KC_CALC": "@@KC_CALCULATOR;",
+            "KC_MY_COMPUTER": "%%nf-md-desktop_classic;",
+            "KC_MYCM": "@@KC_MY_COMPUTER;",
+            "KC_WWW_SEARCH": "%%nf-md-search_web;",
+            "KP_WSCH": "@@KC_WWW_SEARCH;",
+            "KC_WWW_HOME": "%%nf-fa-home;",
+            "KC_WHOM": "@@KC_WWW_HOME;",
+            "KC_WWW_BACK": "%%nf-md-arrow_left_bold;",
+            "KC_WBAK": "@@KC_WWW_BACK;",
+            "KC_WWW_FORWARD": "%%nf-md-arrow_right_bold;",
+            "KC_WFWD": "@@KC_WWW_FORWARD;",
+            "KC_WWW_STOP": "%%nf-fa-stop;",
+            "KC_WSTP": "@@KC_WWW_STOP;",
+            "KC_WWW_REFRESH": "%%nf-md-web_refresh;",
+            "KC_WREF": "@@KC_WWW_REFRESH;",
+            "KC_WWW_FAVORITES": "%%nf-seti-favicon;",
+            "KC_WFAV": "@@KC_WWW_FAVORITES;",
+            "KC_MEDIA_FAST_FORWARD": "%%nf-md-fast_forward;",
+            "KC_MFFD": "@@KC_MEDIA_FAST_FORWARD;",
+            "KC_MEDIA_REWIND": "%%nf-md-rewind;",
+            "KC_MRWD": "@@KC_MEDIA_REWIND;",
+            "KC_BRIGHTNESS_UP": "%%nf-md-brightness_7;",
+            "KC_BRIU": "@@KC_BRIGHTNESS_UP;",
+            "KC_BRMU": "@@KC_BRIGHTNESS_UP;",
+            "KC_BRIGHTNESS_DOWN": "%%nf-md-brightness_5;",
+            "KC_BRID": "@@KC_BRIGHTNESS_DOWN;",
+            "KC_BRMD": "@@KC_BRIGHTNESS_DOWN;",
+            "KC_CONTROL_PANEL": "%%nf-cod-settings_gear;",
+            "KC_CPNL": "@@KC_CONTROL_PANEL;",
+            "KC_ASSISTANT": "%%nf-md-assistant;",
+            "KC_ASST": "@@KC_ASSISTANT;",
+            "KC_MISSION_CONTROL": "%%nf-md-application_settings;",
+            "KC_MCTL": "@@KC_MISSION_CONTROL;",
+            "KC_LAUNCHPAD": "%%nf-md-apps_box;",
+            "KC_LPAD": "@@KC_LAUNCHPAD;",
+        }
+    )
 
-    # System keys
-    mapping.update({
-        'KC_BRIU': '%%nf-md-brightness_7',
-        'KC_BRID': '%%nf-md-brightness_5',
-        'KC_PWR': '%%nf-iec-power',
-        'KC_SLEP': '%%nf-md-power_sleep',
-        'KC_WAKE': '%%nf-md-alarm',
-    })
+    # Number pad keys
+    for num in range(10):
+        mapping[f"KC_KP_{num}"] = str(num)
+    mapping.update(
+        {
+            "KC_KP_SLASH": "/",
+            "KC_PSLS": "@@KC_KP_SLASH;",
+            "KC_KP_ASTERISK": "*",
+            "KC_PAST": "@@KC_KP_ASTERISK;",
+            "KC_KP_MINUS": "-",
+            "KC_PMNS": "@@KC_KP_MINUS;",
+            "KC_KP_PLUS": "+",
+            "KC_PPLS": "@@KC_KP_PLUS;",
+            "KC_KP_ENTER": "%%nf-md-keyboard_return;",
+            "KC_PENT": "@@KC_KP_ENTER;",
+            "KC_KP_DOT": ".",
+            "KC_PDOT": "@@KC_KP_DOT;",
+            "KC_KP_EQUAL": "=",
+            "KC_PEQL": "@@KC_KP_EQUAL;",
+            "KC_KP_COMMA": ",",
+            "KC_PCMM": "@@KC_KP_COMMA;",
+            "KC_KP_EQUAL_AS400": "@@KC_KP_EQUAL;",
+        }
+    )
+
+    # Special keys
+    mapping.update(
+        {
+            "KC_NO": "",
+            "XXXXXXX": "@@KC_NO;",
+            "KC_TRANSPARENT": "",
+            "KC_TRNS": "@@KC_TRANSPARENT;",
+            "_______": "@@KC_TRANSPARENT;",
+        }
+    )
+
+    # Shifted symbols
+    mapping.update(
+        {
+            "KC_TILDE": "~",
+            "KC_TILD": "@@KC_TILDE;",
+            "KC_EXCLAIM": "!",
+            "KC_EXLM": "@@KC_EXCLAIM;",
+            "KC_AT": "@",
+            "KC_HASH": "#",
+            "KC_DOLLAR": "$",
+            "KC_DLR": "@@KC_DOLLAR;",
+            "KC_PERCENT": "%",
+            "KC_PERC": "@@KC_PERCENT;",
+            "KC_CIRCUMFLEX": "^",
+            "KC_CIRC": "@@KC_CIRCUMFLEX;",
+            "KC_AMPERSAND": "&",
+            "KC_AMPR": "@@KC_AMPERSAND;",
+            "KC_ASTERISK": "*",
+            "KC_ASTR": "@@KC_ASTERISK;",
+            "KC_LEFT_PAREN": "(",
+            "KC_LPRN": "@@KC_LEFT_PAREN;",
+            "KC_RIGHT_PAREN": ")",
+            "KC_RPRN": "@@KC_RIGHT_PAREN;",
+            "KC_UNDERSCORE": "_",
+            "KC_UNDS": "@@KC_UNDERSCORE;",
+            "KC_PLUS": "+",
+            "KC_LEFT_CURLY_BRACE": "{",
+            "KC_LCBR": "@@KC_LEFT_CURLY_BRACE;",
+            "KC_RIGHT_CURLY_BRACE": "}",
+            "KC_RCBR": "@@KC_RIGHT_CURLY_BRACE;",
+            "KC_PIPE": "|",
+            "KC_COLON": ":",
+            "KC_COLN": "@@KC_COLON;",
+            "KC_DOUBLE_QUOTE": '"',
+            "KC_DQUO": "@@KC_DOUBLE_QUOTE;",
+            "KC_DQT": "@@KC_DOUBLE_QUOTE;",
+            "KC_LEFT_ANGLE_BRACKET": "<",
+            "KC_LABK": "@@KC_LEFT_ANGLE_BRACKET;",
+            "KC_LT": "@@KC_LEFT_ANGLE_BRACKET;",
+            "KC_RIGHT_ANGLE_BRACKET": ">",
+            "KC_RABK": "@@KC_RIGHT_ANGLE_BRACKET;",
+            "KC_GT": "@@KC_RIGHT_ANGLE_BRACKET;",
+            "KC_QUESTION": "?",
+            "KC_QUES": "@@KC_QUESTION;",
+        }
+    )
 
     # Mouse buttons
     for btn in range(1, 9):
-        mapping[f'KC_BTN{btn}'] = f'M{btn}'
-    mapping['KC_MS_BTN1'] = 'L%%nf-md-cursor_default_click'
-    mapping['KC_MS_BTN2'] = 'R%%nf-md-cursor_default_click'
-    mapping['KC_MS_BTN3'] = 'M%%nf-md-cursor_default_click'
-    mapping['KC_MS_BTN4'] = '4%%nf-md-cursor_default_click'
-    mapping['KC_MS_BTN5'] = '5%%nf-md-cursor_default_click'
-    mapping['KC_MS_BTN6'] = '6%%nf-md-cursor_default_click'
-    mapping['KC_MS_BTN7'] = '7%%nf-md-cursor_default_click'
-    mapping['KC_MS_BTN8'] = '8%%nf-md-cursor_default_click'
-
-    # Special keys
-    mapping.update({
-        'KC_NO': '',
-        'KC_TRNS': '',
-        'KC_TRANSPARENT': '',
-        '_______': '',
-        'XXXXXXX': '',
-    })
+        if btn == 1:
+            mapping["KC_BTN1"] = "L %%nf-md-cursor_default_click;"
+            mapping["KC_MS_BTN1"] = "L %%nf-md-cursor_default_click;"
+        elif btn == 2:
+            mapping["KC_BTN2"] = "R %%nf-md-cursor_default_click;"
+            mapping["KC_MS_BTN2"] = "R %%nf-md-cursor_default_click;"
+        elif btn == 3:
+            mapping["KC_BTN3"] = "M %%nf-md-cursor_default_click;"
+            mapping["KC_MS_BTN3"] = "M %%nf-md-cursor_default_click;"
+        else:
+            mapping[f"KC_BTN{btn}"] = f"{btn} %%nf-md-cursor_default_click;"
+            mapping[f"KC_MS_BTN{btn}"] = f"{btn} %%nf-md-cursor_default_click;"
 
     # QMK Quantum keycodes
-    mapping.update({
-        'QK_CAPS_WORD_TOGGLE': '%%nf-md-apple_keyboard_caps',
-        'QK_REP': '%%nf-fa-repeat REP',
-        'CW_TOGG': '%%nf-md-apple_keyboard_caps',
-    })
+    mapping.update(
+        {
+            "QK_CAPS_WORD_TOGGLE": "%%nf-md-apple_keyboard_caps;",
+            "CW_TOGG": "%%nf-md-apple_keyboard_caps;",
+            "QK_REPEAT_KEY": "%%nf-fa-repeat; REP",
+            "QK_REP": "%%nf-fa-repeat; REP",
+        }
+    )
 
     return mapping
 
@@ -231,10 +412,34 @@ def build_keycode_mapping(keymap_config: Dict[str, Any]) -> Dict[str, str]:
     mapping = build_standard_mapping()
 
     # Add custom key labels from config
-    if 'keyLabels' in keymap_config:
-        mapping.update(keymap_config['keyLabels'])
+    if "keyLabels" in keymap_config:
+        mapping.update(keymap_config["keyLabels"])
 
     return mapping
+
+
+def get_qmk_home() -> Optional[Path]:
+    """
+    Query QMK CLI for the QMK home directory.
+
+    Returns:
+        Path to QMK home, or None if not found
+    """
+    try:
+        result = subprocess.run(
+            ["qmk", "config", "-ro", "user.qmk_home"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        # Output format: "user.qmk_home=PATH"
+        output = result.stdout.strip()
+        if "=" in output:
+            _, qmk_home = output.split("=", 1)
+            return Path(qmk_home.strip())
+    except (subprocess.CalledProcessError, FileNotFoundError) as e:
+        print(f"Warning: Could not query QMK home: {e}", file=sys.stderr)
+    return None
 
 
 def parse_qmk_colors(color_h_path: Path) -> Dict[str, str]:
@@ -250,10 +455,13 @@ def parse_qmk_colors(color_h_path: Path) -> Dict[str, str]:
         print(f"Warning: color.h not found at {color_h_path}", file=sys.stderr)
         return colors
 
-    with open(color_h_path, 'r') as f:
+    with open(color_h_path, "r") as f:
         for line in f:
             # Match lines like: #define RGB_AZURE       0x99, 0xF5, 0xFF
-            match = re.match(r'#define\s+RGB_(\w+)\s+0x([0-9A-Fa-f]{2}),\s*0x([0-9A-Fa-f]{2}),\s*0x([0-9A-Fa-f]{2})', line)
+            match = re.match(
+                r"#define\s+RGB_(\w+)\s+0x([0-9A-Fa-f]{2}),\s*0x([0-9A-Fa-f]{2}),\s*0x([0-9A-Fa-f]{2})",
+                line,
+            )
             if match:
                 name = match.group(1).lower()
                 r = match.group(2)
@@ -320,7 +528,9 @@ def hsv_to_rgb_internal(h: float, s: float, v: float) -> Tuple[float, float, flo
         return v, p, q
 
 
-def darken_color(hex_color: str, target_lightness: float = 0.31, target_saturation: float = 0.50) -> str:
+def darken_color(
+    hex_color: str, target_lightness: float = 0.31, target_saturation: float = 0.50
+) -> str:
     """
     Darken and desaturate a color to make it suitable for backgrounds with white text.
 
@@ -355,6 +565,7 @@ def resolve_color(color_input: str, qmk_colors: Dict[str, str]) -> str:
 
     QMK color names are automatically darkened for better text readability.
     Hex colors are returned as-is.
+    If a named color cannot be resolved, fallback to black.
 
     Args:
         color_input: Either a hex color string or a QMK color name
@@ -364,7 +575,7 @@ def resolve_color(color_input: str, qmk_colors: Dict[str, str]) -> str:
         Hex color string
     """
     # Check if it's already a hex color - don't darken user-provided hex colors
-    if color_input.startswith('#'):
+    if color_input.startswith("#"):
         return color_input
 
     # Try to resolve as a QMK color name (case-insensitive)
@@ -374,19 +585,22 @@ def resolve_color(color_input: str, qmk_colors: Dict[str, str]) -> str:
         qmk_color = qmk_colors[color_name]
         return darken_color(qmk_color)
 
-    # If not found, assume it's a hex color without the # prefix
-    if len(color_input) == 6:
-        return f'#{color_input}'
+    # If not found, assume it's a hex color without the # prefix (#RRGGBB or #RGB)
+    if len(color_input) == 6 or len(color_input) == 4:
+        return f"#{color_input}"
 
-    # Fallback: return as-is and let the error handling catch it later
-    print(f"Warning: Could not resolve color '{color_input}'", file=sys.stderr)
-    return color_input
+    # Fallback: named color not found, return black
+    print(
+        f"Warning: Could not resolve color '{color_input}', using black",
+        file=sys.stderr,
+    )
+    return "#000000"
 
 
 def hex_to_rgb(hex_color: str) -> Tuple[float, float, float]:
     """Convert hex color to RGB tuple (0-1 range)."""
-    hex_color = hex_color.lstrip('#')
-    return tuple(int(hex_color[i:i+2], 16) / 255.0 for i in (0, 2, 4))
+    hex_color = hex_color.lstrip("#")
+    return tuple(int(hex_color[i : i + 2], 16) / 255.0 for i in (0, 2, 4))
 
 
 def rgb_to_hsl(r: float, g: float, b: float) -> Tuple[float, float, float]:
@@ -414,17 +628,18 @@ def rgb_to_hsl(r: float, g: float, b: float) -> Tuple[float, float, float]:
 
 def hsl_to_rgb(h: float, s: float, l: float) -> Tuple[float, float, float]:
     """Convert HSL to RGB (0-1 range)."""
+
     def hue_to_rgb(p: float, q: float, t: float) -> float:
         if t < 0:
             t += 1
         if t > 1:
             t -= 1
-        if t < 1/6:
+        if t < 1 / 6:
             return p + (q - p) * 6 * t
-        if t < 1/2:
+        if t < 1 / 2:
             return q
-        if t < 2/3:
-            return p + (q - p) * (2/3 - t) * 6
+        if t < 2 / 3:
+            return p + (q - p) * (2 / 3 - t) * 6
         return p
 
     if s == 0:
@@ -432,9 +647,9 @@ def hsl_to_rgb(h: float, s: float, l: float) -> Tuple[float, float, float]:
     else:
         q = l * (1 + s) if l < 0.5 else l + s - l * s
         p = 2 * l - q
-        r = hue_to_rgb(p, q, h + 1/3)
+        r = hue_to_rgb(p, q, h + 1 / 3)
         g = hue_to_rgb(p, q, h)
-        b = hue_to_rgb(p, q, h - 1/3)
+        b = hue_to_rgb(p, q, h - 1 / 3)
 
     return r, g, b
 
@@ -513,12 +728,15 @@ def generate_color_gradient(base_color: str, base_index: int = 2) -> List[str]:
     return gradient
 
 
-def translate_keycode(keycode: str, mapping: Dict[str, str]) -> str:
+def translate_keycode(
+    keycode: str, mapping: Dict[str, str], visited: Optional[set] = None
+) -> str:
     """
     Translate a single keycode to display label.
 
     Handles:
     - Direct mapping lookups
+    - Key label references (@@KEYCODE;...)
     - Modifier combinations like S(KC_TAB)
     - Layer toggle keys like MO(_MED)
     - Nested modifiers like C(G(KC_DOWN))
@@ -526,39 +744,68 @@ def translate_keycode(keycode: str, mapping: Dict[str, str]) -> str:
     Args:
         keycode: The QMK keycode to translate
         mapping: The keycode mapping dictionary
+        visited: Set of visited keycodes (for circular reference detection)
 
     Returns:
         Translated display label
     """
+    # Initialize visited set for recursion tracking
+    if visited is None:
+        visited = set()
+
+    # Check for circular references
+    if keycode in visited:
+        print(
+            f"Warning: Circular reference detected for keycode '{keycode}'",
+            file=sys.stderr,
+        )
+        return keycode  # Return keycode as-is to break the cycle
+
+    visited.add(keycode)
+
     # Check custom mapping first
     if keycode in mapping:
-        return mapping[keycode]
+        label = mapping[keycode]
+
+        # Check if label contains any references (@@KEYCODE;)
+        if "@@" in label:
+            # Find and replace all references in the label
+            def replace_reference(match):
+                ref_keycode = match.group(1)
+                # Recursively resolve the referenced keycode
+                return translate_keycode(ref_keycode, mapping, visited)
+
+            # Replace all occurrences of @@KEYCODE;
+            resolved_label = re.sub(r"@@([^;]+);", replace_reference, label)
+            return resolved_label
+
+        return label
 
     # Handle MO(layer) keys
-    mo_match = re.match(r'MO\(([^)]+)\)', keycode)
+    mo_match = re.match(r"MO\(([^)]+)\)", keycode)
     if mo_match:
         layer_name = mo_match.group(1)
         # Remove leading underscore if present
-        layer_name = layer_name.lstrip('_')
+        layer_name = layer_name.lstrip("_")
         return layer_name
 
     # Handle modifier combinations
     # Pattern: MOD(content) where MOD is S, C, A, or G
-    mod_match = re.match(r'([SCAG])\((.+)\)', keycode)
+    mod_match = re.match(r"([SCAG])\((.+)\)", keycode)
     if mod_match:
         modifier = mod_match.group(1)
         inner_content = mod_match.group(2)
 
         # Map modifier to icon
         mod_icons = {
-            'S': '%%nf-md-apple_keyboard_shift',
-            'C': '%%nf-md-apple_keyboard_command',
-            'A': '%%nf-md-apple_keyboard_option',
-            'G': '%%nf-md-apple_keyboard_command',
+            "S": "%%nf-md-apple_keyboard_shift;",
+            "C": "%%nf-md-apple_keyboard_command;",
+            "A": "%%nf-md-apple_keyboard_option;",
+            "G": "%%nf-md-apple_keyboard_command;",
         }
 
         # Recursively translate inner content
-        inner_label = translate_keycode(inner_content, mapping)
+        inner_label = translate_keycode(inner_content, mapping, visited)
 
         # Combine modifier icon with inner label
         if inner_label:
@@ -570,7 +817,9 @@ def translate_keycode(keycode: str, mapping: Dict[str, str]) -> str:
     return keycode
 
 
-def generate_labels(layer_keycodes: List[str], mapping: Dict[str, str]) -> List[List[str]]:
+def generate_labels(
+    layer_keycodes: List[str], mapping: Dict[str, str]
+) -> List[List[str]]:
     """
     Generate labels array for a layer by splitting 60-key array into 10 clusters.
 
@@ -614,7 +863,7 @@ def generate_labels(layer_keycodes: List[str], mapping: Dict[str, str]) -> List[
 def detect_layer_toggles(
     layer_keycodes: List[str],
     key_layer_toggles: Dict[str, int],
-    layer_ids: Dict[str, int]
+    layer_ids: Dict[str, int],
 ) -> List[List[Optional[int]]]:
     """
     Detect layer toggle keys and generate layerToggles structure.
@@ -661,11 +910,11 @@ def detect_layer_toggles(
             layer_num = key_layer_toggles[keycode]
         else:
             # Fall back to MO() key detection
-            mo_match = re.match(r'MO\(([^)]+)\)', keycode)
+            mo_match = re.match(r"MO\(([^)]+)\)", keycode)
             if mo_match:
                 layer_ref = mo_match.group(1)
                 # Extract layer number (handle both numeric and _NAME formats)
-                if layer_ref.startswith('_'):
+                if layer_ref.startswith("_"):
                     # Use layer_ids mapping from config
                     layer_num = layer_ids.get(layer_ref, None)
                 else:
@@ -688,10 +937,10 @@ def detect_layer_toggles(
             layer_num = key_layer_toggles[keycode]
         else:
             # Fall back to MO() key detection
-            mo_match = re.match(r'MO\(([^)]+)\)', keycode)
+            mo_match = re.match(r"MO\(([^)]+)\)", keycode)
             if mo_match:
                 layer_ref = mo_match.group(1)
-                if layer_ref.startswith('_'):
+                if layer_ref.startswith("_"):
                     # Use layer_ids mapping from config
                     layer_num = layer_ids.get(layer_ref, None)
                 else:
@@ -704,7 +953,12 @@ def detect_layer_toggles(
     return [right_toggles, left_toggles]
 
 
-def generate_keymap_yaml(qmk_json: Dict[str, Any], keymap_config: Dict[str, Any], output_path: Path, color_h_path: Path):
+def generate_keymap_yaml(
+    qmk_json: Dict[str, Any],
+    keymap_config: Dict[str, Any],
+    output_path: Path,
+    color_h_path: Path,
+):
     """
     Main generation logic: combine QMK JSON with keymap-config to produce keymap.yaml.
 
@@ -721,23 +975,28 @@ def generate_keymap_yaml(qmk_json: Dict[str, Any], keymap_config: Dict[str, Any]
     mapping = build_keycode_mapping(keymap_config)
 
     # Extract layer configuration
-    layer_ids = keymap_config.get('layerIds', {})
-    key_layer_toggles = keymap_config.get('keyLayerToggles', {})
-    global_secondary_color = keymap_config.get('secondaryColor', '#70768B')
+    layer_ids = keymap_config.get("layerIds", {})
+    key_layer_toggles = keymap_config.get("keyLayerToggles", {})
+    global_secondary_color = keymap_config.get("secondaryColor", "#70768B")
 
     # Generate complete keymap structure
-    keymap = {'layers': []}
+    keymap = {"layers": []}
 
-    layers_data = qmk_json.get('layers', [])
-    config_layers = keymap_config.get('layers', [])
+    layers_data = qmk_json.get("layers", [])
+    config_layers = keymap_config.get("layers", [])
 
     if len(layers_data) != len(config_layers):
-        print(f"Warning: Layer count mismatch. QMK JSON: {len(layers_data)}, Config: {len(config_layers)}", file=sys.stderr)
+        print(
+            f"Warning: Layer count mismatch. QMK JSON: {len(layers_data)}, Config: {len(config_layers)}",
+            file=sys.stderr,
+        )
 
     # Process each layer
     for layer_idx, layer_keycodes in enumerate(layers_data):
         if layer_idx >= len(config_layers):
-            print(f"Warning: No config for layer {layer_idx}, skipping", file=sys.stderr)
+            print(
+                f"Warning: No config for layer {layer_idx}, skipping", file=sys.stderr
+            )
             continue
 
         config_layer = config_layers[layer_idx]
@@ -746,14 +1005,16 @@ def generate_keymap_yaml(qmk_json: Dict[str, Any], keymap_config: Dict[str, Any]
         labels = generate_labels(layer_keycodes, mapping)
 
         # Detect layer toggles
-        layer_toggles = detect_layer_toggles(layer_keycodes, key_layer_toggles, layer_ids)
+        layer_toggles = detect_layer_toggles(
+            layer_keycodes, key_layer_toggles, layer_ids
+        )
 
         # Generate or use existing colors
-        if 'baseColor' in config_layer:
+        if "baseColor" in config_layer:
             # Resolve base color (supports color names and hex)
-            base_color_input = config_layer['baseColor']
+            base_color_input = config_layer["baseColor"]
             base_color = resolve_color(base_color_input, qmk_colors)
-            base_index = config_layer.get('baseColorIndex', 2)
+            base_index = config_layer.get("baseColorIndex", 2)
             colors = generate_color_gradient(base_color, base_index)
 
             # Always append global secondary color
@@ -765,25 +1026,27 @@ def generate_keymap_yaml(qmk_json: Dict[str, Any], keymap_config: Dict[str, Any]
             secondary_color = len(colors) - 1
         else:
             # Use existing colors array (backward compatibility)
-            colors = config_layer.get('colors', [])
-            primary_color = config_layer.get('primaryColor', 0)
-            secondary_color = config_layer.get('secondaryColor', 0)
+            colors = config_layer.get("colors", [])
+            primary_color = config_layer.get("primaryColor", 0)
+            secondary_color = config_layer.get("secondaryColor", 0)
 
         # Combine all layer data
         layer_data = {
-            'name': config_layer.get('name', f'Layer{layer_idx}'),
-            'labels': labels,
-            'colors': colors,
-            'primaryColor': primary_color,
-            'secondaryColor': secondary_color,
-            'layerToggles': layer_toggles,
+            "name": config_layer.get("name", f"Layer{layer_idx}"),
+            "labels": labels,
+            "colors": colors,
+            "primaryColor": primary_color,
+            "secondaryColor": secondary_color,
+            "layerToggles": layer_toggles,
         }
 
-        keymap['layers'].append(layer_data)
+        keymap["layers"].append(layer_data)
 
     # Write YAML file
-    with open(output_path, 'w') as f:
-        yaml.dump(keymap, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+    with open(output_path, "w") as f:
+        yaml.dump(
+            keymap, f, default_flow_style=False, allow_unicode=True, sort_keys=False
+        )
 
     print(f"Generated keymap.yaml at {output_path}")
 
@@ -795,21 +1058,22 @@ def generate_images_with_typst(project_root: Path):
     Args:
         project_root: Root directory of the project
     """
-    layers_source = project_root / 'support' / 'keymap-images' / 'keymap-layers.typ'
-    overview_source = project_root / 'support' / 'keymap-images' / 'keymap-overview.typ'
-    font_path = project_root / 'support' / 'keymap-images' / 'fonts'
-    docs_dir = project_root / 'docs'
+    layers_source = project_root / "support" / "keymap-images" / "keymap-layers.typ"
+    overview_source = project_root / "support" / "keymap-images" / "keymap-overview.typ"
+    font_path = project_root / "support" / "keymap-images" / "fonts"
+    docs_dir = project_root / "docs"
 
     # Generate individual layer map images
     print("Generating layer map images with typst...")
-    layer_maps_output = docs_dir / 'keymap-{p}.png'
+    layer_maps_output = docs_dir / "keymap-{p}.png"
     cmd_layers = [
-        'typst', 'compile',
+        "typst",
+        "compile",
         str(layers_source),
         str(layer_maps_output),
-        '--ppi=120',
-        f'--font-path={font_path}',
-        '--ignore-system-fonts'
+        "--ppi=120",
+        f"--font-path={font_path}",
+        "--ignore-system-fonts",
     ]
 
     try:
@@ -822,14 +1086,15 @@ def generate_images_with_typst(project_root: Path):
 
     # Generate overview image
     print("Generating layers overview image with typst...")
-    overview_output = docs_dir / 'keymap-overview.png'
+    overview_output = docs_dir / "keymap-overview.png"
     cmd_overview = [
-        'typst', 'compile',
+        "typst",
+        "compile",
         str(overview_source),
         str(overview_output),
-        '--ppi=120',
-        f'--font-path={font_path}',
-        '--ignore-system-fonts'
+        "--ppi=120",
+        f"--font-path={font_path}",
+        "--ignore-system-fonts",
     ]
 
     try:
@@ -847,12 +1112,12 @@ def main():
     """
     # Parse command-line arguments
     parser = argparse.ArgumentParser(
-        description='Generate keymap.yaml from QMK c2json output and keymap-config.yaml'
+        description="Generate keymap.yaml from QMK c2json output and keymap-config.yaml"
     )
     parser.add_argument(
-        'color_h_path',
+        "--color-header-path",
         type=Path,
-        help='Path to the QMK color.h file (e.g., /path/to/qmk/quantum/color.h)'
+        help="Path to the QMK color.h file (e.g., /path/to/qmk/quantum/color.h). If not provided, will query QMK CLI for QMK home.",
     )
     args = parser.parse_args()
 
@@ -861,15 +1126,33 @@ def main():
     project_root = script_dir.parent.parent
 
     # Paths
-    qmk_json_path = project_root / 'qmk.json'
-    keymap_config_path = script_dir / 'keymap-config.yaml'
-    output_path = script_dir / 'keymap.yaml'
-    color_h_path = args.color_h_path
+    qmk_json_path = project_root / "qmk.json"
+    keymap_config_path = script_dir / "keymap-config.yaml"
+    output_path = script_dir / "keymap.yaml"
 
-    # Validate color.h path
-    if not color_h_path.exists():
-        print(f"Error: color.h not found at {color_h_path}", file=sys.stderr)
-        sys.exit(1)
+    # Determine color.h path
+    if args.color_header_path:
+        color_h_path = args.color_header_path
+        print(f"Using provided color.h path: {color_h_path}")
+    else:
+        # Query QMK CLI for QMK home
+        print("Querying QMK CLI for QMK home...")
+        qmk_home = get_qmk_home()
+        if qmk_home:
+            color_h_path = qmk_home / "quantum" / "color.h"
+            print(f"Found QMK home at {qmk_home}")
+            print(f"Using color.h path: {color_h_path}")
+        else:
+            # Fallback: use a non-existent path (will trigger black color fallback)
+            color_h_path = Path("/dev/null/color.h")
+            print(
+                "Warning: Could not determine QMK home. Named colors will fallback to black.",
+                file=sys.stderr,
+            )
+
+    # Note: We don't validate color.h existence here
+    # If it doesn't exist, parse_qmk_colors will return empty dict
+    # and resolve_color will fallback to black for named colors
 
     # Load qmk.json to get keyboard and keymap
     print("Loading qmk.json...")
@@ -880,27 +1163,45 @@ def main():
     # The keyboard may have variants (e.g., svalboard/trackball/pmw3389/right)
     # but the keymap.c is typically under the base keyboard directory
     # Try the full path first, then fall back to base keyboard name
-    keymap_c_path = project_root / 'keyboards' / keyboard / 'keymaps' / keymap_name / 'keymap.c'
+    keymap_c_path = (
+        project_root / "keyboards" / keyboard / "keymaps" / keymap_name / "keymap.c"
+    )
 
     if not keymap_c_path.exists():
         # Try with base keyboard name (first part before /)
-        base_keyboard = keyboard.split('/')[0]
-        keymap_c_path = project_root / 'keyboards' / base_keyboard / 'keymaps' / keymap_name / 'keymap.c'
+        base_keyboard = keyboard.split("/")[0]
+        keymap_c_path = (
+            project_root
+            / "keyboards"
+            / base_keyboard
+            / "keymaps"
+            / keymap_name
+            / "keymap.c"
+        )
 
     if not keymap_c_path.exists():
         print(f"Error: keymap.c not found at {keymap_c_path}", file=sys.stderr)
-        print(f"Tried: keyboards/{keyboard}/keymaps/{keymap_name}/keymap.c", file=sys.stderr)
-        print(f"   and: keyboards/{base_keyboard}/keymaps/{keymap_name}/keymap.c", file=sys.stderr)
+        print(
+            f"Tried: keyboards/{keyboard}/keymaps/{keymap_name}/keymap.c",
+            file=sys.stderr,
+        )
+        print(
+            f"   and: keyboards/{base_keyboard}/keymaps/{keymap_name}/keymap.c",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     # Run qmk c2json command
     print("Running qmk c2json...")
     cmd = [
-        'qmk', 'c2json',
-        '-kb', keyboard,
-        '-km', keymap_name,
+        "qmk",
+        "c2json",
+        "-kb",
+        keyboard,
+        "-km",
+        keymap_name,
         str(keymap_c_path),
-        '--no-cpp'
+        "--no-cpp",
     ]
 
     try:
@@ -916,7 +1217,7 @@ def main():
 
     # Load keymap-config.yaml
     print("Loading keymap-config.yaml...")
-    with open(keymap_config_path, 'r') as f:
+    with open(keymap_config_path, "r") as f:
         keymap_config = yaml.safe_load(f)
 
     # Generate keymap.yaml
@@ -935,5 +1236,5 @@ def main():
     print("Done!")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

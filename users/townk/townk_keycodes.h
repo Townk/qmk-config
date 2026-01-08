@@ -33,12 +33,10 @@
 
 #define MKC_BKTAB   S(KC_TAB)        ///< Back Tab (⇧ ⇥)
 #define MKC_APPWIN  C(G(KC_DOWN))    ///< Show windows from current app (⌃ ⌘ ↓)
-#define MKC_ALLWIN  C(G(KC_UP))      ///< Show all windows from all apps (Mission Control) (⌃ ⌘ ↑)
 #define MKC_DKTN    C(G(KC_RGHT))    ///< Next Desktop (⌃ ⌘ →)
 #define MKC_DKTP    C(G(KC_LEFT))    ///< Previous Desktop (⌃ ⌘ ←)
 #define MKC_SHDKT   A(G(KC_DOWN))    ///< Show Desktop (⌥ ⌘ ↓)
 #define MKC_SHNOT   A(G(KC_UP))      ///< Show Notification Center (⌥ ⌘ ↑)
-#define MKC_SPAPP   A(G(KC_LEFT))    ///< Spotlight Apps (⌥ ⌘ ←)
 #define MKC_SPFND   A(G(KC_RIGHT))   ///< Spotlight Find (⌥ ⌘ →)
 
 #define SV_LDPU    SV_LEFT_DPI_INC   ///< Short version of left side mouse DPI increase

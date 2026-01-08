@@ -14,38 +14,36 @@ keyLayerToggles:
     CKC_BKTAB: 4
 keyLabels:
     # Custom tap-dance keys (CKC_*)
-    CKC_BSPC: "%%nf-md-brain %%nf-md-backspace"
-    CKC_SPC: "%%nf-md-keyboard_space"
-    CKC_TAB: "%%nf-md-keyboard_tab"
-    CKC_BKTAB: "%%nf-md-keyboard_tab_reverse"
-    CKC_SMSFT: "%%nf-md-brain %%nf-md-apple_keyboard_shift"
+    CKC_BSPC: "%%nf-md-brain; @@KC_BACKSPACE;"
+    CKC_SPC: "@@KC_SPACE;"
+    CKC_TAB: "@@KC_TAB;"
+    CKC_BKTAB: "%%nf-md-keyboard_tab_reverse;"
+    CKC_SMSFT: "%%nf-md-brain; @@KC_LEFT_SHIFT;"
 
     # Custom macro keys (MKC_*)
-    MKC_BKTAB: "%%nf-md-keyboard_tab_reverse"
-    MKC_APPWIN: "%%nf-md-apple_keyboard_control %%nf-md-apple_keyboard_command %%nf-fa-arrow_down"
-    MKC_ALLWIN: "%%nf-md-apple_keyboard_control %%nf-md-apple_keyboard_command %%nf-fa-arrow_up"
-    MKC_DKTN: "%%nf-md-apple_keyboard_control %%nf-md-apple_keyboard_command %%nf-fa-arrow_right"
-    MKC_DKTP: "%%nf-md-apple_keyboard_control %%nf-md-apple_keyboard_command %%nf-fa-arrow_left"
-    MKC_SHDKT: "%%nf-md-monitor"
-    MKC_SHNOT: "%%nf-md-bell"
-    MKC_SPAPP: "%%nf-md-magnify %%nf-md-application"
-    MKC_SPFND: "%%nf-md-magnify %%nf-md-file_search"
-    ML_ALT: "%%nf-md-apple_keyboard_option OPT"
+    MKC_BKTAB: "@@CKC_BKTAB;"
+    MKC_APPWIN: "@@KC_LEFT_CTRL; @@KC_LEFT_GUI; @@KC_DOWN;"
+    MKC_DKTN: "@@KC_LEFT_CTRL; @@KC_LEFT_GUI; @@KC_RIGHT;"
+    MKC_DKTP: "@@KC_LEFT_CTRL; @@KC_LEFT_GUI; @@KC_LEFT;"
+    MKC_SHDKT: "%%nf-md-monitor;"
+    MKC_SHNOT: "%%nf-md-bell;"
+    MKC_SPFND: "%%nf-md-magnify; %%nf-md-file_search;"
+    ML_ALT: "@@KC_LEFT_ALT; OPT"
 
     # Mouse button keys (MB_*)
-    MB_SFT: "L%%nf-md-mouse"
-    MB_ALT: "R%%nf-md-mouse"
-    MB_GUI: "M%%nf-md-mouse"
-    MB_CTL: "4%%nf-md-mouse"
+    MB_SFT: "@@KC_BTN1;"
+    MB_ALT: "@@KC_BTN2;"
+    MB_GUI: "@@KC_BTN3;"
+    MB_CTL: "@@KC_BTN4;"
 
     # Svalboard-specific keys (SV_*)
-    SV_LDPU: "L %%nf-md-mouse_move_up"
-    SV_LDPD: "L %%nf-md-mouse_move_down"
-    SV_RDPU: "R %%nf-md-mouse_move_up"
-    SV_RDPD: "R %%nf-md-mouse_move_down"
-    SV_SOUT: "%%nf-oct-log"
-    SV_SNIPER_3: "3%%nf-md-crosshairs"
-    SV_SNIPER_5: "5%%nf-md-crosshairs"
+    SV_LDPU: "L %%nf-md-mouse_move_up;"
+    SV_LDPD: "L %%nf-md-mouse_move_down;"
+    SV_RDPU: "R %%nf-md-mouse_move_up;"
+    SV_RDPD: "R %%nf-md-mouse_move_down;"
+    SV_SOUT: "%%nf-oct-log;"
+    SV_SNIPER_3: "%%nf-md-crosshairs;3"
+    SV_SNIPER_5: "%%nf-md-crosshairs;5"
 
 secondaryColor: "#70768B"
 
