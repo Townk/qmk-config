@@ -17,3 +17,6 @@ compile_commands.json
 
 # python
 __pycache__/
+
+# Virtualenv
+.venv
