@@ -1,0 +1,192 @@
+# Base configuration for layers on the "to be generated" keymap.
+#
+# Attributes:
+#   id: A string that might be used in the keymap instead of a layer number
+#     when activating a layer. This is usually needed only for QMK Userspace
+#     keymaps that have a `#define` to represent layer numbers.
+#   name: The name that skim will add to the output layer keymap image.
+#   label: The string to use instead of the layer number when defining a key
+#     label for a layer activation key. If this attribute is not present, the
+#     1-indexed layer number should be used.
+#   base_color: The color used to generate a color progression to represent a
+#     key cluster in the pinal keymap image.
+layers:
+    - id: _BASE
+      name: COLEMAK
+      label: "BASE"
+      base_color: "#347156"
+    - id: _NAV
+      name: Navigation
+      label: "NAV"
+      base_color: "#89511C"
+    - id: _NUM
+      name: Numbers
+      label: "NUM"
+      base_color: "#41687E"
+    - id: _SYM
+      name: Symbols
+      label: "SYM"
+      base_color: "#8C3B2C"
+    - id: _FUN
+      name: Function Keys
+      label: "FN"
+      base_color: "#5F4B7E"
+    - id: _MED
+      name: Multimedia
+      label: "MED"
+      base_color: "#7E6E1E"
+    - id: _SYS
+      name: System
+      label: "SYS"
+      base_color: "#9C2927"
+    - id: _MBO
+      name: Mouse
+      label: "MBO"
+      base_color: "#8C3396"
+
+# This entry defines a mapping for special keys that work as layer activation
+# keys. This is usually used on QMK Userspace keymaps that have custom keys
+# defined, but could also work for a `#define` that translate to a layer
+# activation function (e.g., `#define TOGGLE_NAV  MO(2)`).
+#
+# Each special key is defined as a dictionary of "the key keycode" to an object
+# with two entries:
+#
+# target: The layer number or ID that will be activated when this key is
+#     activated.
+# type: A string that matches an activation layer function ("DF", "PDF", "MO",
+#     "LM", "LT", "OSL", "TG", "TO", or "TT") that is triggered whenever the
+#     special key is activated.
+layer_keycode:
+  CKC_BSPC:
+    target: 1
+    type: "MO"
+  USER20:
+    target: 1
+    type: "MO"
+  CKC_SPC:
+    target: _NUM
+    type: "MO"
+  USER21:
+    target: _NUM
+    type: "MO"
+  CKC_TAB:
+    target: 3
+    type: "MO"
+  USER22:
+    target: 3
+    type: "MO"
+  CKC_BKTAB:
+    target: _FUN
+    type: "MO"
+  USER23:
+    target: _FUN
+    type: "MO"
+
+# This entry is used to define overrides for the keycode labels used to
+# generate the keymap image.
+#
+# You can use a string or one of the special values to define the label.
+#
+# Special values:
+#   @@KEYCODE; - Reference to another keycode (will be resolved recursively).
+#   %%icon; - NerdFont icon reference (use the icon "Class" name from the
+#       NerdFont website).
+#
+# You can use one or more special value in the same label.
+#
+# Note: Do not forget the `;` character at the end of the special value.
+keycodes:
+    # Custom tap-dance keys (CKC_*)
+    CKC_BSPC: "%%nf-md-brain; @@KC_BACKSPACE;"
+    CKC_SPC: "@@KC_SPACE;"
+    CKC_TAB: "@@KC_TAB;"
+    CKC_BKTAB: "%%nf-md-keyboard_tab_reverse;"
+    CKC_SMSFT: "%%nf-md-brain; @@KC_LEFT_SHIFT;"
+
+    # Custom macro keys (MKC_*)
+    MKC_BKTAB: "@@CKC_BKTAB;"
+    MKC_APPWIN: "@@KC_LEFT_CTRL; @@KC_LEFT_GUI; @@KC_DOWN;"
+    MKC_DKTN: "@@KC_LEFT_CTRL; @@KC_LEFT_GUI; @@KC_RIGHT;"
+    MKC_DKTP: "@@KC_LEFT_CTRL; @@KC_LEFT_GUI; @@KC_LEFT;"
+    MKC_SHDKT: "%%nf-md-monitor;"
+    MKC_SHNOT: "%%nf-md-bell;"
+    MKC_SPFND: "%%nf-md-magnify; %%nf-md-file_search;"
+    ML_ALT: "@@KC_LEFT_ALT; OPT"
+
+    # Mouse button keys (MB_*)
+    MB_SFT: "@@KC_BTN1;"
+    MB_ALT: "@@KC_BTN2;"
+    MB_GUI: "@@KC_BTN3;"
+    MB_CTL: "@@KC_BTN4;"
+
+    # Keybard Alias
+    USER20: "@@CKC_BSPC;"
+    USER21: "@@CKC_SPC;"
+    USER22: "@@CKC_TAB;"
+    USER23: "@@CKC_BKTAB;"
+    USER24: "@@CKC_SMSFT;"
+    USER25: "@@MB_SFT;"
+    USER26: "@@MB_ALT;"
+    USER27: "@@MB_GUI;"
+    USER28: "@@MB_CTL;"
+
+    # Svalboard-specific keys (SV_*)
+    SV_LDPU: "@@SV_LEFT_DPI_INC;"
+    SV_LDPD: "@@SV_LEFT_DPI_DEC;"
+    SV_RDPU: "@@SV_RIGHT_DPI_INC;"
+    SV_RDPD: "@@SV_RIGHT_DPI_DEC;"
+    SV_SOUT: "@@SV_OUTPUT_STATUS;"
+
+reversed_alias:
+  "LSFT(KC_TAB)": "@@MKC_BKTAB;"
+
+# This entry defines helper values to tweak the image generation process.
+appearance:
+  # Defines a border style for the image. If this entry is not defined, the
+  # skim output assumes you do not want a border on the generated image.
+  border:
+    # The color border
+    color: '#000000'
+    # If this attribute is defined with a value greater than `0`, the border
+    # will be a rounded border withe the round radius set to this value.
+    # Do not define a unit in this attribute, the tool uses a pixel-independent
+    # unit for all its drawing, so it is already implying it.
+    radius: 20
+
+  # Overall colors for the generated image
+  colors:
+    # The color to use for the background image. If you want a transparent
+    # background, set this entry to `null`.
+    background: '#FFFFFF'
+    # This is a neutral color that is used on some of the thumb keys for
+    # aesthetics purpose.
+    neutral: '#70768B'
+    # Any text written in the image will have this color
+    text: '#1b1b1b'
+
+  # Defines named colors that can be used in this configuration to reference a
+  # color value. Each entry should be a string for the color name and a hex
+  # color that will be used whenever the color name is found where a color is
+  # expected. Color names are case insensitive, but usually represented in
+  # lower-case.
+  named_colors:
+    AZURE: '#276e76'
+    BLACK: '#4f4f4f'
+    BLUE: '#272776'
+    CHARTREUSE: '#4f7627'
+    CORAL: '#763c27'
+    CYAN: '#277676'
+    GOLD: '#766a27'
+    GOLDENROD: '#766027'
+    GREEN: '#277627'
+    MAGENTA: '#762776'
+    ORANGE: '#764f27'
+    PINK: '#76274e'
+    PURPLE: '#4d2776'
+    RED: '#762727'
+    SPRINGGREEN: '#27764f'
+    TEAL: '#277676'
+    TURQUOISE: '#3e605c'
+    WHITE: '#4f4f4f'
+    YELLOW: '#767627'
