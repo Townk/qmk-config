@@ -8,13 +8,14 @@ the Svalboard COLEMAK-DH configuration.
 | Layer | Name | Activation | Purpose |
 | ----- | ---- | ---------- | ------- |
 | 0 | BASE | Default | COLEMAK-DH letters with common symbols |
-| 1 | NAV | Hold left thumb inward (Backspace) | Vim-style navigation and window management |
-| 2 | NUM | Hold right thumb inward (Space) | Numeric keypad with operators |
-| 3 | SYM | Hold left thumb outward (Tab) | Programming symbols and brackets |
-| 4 | FUN | Hold right thumb outward (Back-tab) | Function keys F1-F20 |
-| 5 | MED | Hold left thumb knuckle outward | Multimedia keys |
-| 6 | SYS | Hold right thumb knuckle outward | System keys (keyboard firmware and OS) |
-| 7 | MBO | Auto on trackball movement | Mouse buttons with modifiers |
+| 1 | GAME | Right pinky on the System layer | AWSD-driven layout on the left hand |
+| 2 | NAV | Hold left thumb inward (Backspace) | Vim-style navigation and window management |
+| 3 | NUM | Hold right thumb inward (Space) | Numeric keypad with operators |
+| 4 | SYM | Hold left thumb outward (Tab) | Programming symbols and brackets |
+| 5 | FUN | Hold right thumb outward (Back-tab) | Function keys F1-F20 |
+| 6 | MED | Hold left thumb knuckle outward | Multimedia keys |
+| 7 | SYS | Hold right thumb knuckle outward | System keys (keyboard firmware and OS) |
+| 15 | MBO | Auto on trackball movement | Mouse buttons with modifiers |
 
 ## Svalboard Key Terminology
 
@@ -52,7 +53,7 @@ Thumb keys are named by the thumb part used:
 The primary typing layer with COLEMAK-DH letter arrangement and frequently used
 symbols.
 
-![](keymap-1.svg)
+![](keymap-layer-0.svg)
 
 ### Key Features
 
@@ -78,11 +79,27 @@ symbols.
 
 ---
 
-## Layer 1: NAV (Navigation)
+## Layer 1: GAME
+
+Gaming layout layer.
+
+![](keymap-layer-1.svg)
+
+### Key Features
+
+TDB
+
+### Activation
+
+Hold **Right Pinky Center** key on the **System Layer**.
+
+---
+
+## Layer 2: NAV (Navigation)
 
 Vim-style navigation and macOS window management on the right hand.
 
-![](keymap-2.svg)
+![](keymap-layer-2.svg)
 
 ### Key Features
 
@@ -97,11 +114,11 @@ Hold **Left Pad** (Backspace key) to activate.
 
 ---
 
-## Layer 2: NUM (Numbers)
+## Layer 3: NUM (Numbers)
 
 Numeric keypad layout with mathematical operators on the left hand.
 
-![](keymap-3.svg)
+![](keymap-layer-3.svg)
 
 ### Key Features
 
@@ -117,11 +134,11 @@ Hold **Right Pad** (Space key) to activate.
 
 ---
 
-## Layer 3: SYM (Symbols)
+## Layer 4: SYM (Symbols)
 
 Programming symbols and brackets on the right hand, organized for efficient chording.
 
-![](keymap-4.svg)
+![](keymap-layer-4.svg)
 
 ### Key Features
 
@@ -136,11 +153,11 @@ Hold **Left Nail** (Tab key) to activate.
 
 ---
 
-## Layer 4: FUN (Function Keys)
+## Layer 5: FUN (Function Keys)
 
 All function keys `F1`-`F20` on the left hand.
 
-![](keymap-5.svg)
+![](keymap-layer-5.svg)
 
 ### Key Features
 
@@ -155,11 +172,11 @@ Hold **Right Nail** (Back-tab key) to activate.
 
 ---
 
-## Layer 5: MED (Multimedia Keys)
+## Layer 6: MED (Multimedia Keys)
 
 Media playback and volume control on the right hand.
 
-![](keymap-6.svg)
+![](keymap-layer-6.svg)
 
 ### Key Features
 
@@ -174,12 +191,12 @@ Hold **Left Knuckle** to activate.
 
 ---
 
-## Layer 6: SYS (System Keys)
+## Layer 7: SYS (System Keys)
 
 System-level controls for display brightness, trackball DPI adjustment, and
 power management on the left hand.
 
-![](keymap-7.svg)
+![](keymap-layer-7.svg)
 
 ### Key Features
 
@@ -196,11 +213,11 @@ Hold **Right Knuckle** to activate.
 
 ---
 
-## Layer 7: MBO (Mouse Buttons)
+## Layer 15: MBO (Mouse Buttons)
 
 Auto-activated mouse layer with special mouse button keys and modifiers.
 
-![](keymap-8.svg)
+![](keymap-layer-15.svg)
 
 ### Key Features
 
