@@ -118,6 +118,21 @@ extern void mouse_mode(bool on);
                           CUSTOM_UNTAP(tap_key));            \
     )
 
+#define CUSTOM_MT(macro_key, tap_key, mod)                   \
+    SMTD_DANCE(macro_key,                                    \
+        NOTHING,                                             \
+        CUSTOM_TAP(tap_key),                                 \
+        SMTD_LIMIT(1,                                        \
+            register_mods(MOD_BIT(mod));                     \
+            send_keyboard_report(),                          \
+            SMTD_REGISTER_16(true, tap_key)),                \
+        SMTD_LIMIT(1,                                        \
+            unregister_mods(MOD_BIT(mod));                   \
+            send_keyboard_report(),                          \
+            SMTD_UNREGISTER_16(true, tap_key));              \
+            send_keyboard_report()                           \
+    )
+
 /**
  * @brief Creates a smart shift behavior with Caps Word integration.
  *
@@ -388,6 +403,7 @@ smtd_resolution on_smtd_action(uint16_t keycode, smtd_action action, uint8_t tap
         CUSTOM_LT(CKC_SPC, KC_SPC, _NUM);
         SHIFTED_LT(CKC_BSPC, KC_DEL, KC_BSPC, _NAV);
         SMART_SHIFT(CKC_SMSFT);
+        CUSTOM_MT(MB_ESC, KC_ESC, KC_LEFT_ALT);
     }
 
     return SMTD_RESOLUTION_UNHANDLED;

@@ -17,6 +17,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "keycodes.h"
+#include "modifiers.h"
 
 #include QMK_KEYBOARD_H
 #include "quantum_keycodes.h"
@@ -24,6 +25,8 @@
 #include "townk_keycodes.h"
 #include "townk_mouse.h"
 #include "townk_overrides.h"
+
+extern void mouse_mode(bool on);
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * DISCLAIMER                                                                *
@@ -244,6 +247,45 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
         ),
 
     /*
+     * Game Layer (➊ GAME)
+     *
+     *      L4           L3           L2           L1       ┊      R1           R2           R3           R4
+     *     ╭───╮        ╭───╮        ╭───╮        ╭───╮     ┊     ╭───╮        ╭───╮        ╭───╮        ╭───╮
+     *     │ ⌥ │        │ Q │        │ R │        │ E │     ┊     │   │        │   │        │   │        │   │
+     * ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮ ┊ ╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮╭───┼───┼───╮
+     * │0|9│ ⌃ │ Y ││ X │ A │ T ││ V │ W │ G ││ B │ D │ F │ ┊ │   │   │   ││   │   │   ││   │   │   ││   │   │   │
+     * ╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯ ┊ ╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯╰───┼───┼───╯
+     *     │ ⇧ │        │ Z │        │ S │        │ C │     ┊     │   │        │   │        │   │        │   │
+     *     ├───┤        ├───┤        ├───┤        ├───┤     ┊     ├───┤        ├───┤        ├───┤        ├───┤
+     *     │1|5│        │2|6│        │3|7│        │4|8│     ┊     │   │        │   │        │   │        │   │
+     *     ╰───╯        ╰───╯        ╰───╯        ╰───╯     ┊     ╰───╯        ╰───╯        ╰───╯        ╰───╯
+     *                                                      ┊
+     *                                    LT (Left Thumbs)  ┊  RT (Right Thumbs)
+     *                                   ╭─────╭────╮─────╮ ┊ ╭─────╭────╮─────╮
+     *                                   │  ␣  ││  ││  ⇥  │ ┊ │ 2  ││  ││ 1  │
+     *                                   ╰─────│╰──╯│─────╯ ┊ ╰─────│╰──╯│─────╯
+     *                                     │ ⎋ │    │─────╮ ┊ ╭─────│    │   │
+     *                                     ╰───│ ⇧  │  ⌘  │ ┊ │     │ 3 │───╯
+     *                                         ╰────╯─────╯ ┊ ╰─────╰────╯
+     */
+    [_GAME] = LAYOUT(
+        /*     Center    North     East      South     West      Double-South */
+        /*R1*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,
+        /*R2*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,
+        /*R3*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,
+        /*R4*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,
+
+        /*L1*/ KC_D,     KC_E,     KC_F,     KC_C,     KC_B,     KC_4,
+        /*L2*/ KC_W,     KC_G,     KC_S,     KC_S,     KC_V,     KC_3,
+        /*L3*/ KC_A,     KC_Q,     KC_T,     KC_Z,     KC_X,     KC_2,
+        /*L4*/ KC_LCTL,  KC_LALT,  KC_Y,     KC_LSFT,  KC_0,     KC_1,
+
+        /*     Down      Pad       Up        Nail      Knuckle   Double Down  */
+        /*RT*/ KC_BTN3,  KC_BTN1,  KC_ESC,   KC_BTN2,  XXXXXXX,  XXXXXXX,
+        /*LT*/ KC_LSFT,  KC_SPC,   KC_ESC,   KC_TAB,   KC_LGUI,  TO(_BASE)
+        ),
+
+    /*
      * Navigation Layer (➊ NAV)
      *
      *      L4           L3           L2           L1       ┊      R1           R2           R3           R4
@@ -460,20 +502,20 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
      *                                         ╰────╯─────╯ ┊ ╰─────╰────╯
      */
     [_SYS] = LAYOUT(
-        /*     Center    North     East      South     West      Double-South */
-        /*R1*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  KC_RIGHT_SHIFT,
-        /*R2*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  KC_RIGHT_GUI,
-        /*R3*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  KC_RIGHT_ALT,
-        /*R4*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  KC_RIGHT_CTRL,
+        /*     Center     North     East      South     West      Double-South */
+        /*R1*/ XXXXXXX,   XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  KC_RIGHT_SHIFT,
+        /*R2*/ XXXXXXX,   XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  KC_RIGHT_GUI,
+        /*R3*/ XXXXXXX,   XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  KC_RIGHT_ALT,
+        /*R4*/ TO(_GAME), XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  KC_RIGHT_CTRL,
 
-        /*L1*/ XXXXXXX,  KC_BRIU,  XXXXXXX,  KC_BRID,  XXXXXXX,  KC_LEFT_SHIFT,
-        /*L2*/ XXXXXXX,  SV_RDPU,  XXXXXXX,  SV_RDPD,  XXXXXXX,  KC_LEFT_GUI,
-        /*L3*/ XXXXXXX,  SV_LDPU,  XXXXXXX,  SV_LDPD,  XXXXXXX,  KC_LEFT_ALT,
-        /*L4*/ KC_PWR,   XXXXXXX,  XXXXXXX,  KC_SLEP,  XXXXXXX,  KC_LEFT_CTRL,
+        /*L1*/ XXXXXXX,   KC_BRIU,  XXXXXXX,  KC_BRID,  XXXXXXX,  KC_LEFT_SHIFT,
+        /*L2*/ XXXXXXX,   SV_RDPU,  XXXXXXX,  SV_RDPD,  XXXXXXX,  KC_LEFT_GUI,
+        /*L3*/ XXXXXXX,   SV_LDPU,  XXXXXXX,  SV_LDPD,  XXXXXXX,  KC_LEFT_ALT,
+        /*L4*/ KC_PWR,    XXXXXXX,  XXXXXXX,  KC_SLEP,  XXXXXXX,  KC_LEFT_CTRL,
 
-        /*     Down      Pad       Up        Nail      Knuckle   Double Down  */
-        /*RT*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,
-        /*LT*/ SV_SOUT,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX
+        /*     Down       Pad       Up        Nail      Knuckle   Double Down  */
+        /*RT*/ XXXXXXX,   XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,
+        /*LT*/ SV_SOUT,   XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX
         ),
 
     /*
@@ -511,8 +553,8 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
         /*L4*/ _______,  _______,  _______,  _______,    _______,  MB_CTL,
 
         /*     Down      Pad       Up        Nail        Knuckle   Double Down   */
-        /*RT*/ _______,  CKC_SPC,  _______,  CKC_BKTAB,  _______,  SV_SNIPER_5,
-        /*LT*/ KC_LSFT,  CKC_BSPC, ML_ALT,   CKC_TAB,    _______,  SV_SNIPER_3
+        /*RT*/ _______,  CKC_SPC,  MB_ESC,   CKC_BKTAB,  _______,  SV_SNIPER_5,
+        /*LT*/ KC_LSFT,  CKC_BSPC, ML_CMD,   CKC_TAB,    _______,  SV_SNIPER_3
         )
 };
 
@@ -662,6 +704,9 @@ void keyboard_post_init_user(void) {
  * @see process_special_mouse_keys() in townk_mouse.c for special key handling.
  */
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    if (keycode == KC_ESC) {
+        mouse_mode(false);
+    }
     if (!process_special_mouse_keys(keycode, record)) {
         return false;
     }

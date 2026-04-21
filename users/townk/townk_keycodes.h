@@ -46,6 +46,7 @@
 #define SV_SOUT    SV_OUTPUT_STATUS  ///< Short version of Svalboard Status Output
 
 #define ML_ALT     KC_LALT           ///< Helper key to generate a proper key label on the keymap images
+#define ML_CMD     KC_LGUI           ///< Helper key to generate a proper key label on the keymap images
 
 enum custom_keycodes {
     /** Backspace on tap, delete on Shift+Tap, navigation layer on hold. */
@@ -58,6 +59,7 @@ enum custom_keycodes {
     MB_ALT,    ///< Mouse button 2 (lift-click) on tap, Alt on hold.
     MB_GUI,    ///< Mouse button 3 (middle-click) on tap, Gui on hold.
     MB_CTL,    ///< Mouse button 4 on tap, Ctrl on hold.
+    MB_ESC,    ///< Esc on tap, Alt on hold.
 };
 
 #endif // QMK_USERSPACE_TOWNK_KEYMAPS_H

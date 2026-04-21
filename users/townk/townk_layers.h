@@ -30,6 +30,7 @@ extern const rgblight_segment_t* const rgb_layers[];
 
 enum layer_names {
     _BASE,                 ///< The default keyboard layer.
+    _GAME,                 ///< Game layer (buttons on left, mouse on right)
     _NAV,                  ///< Navigation layer. Has keys used to move around the OS.
     _NUM,                  ///< Numbers layer. Has all digits and some math operations.
     _SYM,                  ///< Symbols layer. Has all symbols organized ergonomically.

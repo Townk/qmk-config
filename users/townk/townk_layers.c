@@ -48,19 +48,21 @@
 #include "rgblight.h"
 #include "color.h"
 
+extern void mouse_mode(bool on);
+
 #define LAYER_COLOR(name, color) rgblight_segment_t const (name)[] = RGBLIGHT_LAYER_SEGMENTS({0, 2, color})
-LAYER_COLOR(layer0_colors, HSV_GREEN);  // Base layer
-LAYER_COLOR(layer1_colors, HSV_ORANGE); // Navigation
-LAYER_COLOR(layer2_colors, HSV_AZURE);  // Numbers
-LAYER_COLOR(layer3_colors, HSV_CORAL);  // Symbols
-LAYER_COLOR(layer4_colors, HSV_PURPLE); // Fn Keys
-LAYER_COLOR(layer5_colors, HSV_YELLOW); // Multi-Media
-LAYER_COLOR(layer6_colors, HSV_PINK);
-LAYER_COLOR(layer7_colors, HSV_CHARTREUSE);
-LAYER_COLOR(layer8_colors, HSV_GOLD);
-LAYER_COLOR(layer9_colors, HSV_TEAL);
-LAYER_COLOR(layer10_colors, HSV_SPRINGGREEN);
-LAYER_COLOR(layer11_colors, HSV_TURQUOISE);
+LAYER_COLOR(layer0_colors, HSV_GREEN);     // Base layer
+LAYER_COLOR(layer1_colors, HSV_TURQUOISE); // Game layer
+LAYER_COLOR(layer2_colors, HSV_ORANGE);    // Navigation
+LAYER_COLOR(layer3_colors, HSV_AZURE);     // Numbers
+LAYER_COLOR(layer4_colors, HSV_CORAL);     // Symbols
+LAYER_COLOR(layer5_colors, HSV_PURPLE);    // Fn Keys
+LAYER_COLOR(layer6_colors, HSV_YELLOW);    // Multi-Media
+LAYER_COLOR(layer7_colors, HSV_PINK);
+LAYER_COLOR(layer8_colors, HSV_CHARTREUSE);
+LAYER_COLOR(layer9_colors, HSV_GOLD);
+LAYER_COLOR(layer10_colors, HSV_TEAL);
+LAYER_COLOR(layer11_colors, HSV_SPRINGGREEN);
 LAYER_COLOR(layer12_colors, HSV_GOLDENROD);
 LAYER_COLOR(layer13_colors, HSV_BLUE);
 LAYER_COLOR(layer14_colors, HSV_RED);     // System
@@ -133,6 +135,15 @@ layer_state_t layer_state_set_user(layer_state_t state) {
   for (int i = 0; i < RGBLIGHT_LAYERS; ++i) {
       rgblight_set_layer_state(i, layer_state_cmp(state, i));
   }
+
+  // Disable auto-mouse when on the game layer
+  if (layer_state_cmp(state, _GAME)) {
+      global_saved_values.auto_mouse = false;
+      mouse_mode(false);
+  } else {
+      global_saved_values.auto_mouse = true;
+  }
+
   return state;
 }
 
