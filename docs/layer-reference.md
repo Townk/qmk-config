@@ -52,7 +52,7 @@ Thumb keys are named by the thumb part used:
 The primary typing layer with COLEMAK-DH letter arrangement and frequently used
 symbols.
 
-![](keymap-1.svg)
+![](keymap-layer-0.svg)
 
 ### Key Features
 
@@ -82,7 +82,7 @@ symbols.
 
 Vim-style navigation and macOS window management on the right hand.
 
-![](keymap-2.svg)
+![](keymap-layer-2.svg)
 
 ### Key Features
 
@@ -101,7 +101,7 @@ Hold **Left Pad** (Backspace key) to activate.
 
 Numeric keypad layout with mathematical operators on the left hand.
 
-![](keymap-3.svg)
+![](keymap-layer-3.svg)
 
 ### Key Features
 
@@ -121,7 +121,7 @@ Hold **Right Pad** (Space key) to activate.
 
 Programming symbols and brackets on the right hand, organized for efficient chording.
 
-![](keymap-4.svg)
+![](keymap-layer-4.svg)
 
 ### Key Features
 
@@ -140,7 +140,7 @@ Hold **Left Nail** (Tab key) to activate.
 
 All function keys `F1`-`F20` on the left hand.
 
-![](keymap-5.svg)
+![](keymap-layer-5.svg)
 
 ### Key Features
 
@@ -159,7 +159,7 @@ Hold **Right Nail** (Back-tab key) to activate.
 
 Media playback and volume control on the right hand.
 
-![](keymap-6.svg)
+![](keymap-layer-6.svg)
 
 ### Key Features
 
@@ -179,7 +179,7 @@ Hold **Left Knuckle** to activate.
 System-level controls for display brightness, trackball DPI adjustment, and
 power management on the left hand.
 
-![](keymap-7.svg)
+![](keymap-layer-7.svg)
 
 ### Key Features
 
@@ -200,7 +200,7 @@ Hold **Right Knuckle** to activate.
 
 Auto-activated mouse layer with special mouse button keys and modifiers.
 
-![](keymap-8.svg)
+![](keymap-layer-8.svg)
 
 ### Key Features
 
