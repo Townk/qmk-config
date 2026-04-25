@@ -430,10 +430,10 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
         /*R3*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  KC_RIGHT_ALT,
         /*R4*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  KC_RIGHT_CTRL,
 
-        /*L1*/ KC_F8,    KC_F14,   KC_F9,    KC_F1,    KC_F20,   KC_LEFT_SHIFT,
-        /*L2*/ KC_F7,    KC_F13,   KC_F19,   KC_F2,    KC_F18,   KC_LEFT_GUI,
-        /*L3*/ KC_F6,    KC_F12,   KC_F17,   KC_F3,    KC_F16,   KC_LEFT_ALT,
-        /*L4*/ KC_F5,    KC_F11,   KC_F15,   KC_F4,    KC_F10,   KC_LEFT_CTRL,
+        /*L1*/ KC_F8,    KC_F14,   KC_F9,    KC_F4,    KC_F20,   KC_LEFT_SHIFT,
+        /*L2*/ KC_F7,    KC_F13,   KC_F19,   KC_F3,    KC_F18,   KC_LEFT_GUI,
+        /*L3*/ KC_F6,    KC_F12,   KC_F17,   KC_F2,    KC_F16,   KC_LEFT_ALT,
+        /*L4*/ KC_F5,    KC_F11,   KC_F15,   KC_F1,    KC_F10,   KC_LEFT_CTRL,
 
         /*     Down      Pad       Up        Nail      Knuckle   Double Down  */
         /*RT*/ XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,  XXXXXXX,

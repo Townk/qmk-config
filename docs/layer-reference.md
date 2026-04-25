@@ -196,7 +196,7 @@ Hold **Left Knuckle** to activate.
 System-level controls for display brightness, trackball DPI adjustment, and
 power management on the left hand.
 
-![](keymap-layer-7.svg)
+![](keymap-layer-14.svg)
 
 ### Key Features
 
