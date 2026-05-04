@@ -9,8 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `QWT` layer (1) — QWERTY letter arrangement with the same modifier,
+  symbol, and thumb cluster layout as `BASE`, for situations that assume
+  the default layout
+- `GAM1` layer (2) — gaming-oriented base layer with WASD movement on the
+  left hand and mouse buttons / scroll on the right thumb cluster
+- `GAM2` layer (3) — sub-layer of `GAM1` providing numbers `1`-`9`, `0`,
+  and `F1`-`F9` for hotbar / ability slots without disturbing WASD
+- Per-layer custom HSV color constants (`BASE_GREEN`, `QWT_TEAL`,
+  `GAME_1_BLUE`, `GAME_2_BLUE`, `NAV_ORANGE`, `NUM_BLUE`, `FUN_PURPLE`,
+  `MED_YELLOW`, `SYS_RED`, `MBO_MAGENTA`) replacing the stock `HSV_*`
+  presets for finer indicator-color control
+- `docs/keymap-symbols.svg` legend documenting the glyphs used across the
+  keymap diagrams, embedded in the layer reference
 - Comprehensive documentation structure
-  - `docs/layer-reference.md` - Complete visual reference for all 8 keyboard layers
+  - `docs/layer-reference.md` - Complete visual reference for all keyboard layers
   - `docs/advanced-features.md` - Deep dive into special features and configuration
 - Semantic versioning system with release-based patch tracking
 - VERSION file for major.minor version management (patch auto-increments from
@@ -19,14 +32,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Renumbered layers to make room for the new typing/gaming layers:
+  `NAV` 1→4, `NUM` 2→5, `SYM` 3→6, `FUN` 4→7, `MED` 5→8 (`SYS` stays at
+  14 and `MBO` at 15)
+- Auto-mouse layer is now disabled whenever `GAM1` *or* `GAM2` is active
+  (previously only the single `_GAME` layer)
+- Layer reference, README layer overview, and advanced-features RGB table
+  updated for the new layer set
 - GitHub Actions workflow now uses semantic versions for releases (v1.0.1,
   v1.0.2, etc.)
 - Release tags changed from timestamp-based to version-based
 - Firmware filenames now include version numbers for better tracking
 - README streamlined to reference detailed documentation files
 
+### Removed
+
+- Game-layer key overrides for `Shift + 0/1/2/3/4` → `9/5/6/7/8`. `GAM2`
+  now exposes the digits directly, so the workaround is no longer needed.
+
 ### Fixed
 
+- `ML_CMD` now resolves to `KC_LCMD` instead of `KC_LGUI`, so generated
+  keymap images label the Command key correctly
+- Documentation: corrected the Backspace/Delete shift behavior on
+  `CKC_BSPC` (plain tap = Backspace, Shift+tap = Delete — was reversed)
+- Documentation: per-`MB_*` mouse button mapping now reflects the actual
+  buttons sent by `townk_mouse.c` (BTN1 / BTN2 / BTN3 / BTN4 instead of
+  the generic "Button 1")
+- Documentation: Caps Word activation — Double-Down keys are
+  `QK_CAPS_WORD_TOGGLE` (single press toggles); the double-tap path is on
+  the Smart Shift key, not on DD
+- Documentation: layout name standardized to `COLEMAK-DH` throughout the
+  README and Technical Details
 - Version tracking no longer requires git commits (uses GitHub API to count releases).
 
 ## [1.0.0] - 2025-01-03
