@@ -24,19 +24,19 @@
  *
  * **Layer Color Mapping:**
  * - Layer 0 (_BASE): Green
- * - Layer 1 (_NAV): Orange
- * - Layer 2 (_NUM): Azure
- * - Layer 3 (_SYM): Coral
- * - Layer 4 (_FUN): Purple
- * - Layer 5 (_MED): Yellow
- * - Layer 6: Pink
- * - Layer 7: Red
- * - Layer 8: Magenta
- * - Layer 9: Teal
- * - Layer 10: Spring Green
- * - Layer 11: Turquoise
- * - Layer 12: Green
- * - Layer 13: Azure
+ * - Layer 1 (_QWERTY): Blue
+ * - Layer 2 (_GAM1): Turquoise
+ * - Layer 3 (_NAV): Orange
+ * - Layer 4 (_NUM): Azure
+ * - Layer 5 (_SYM): Coral
+ * - Layer 6 (_FUN): Purple
+ * - Layer 7 (_MED): Yellow
+ * - Layer 8: Pink
+ * - Layer 9: Charteruse
+ * - Layer 10: Gold
+ * - Layer 11: Teal
+ * - Layer 12: Spring Green
+ * - Layer 13: Goldenrod
  * - Layer 14 (_SYS): Red
  * - Layer 15 (_MBO): Magenta
  *
@@ -48,25 +48,37 @@
 #include "rgblight.h"
 #include "color.h"
 
+// HSV version of the layer colors
+#define BASE_GREEN          70, 220, 180
+#define QWT_TEAL           105, 240, 150
+#define GAME_1_BLUE        153, 255, 180
+#define GAME_2_BLUE        137, 255, 180
+#define NAV_ORANGE          20, 255, 180
+#define NUM_BLUE           143, 255, 180
+#define FUN_PURPLE         183, 255, 180
+#define MED_YELLOW          43, 255, 180
+#define SYS_RED              0, 255, 180
+#define MBO_MAGENTA        208, 255, 180
+
 extern void mouse_mode(bool on);
 
 #define LAYER_COLOR(name, color) rgblight_segment_t const (name)[] = RGBLIGHT_LAYER_SEGMENTS({0, 2, color})
-LAYER_COLOR(layer0_colors, HSV_GREEN);     // Base layer
-LAYER_COLOR(layer1_colors, HSV_TURQUOISE); // Game layer
-LAYER_COLOR(layer2_colors, HSV_ORANGE);    // Navigation
-LAYER_COLOR(layer3_colors, HSV_AZURE);     // Numbers
-LAYER_COLOR(layer4_colors, HSV_CORAL);     // Symbols
-LAYER_COLOR(layer5_colors, HSV_PURPLE);    // Fn Keys
-LAYER_COLOR(layer6_colors, HSV_YELLOW);    // Multi-Media
-LAYER_COLOR(layer7_colors, HSV_PINK);
-LAYER_COLOR(layer8_colors, HSV_CHARTREUSE);
-LAYER_COLOR(layer9_colors, HSV_GOLD);
-LAYER_COLOR(layer10_colors, HSV_TEAL);
-LAYER_COLOR(layer11_colors, HSV_SPRINGGREEN);
-LAYER_COLOR(layer12_colors, HSV_GOLDENROD);
-LAYER_COLOR(layer13_colors, HSV_BLUE);
-LAYER_COLOR(layer14_colors, HSV_RED);     // System
-LAYER_COLOR(layer15_colors, HSV_MAGENTA); // Mouse layer
+LAYER_COLOR(layer0_colors, BASE_GREEN);    // Base layer   (#347156)
+LAYER_COLOR(layer1_colors, QWT_TEAL);      // Base QWERTY  (#2F898B)
+LAYER_COLOR(layer2_colors, GAME_1_BLUE);   // Game layer 1 (#355A93)
+LAYER_COLOR(layer3_colors, GAME_2_BLUE);   // Game layer 2 (#0C7595)
+LAYER_COLOR(layer4_colors, NAV_ORANGE);    // Navigation   (#D96702)
+LAYER_COLOR(layer5_colors, NUM_BLUE);      // Numbers      (#41687E)
+LAYER_COLOR(layer6_colors, HSV_CORAL);     // Symbols      (#FF7C4D)
+LAYER_COLOR(layer7_colors, FUN_PURPLE);    // Fn Keys      (#605181)
+LAYER_COLOR(layer8_colors, MED_YELLOW);    // Multi-Media  (#767709)
+LAYER_COLOR(layer9_colors, HSV_PINK);
+LAYER_COLOR(layer10_colors, HSV_CHARTREUSE);
+LAYER_COLOR(layer11_colors, HSV_GOLD);
+LAYER_COLOR(layer12_colors, HSV_TEAL);
+LAYER_COLOR(layer13_colors, HSV_SPRINGGREEN);
+LAYER_COLOR(layer14_colors, SYS_RED);     // System      (#9C2927)
+LAYER_COLOR(layer15_colors, MBO_MAGENTA); // Mouse layer (#8C3396)
 #undef LAYER_COLOR
 
 /**
@@ -137,7 +149,7 @@ layer_state_t layer_state_set_user(layer_state_t state) {
   }
 
   // Disable auto-mouse when on the game layer
-  if (layer_state_cmp(state, _GAME)) {
+  if (layer_state_cmp(state, _GAM1) || layer_state_cmp(state, _GAM2)) {
       global_saved_values.auto_mouse = false;
       mouse_mode(false);
   } else {
