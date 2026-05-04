@@ -46,7 +46,7 @@
 #define SV_SOUT    SV_OUTPUT_STATUS  ///< Short version of Svalboard Status Output
 
 #define ML_ALT     KC_LALT           ///< Helper key to generate a proper key label on the keymap images
-#define ML_CMD     KC_LGUI           ///< Helper key to generate a proper key label on the keymap images
+#define ML_CMD     KC_LCMD           ///< Helper key to generate a proper key label on the keymap images
 
 enum custom_keycodes {
     /** Backspace on tap, delete on Shift+Tap, navigation layer on hold. */

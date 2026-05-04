@@ -1,15 +1,15 @@
-# Svalboard QMK Configuration - COLEMAK Layout
+# Miryoku-inspired Svalboard Layout
 
 [![Build Vial-QMK firmware](https://github.com/Townk/qmk-config/actions/workflows/build_binaries.yaml/badge.svg)](https://github.com/Townk/qmk-config/actions/workflows/build_binaries.yaml)
 
 A highly optimized [QMK](https://qmk.fm) firmware configuration for the
 [Svalboard](https://svalboard.com) split ergonomic keyboard featuring dual
-trackballs, COLEMAK layout, and Miryoku-inspired layer design.
+trackballs, COLEMAK-DH layout, and Miryoku-inspired layer design.
 
 ## Features
 
-- **COLEMAK Layout**: Modern, ergonomic letter arrangement optimized for
-  finger rolls
+- **COLEMAK-DH Layout**: Modern, ergonomic letter arrangement optimized for
+  finger rolls (with a built-in QWERTY layer for fallback)
 - **Miryoku-Inspired Layers**: Single-hand layer activation with all functional
   keys on the opposite hand
 - **Dual Trackball Support**: Independent sensors with configurable DPI
@@ -20,15 +20,16 @@ trackballs, COLEMAK layout, and Miryoku-inspired layer design.
   intelligent context switching
 - **RGB Layer Indicators**: Visual feedback for active layers
 - **Vial/Keybard Support**: Runtime customization without reflashing
-- **8 Thoughtfully Designed Layers**: `BASE`, `NAV`, `NUM`, `SYM`, `FUN`,
-  `MED`, `SYS`, and auto-activated mouse layer
+- **11 Thoughtfully Designed Layers**: `BASE` (COLEMAK-DH) and `QWT`
+  (QWERTY) typing layouts, `GAM1`/`GAM2` for gaming, `NAV`, `NUM`, `SYM`,
+  `FUN`, `MED`, `SYS`, and an auto-activated mouse layer
 
 ![](docs/keymap-overview.svg)
 
 ## Documentation
 
-- **[Layer Reference](docs/layer-reference.md)** - Complete visual guide to all
-  8 keyboard layers
+- **[Layer Reference](docs/layer-reference.md)** - Complete visual guide to
+  every keyboard layer
 - **[Advanced Features](docs/advanced-features.md)** - Home row modifiers,
   special mouse keys, trackball configuration, and more
 - **[Changelog](CHANGELOG.md)** - Version history and release notes
@@ -36,15 +37,18 @@ trackballs, COLEMAK layout, and Miryoku-inspired layer design.
 ## Layer Overview
 
 | Layer | Name | Activation | Purpose |
-| ----- | ---- | ---------- | ------- |
-| 0 | BASE | Default | COLEMAK letters with common symbols |
-| 1 | NAV | Hold left thumb inward (Backspace) | Vim-style navigation and window management |
-| 2 | NUM | Hold right thumb inward (Space) | Numeric keypad with operators |
-| 3 | SYM | Hold left thumb outward (Tab) | Programming symbols and brackets |
-| 4 | FUN | Hold right thumb outward (Back-tab) | Function keys F1-F20 |
-| 5 | MED | Hold left thumb knuckle outward | Multimedia keys |
-| 6 | SYS | Hold right thumb knuckle outward | System keys (keyboard firmware and OS) |
-| 7 | MBO | Auto on trackball movement | Mouse buttons with modifiers |
+| ----- | :----: | ---------- | ------- |
+| 0 | ![BASE](https://img.shields.io/badge/BASE-347156) | Default | COLEMAK-DH letters with common symbols |
+| 1 | ![QWT](https://img.shields.io/badge/QWT-2F898B) | Right ring finger on the System layer | QWERTY letters with common symbols |
+| 2 | ![GAM1](https://img.shields.io/badge/GAM1-355A93) | Right middle finger on the System layer | WASD-driven layout on the left hand |
+| 3 | ![GAM2](https://img.shields.io/badge/GAM2-0C7595) | Hold left thumb down while in the GAM1 layer | Number keys for the WASD-driven layout on the left hand |
+| 4 | ![NAV](https://img.shields.io/badge/NAV-D96702) | Hold left thumb inward (Backspace) | Vim-style navigation and window management |
+| 5 | ![NUM](https://img.shields.io/badge/NUM-41687E) | Hold right thumb inward (Space) | Numeric keypad with operators |
+| 6 | ![SYM](https://img.shields.io/badge/SYM-FF7C4D) | Hold left thumb outward (Tab) | Programming symbols and brackets |
+| 7 | ![FUN](https://img.shields.io/badge/FUN-605181) | Hold right thumb outward (Back-tab) | Function keys F1-F20 |
+| 8 | ![MED](https://img.shields.io/badge/MED-767709) | Hold left thumb knuckle outward | Multimedia keys |
+| 14 | ![SYS](https://img.shields.io/badge/SYS-9C2927) | Hold right thumb knuckle outward | System keys (keyboard firmware and OS) |
+| 15 | ![MBO](https://img.shields.io/badge/MBO-8C3396) | Auto on trackball movement | Mouse buttons with modifiers |
 
 For detailed layer diagrams with all key positions, see the [Layer Reference](docs/layer-reference.md).
 
@@ -86,10 +90,10 @@ Build firmware for both keyboard halves:
 qmk userspace-compile
 ```
 
-This generates versioned firmware files:
+This produces the QMK default filenames in the project root:
 
-- `svalboard-colemak-dh-townk-{VERSION}.left.uf2` - Left half firmware
-- `svalboard-colemak-dh-townk-{VERSION}.right.uf2` - Right half firmware
+- `svalboard_trackball_pmw3389_left_townk.uf2` - Left half firmware
+- `svalboard_trackball_pmw3389_right_townk.uf2` - Right half firmware
 
 Or build a specific half:
 
@@ -97,6 +101,11 @@ Or build a specific half:
 qmk compile -kb svalboard/trackball/pmw3389/left -km townk
 qmk compile -kb svalboard/trackball/pmw3389/right -km townk
 ```
+
+> [!NOTE]
+> The CI workflow renames these to `svalboard-colemak-dh-townk-{VERSION}.left.uf2`
+> and `.right.uf2` before publishing release artifacts. Local builds keep the
+> QMK default naming.
 
 ### Flashing Firmware
 
@@ -214,9 +223,9 @@ keyboard modifiers, or held mouse buttons depending on context.
 
 ### Caps Word
 
-Double-tap the Double-Down thumb key to enable Caps Word - type in CAPS without
-holding shift. Automatically deactivates on space, punctuation, or layer
-change.
+Press either Double-Down thumb key (or double-tap the Smart Shift key) to
+enable Caps Word — type in CAPS without holding shift. Automatically
+deactivates on space, punctuation, or any layer-key tap.
 
 [Learn more →](docs/advanced-features.md#caps-word)
 
@@ -266,7 +275,7 @@ docker run -v $(pwd):/workspace ghcr.io/qmk/qmk_cli
 - **Base Firmware**: [vial-qmk](https://github.com/svalboard/vial-qmk)
   (Svalboard fork)
 - **Keyboard**: Svalboard with PMW3389 dual-trackballs
-- **Layout**: COLEMAK (46-key split)
+- **Layout**: COLEMAK-DH (split, dual-trackball)
 - **Features**: Vial, RGB Lighting, Pointing Device, Mouse Keys
 
 ## Resources

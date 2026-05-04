@@ -78,8 +78,8 @@ These thumb keys use SM_TD for reliable tap/hold distinction:
 **Left Thumb:**
 
 - **Pad**: Backspace/Delete (tap) / Navigation layer (hold)
-  - Without Shift: Delete on tap
-  - With Shift: Backspace on tap
+  - Without Shift: Backspace on tap
+  - With Shift: Delete on tap (shift is suppressed for the Delete output)
 - **Nail**: Tab (tap) / Symbol layer (hold)
 - **Down**: Smart Shift (tap) / Shift modifier (hold)
 
@@ -142,12 +142,15 @@ dual-function behavior for mouse operations with modifiers.
 ### Location
 
 These keys are located on the **left Double-South keys** in the **MBO (Mouse
-Buttons) layer**:
+Buttons) layer**, with each key paired to a specific mouse button and
+modifier:
 
-- L1 DS: `MB_SFT` (Shift + Mouse Button)
-- L2 DS: `MB_GUI` (Command + Mouse Button)
-- L3 DS: `MB_ALT` (Option + Mouse Button)
-- L4 DS: `MB_CTL` (Control + Mouse Button)
+| Key | Position | Mouse Button | Modifier (on hold) |
+| --- | -------- | ------------ | ------------------ |
+| `MB_SFT` | L1 DS | Button 1 (left click) | Shift (⇧) |
+| `MB_GUI` | L2 DS | Button 3 (middle click) | Command (⌘) |
+| `MB_ALT` | L3 DS | Button 2 (right click) | Option (⌥) |
+| `MB_CTL` | L4 DS | Button 4 | Control (⌃) |
 
 ### Behavior Modes
 
@@ -155,10 +158,12 @@ These special keys have **three different behaviors** depending on context:
 
 #### 1. Tap Alone → Mouse Click
 
-When you tap the key without any other interaction, it acts as a **mouse button
-click** (Button 1).
+When you tap the key without any other interaction, it sends the mouse
+button paired with that key (left/right/middle click for `MB_SFT`/`MB_ALT`/
+`MB_GUI`, and Button 4 for `MB_CTL` — see the table above).
 
-**Use case**: Quick clicking without holding modifiers.
+**Use case**: Quick clicking with the most ergonomic key for the click type
+you need, without holding any modifier.
 
 #### 2. Hold + Press Other Key → Keyboard Modifier
 
@@ -337,7 +342,13 @@ automatically deactivating when you're done with a word.
 
 ### Activation
 
-**Double-tap** either **Double-Down (DD) thumb key** to toggle Caps Word on/off.
+There are two ways to activate Caps Word:
+
+- **Press** either **Double-Down (DD) thumb key** — both are mapped to
+  `QK_CAPS_WORD_TOGGLE`, which toggles Caps Word on/off in a single press.
+- **Double-tap** the left thumb **Down** key (Smart Shift / `CKC_SMSFT`).
+  Tapping it once gives a one-shot Shift; tapping it twice (or tapping it
+  while Shift is already held) calls `caps_word_on()` instead.
 
 ### Behavior
 
@@ -373,49 +384,65 @@ layer, providing instant visual feedback.
 
 ### Layer Colors
 
-| Layer | Color | HSV Constant |
-| ----- | ----- | ------------ |
-| BASE | Green | HSV_GREEN |
-| NAV | Orange | HSV_ORANGE |
-| NUM | Azure | HSV_AZURE |
-| SYM | Coral | HSV_CORAL |
-| FUN | Purple | HSV_PURPLE |
-| MED | Yellow | HSV_YELLOW |
-| SYS | Red | HSV_RED |
-| MBO | Magenta | HSV_MAGENTA |
+| Layer | Name | Color | HSV Constant | Hex |
+| ----- | ---- | :---: | ------------ | --- |
+| 0 | BASE | ![Green](https://img.shields.io/badge/Green-347156?style=flat) | `BASE_GREEN` | `#347156` |
+| 1 | QWT | ![Teal](https://img.shields.io/badge/Teal-2F898B?style=flat) | `QWT_TEAL` | `#2F898B` |
+| 2 | GAM1 | ![Blue](https://img.shields.io/badge/Blue-355A93?style=flat) | `GAME_1_BLUE` | `#355A93` |
+| 3 | GAM2 | ![Deep blue](https://img.shields.io/badge/Deep%20blue-0C7595?style=flat) | `GAME_2_BLUE` | `#0C7595` |
+| 4 | NAV | ![Orange](https://img.shields.io/badge/Orange-D96702?style=flat) | `NAV_ORANGE` | `#D96702` |
+| 5 | NUM | ![Blue](https://img.shields.io/badge/Blue-41687E?style=flat) | `NUM_BLUE` | `#41687E` |
+| 6 | SYM | ![Coral](https://img.shields.io/badge/Coral-FF7C4D?style=flat) | `HSV_CORAL` | `#FF7C4D` |
+| 7 | FUN | ![Purple](https://img.shields.io/badge/Purple-605181?style=flat) | `FUN_PURPLE` | `#605181` |
+| 8 | MED | ![Yellow](https://img.shields.io/badge/Yellow-767709?style=flat) | `MED_YELLOW` | `#767709` |
+| 14 | SYS | ![Red](https://img.shields.io/badge/Red-9C2927?style=flat) | `SYS_RED` | `#9C2927` |
+| 15 | MBO | ![Magenta](https://img.shields.io/badge/Magenta-8C3396?style=flat) | `MBO_MAGENTA` | `#8C3396` |
 
 ### Customizing Colors
 
-Edit the layer color definitions in `users/townk/townk_layers.c`:
+Layer colors are defined as custom HSV triples at the top of
+`users/townk/townk_layers.c` and assigned to RGB lighting segments via
+`LAYER_COLOR`:
 
 ```c
+// HSV triples for each layer color
+#define BASE_GREEN   70, 220, 180
+#define QWT_TEAL    105, 240, 150
+#define GAME_1_BLUE 153, 255, 180
+// ... etc.
+
 #define LAYER_COLOR(name, color) rgblight_segment_t const (name)[] = RGBLIGHT_LAYER_SEGMENTS({0, 2, color})
-LAYER_COLOR(layer0_colors, HSV_GREEN);  // Base layer
-LAYER_COLOR(layer1_colors, HSV_ORANGE); // Navigation
-LAYER_COLOR(layer2_colors, HSV_AZURE);  // Numbers
-LAYER_COLOR(layer3_colors, HSV_CORAL);  // Symbols
-LAYER_COLOR(layer4_colors, HSV_PURPLE); // Fn Keys
-LAYER_COLOR(layer5_colors, HSV_YELLOW); // Multimedia
-LAYER_COLOR(layer14_colors, HSV_RED);     // System
-LAYER_COLOR(layer15_colors, HSV_MAGENTA); // Mouse layer
+LAYER_COLOR(layer0_colors, BASE_GREEN);   // Base layer
+LAYER_COLOR(layer1_colors, QWT_TEAL);     // Base QWERTY
+LAYER_COLOR(layer2_colors, GAME_1_BLUE);  // Game layer 1
+// ... etc.
 ```
 
-Available QMK color constants:
+To change a color, either edit the existing HSV triple or substitute one of
+QMK's built-in constants (`HSV_RED`, `HSV_ORANGE`, `HSV_YELLOW`, `HSV_GREEN`,
+`HSV_CYAN`, `HSV_BLUE`, `HSV_PURPLE`, `HSV_MAGENTA`, `HSV_PINK`, `HSV_CORAL`,
+`HSV_WHITE`, etc.).
 
-- `HSV_RED`, `HSV_ORANGE`, `HSV_YELLOW`
-- `HSV_GREEN`, `HSV_CYAN`, `HSV_BLUE`
-- `HSV_PURPLE`, `HSV_MAGENTA`, `HSV_PINK`
-- `HSV_WHITE`
-
-Or define custom RGB values: `{hue, saturation, value}`
+> [!NOTE]
+> The `rgb_layers` array uses **all 16 RGB lighting slots** (the QMK maximum)
+> even though several layer indices in between are unused. Slots 9-13 are
+> assigned placeholder colors (`HSV_PINK`, `HSV_CHARTREUSE`, `HSV_GOLD`,
+> `HSV_TEAL`, `HSV_SPRINGGREEN`) so that `SYS` (14) and `MBO` (15) can keep
+> their fixed slot positions.
 
 ### How It Works
 
-The `layer_state_set_user()` callback in `townk_layers.c` detects layer changes
-and updates the RGB lighting via `rgblight_sethsv_noeep()`.
+`townk_layers.c` registers the `rgb_layers` array via
+`setup_rgb_light_layer()` during keyboard initialization, so QMK's built-in
+RGB lighting layer system handles the indicator on its own.
 
-RGB changes are **not saved to EEPROM**, so the lighting resets to your default
-on restart.
+The user-level `layer_state_set_user()` callback iterates every RGB layer
+slot and toggles each one to match the current layer state, so the highest
+active layer's color always wins. The same callback also disables the
+auto-mouse layer while `GAM1` or `GAM2` is active.
+
+Layer colors are firmware-defined and reset to the values above on every
+boot — they are not user-tunable at runtime.
 
 ---
 
