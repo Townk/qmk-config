@@ -273,6 +273,48 @@ class TownkMouseTest(unittest.TestCase):
         LIB.T_key(MB_GUI, False)
         self.assertNoMouseButton("releasing after a scroll must not click")
 
+    def test_two_modifiers_then_click(self) -> None:
+        """Cmd+Option+click: two keys held as modifiers, a third clicks."""
+        LIB.T_key(MB_GUI, True)
+        LIB.T_key(MB_ALT, True)   # resolves MB_GUI -> Cmd
+        LIB.T_key(MB_SFT, True)   # resolves MB_ALT -> Option
+        self.assertEqual(
+            self.mods(), MOD_LGUI | MOD_LALT, "both modifiers must be held"
+        )
+
+        LIB.T_key(MB_SFT, False)
+        self.assertEqual(
+            self.history(),
+            [
+                Event(KC_BTN1, pressed=True, mods=MOD_LGUI | MOD_LALT),
+                Event(KC_BTN1, pressed=False, mods=MOD_LGUI | MOD_LALT),
+            ],
+            "the click must carry both modifiers",
+        )
+
+        LIB.T_key(MB_ALT, False)
+        LIB.T_key(MB_GUI, False)
+
+    def test_two_modifiers_then_drag(self) -> None:
+        """Cmd+Option+drag: the same, with motion instead of a tap."""
+        LIB.T_key(MB_GUI, True)
+        LIB.T_key(MB_ALT, True)
+        LIB.T_key(MB_SFT, True)
+
+        LIB.T_pointing(5, 5, 0, 0)
+        self.assertEqual(
+            self.mods(), MOD_LGUI | MOD_LALT,
+            "motion must not strip the modifiers off the other keys",
+        )
+        self.assertEqual(
+            self.history(),
+            [Event(KC_BTN1, pressed=True, mods=MOD_LGUI | MOD_LALT)],
+        )
+
+        LIB.T_key(MB_SFT, False)
+        LIB.T_key(MB_ALT, False)
+        LIB.T_key(MB_GUI, False)
+
     # -- a gesture already in flight --------------------------------------
 
     def test_key_pressed_during_a_drag_becomes_a_modifier(self) -> None:
