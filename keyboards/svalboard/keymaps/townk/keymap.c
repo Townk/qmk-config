@@ -630,13 +630,23 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
         /*L4*/ _______,  _______,  _______,  _______,    _______,  MB_CTL,
 
         /*     Down      Pad       Up        Nail        Knuckle   Double Down   */
-        /* Pad is transparent rather than an explicit CKC_SPC. This layer now
-         * stays active while the left thumb pad holds _NAV open, and _MBO
-         * outranks _NAV — so spelling CKC_SPC out here shadowed _NAV's Tab.
-         * Falling through gives CKC_SPC over _BASE exactly as before, and Tab
-         * over _NAV. Esc and back-tab stay explicit: _NAV leaves those
-         * positions empty, so transparency would lose them for no gain. */
-        /*RT*/ _______,  _______,  KC_ESC,   CKC_BKTAB,  _______,  SV_SNIPER_5,
+        /* The SM_TD keys here (CKC_SPC, CKC_BKTAB, and CKC_BSPC/CKC_TAB below)
+         * MUST be spelled out, never left transparent — they are load-bearing,
+         * not redundant copies of _BASE.
+         *
+         * smtd_current_keycode() reads keymap_key_to_keycode(get_highest_layer(
+         * layer_state), key): the highest active layer ONLY, with no
+         * transparency resolution. Whenever mouse mode is on, that layer is
+         * this one — so a _______ here hands SM_TD KC_TRANSPARENT instead of
+         * the real keycode, and it can no longer match the key to its own
+         * state. Symptoms: the first press is swallowed, and the layer-tap
+         * hold needs a deliberate pause before it engages.
+         *
+         * Consequence, accepted: while the left thumb pad holds _NAV open with
+         * mouse mode on, _MBO outranks _NAV and this Pad is Space rather than
+         * _NAV's Tab. Transparency is the only thing that would defer to _NAV,
+         * and it is unusable here. */
+        /*RT*/ _______,  CKC_SPC,  KC_ESC,   CKC_BKTAB,  _______,  SV_SNIPER_5,
         /*LT*/ KC_LSFT,  CKC_BSPC, ML_CMD,   CKC_TAB,    _______,  SV_SNIPER_3
         )
 };

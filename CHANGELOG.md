@@ -67,11 +67,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- `_MBO`'s right-thumb Pad is transparent instead of an explicit `CKC_SPC`.
-  That layer now stays active while the left thumb pad holds `_NAV` open, and
-  `_MBO` outranks `_NAV`, so spelling the keycode out shadowed `_NAV`'s Tab.
-  Falling through gives `CKC_SPC` over `_BASE` exactly as before, and Tab over
-  `_NAV`
 - `MB_*` keys are now **button-first**: a press commits to nothing and emits
   nothing, and the modifier role must be earned by a competing signal (another
   keypress, or a scroll) before release. Previously the modifier was claimed on

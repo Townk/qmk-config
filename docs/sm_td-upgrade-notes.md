@@ -72,6 +72,33 @@ sufficient.
   `layer_state_is` behave additively as on the board. If the upgrade changes how
   SM_TD reads layer state, check that model still holds.
 
+## SM_TD keys must be spelled out on every layer that can be on top
+
+`smtd_current_keycode()` is:
+
+```c
+uint8_t current_layer = get_highest_layer(layer_state);
+return keymap_key_to_keycode(current_layer, *key);
+```
+
+The **highest active layer only**, with no transparency resolution. A `_______`
+at an SM_TD key's position on a layer that can be topmost hands SM_TD
+`KC_TRANSPARENT` instead of the real keycode, and it can no longer match the key
+to its own state.
+
+The symptoms do not look like a keymap problem: the first press of the key is
+swallowed, and a layer-tap hold needs a deliberate pause before it engages, as
+if the tapping term had changed. Learned by doing it — `_MBO`'s `CKC_SPC` was
+"cleaned up" to `_______` on the grounds that it merely duplicated `_BASE`, and
+Space broke on the mouse layer.
+
+So the SM_TD keycodes repeated on `_MBO` (`CKC_SPC`, `CKC_BKTAB`, `CKC_BSPC`,
+`CKC_TAB`) are load-bearing, not redundant. Leave them explicit.
+
+If the upgrade changes `smtd_current_keycode()` to resolve transparency, this
+constraint lifts and those entries could be reconsidered — that would also fix
+`_MBO` shadowing `_NAV`'s Tab while the left thumb pad is held.
+
 ## Known unknown worth resolving early
 
 The `MB_*` engine would benefit from being expressed as SM_TD keys rather than
