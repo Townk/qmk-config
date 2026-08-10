@@ -29,26 +29,10 @@
  * SVALBOARD: that path would pull in keymap_support.h and QK_KB_20. */
 #define SAFE_RANGE 0x7E00
 
-/* ------------------------------------------------------------------------ *
- * QMK keycode constants (quantum/keycodes.h on-device)
- * ------------------------------------------------------------------------ */
-
-enum test_keycodes {
-    KC_NO   = 0x0000,
-    KC_BTN1 = 0x00D1,
-    KC_BTN2 = 0x00D2,
-    KC_BTN3 = 0x00D3,
-    KC_BTN4 = 0x00D4,
-    KC_BTN5 = 0x00D5,
-    KC_BTN6 = 0x00D6,
-    KC_BTN7 = 0x00D7,
-    KC_BTN8 = 0x00D8,
-    /* MOD_BIT() masks these to 0x07, giving 1/2/4/8 as on-device. */
-    KC_LCTL = 0x00E0,
-    KC_LSFT = 0x00E1,
-    KC_LALT = 0x00E2,
-    KC_LGUI = 0x00E3,
-};
+/* QMK keycodes and modifier masks, with real values -- townk_smtd.c switches on
+ * keycode ranges that are only well-formed if the ordering matches. */
+#include "keycodes.h"
+#include "modifiers.h"
 
 /* ------------------------------------------------------------------------ *
  * QMK API the sm_td shim does not stub
@@ -62,8 +46,21 @@ void tap_code(uint16_t keycode) { tap_code16(keycode); }
 
 /* townk_mouse.c consults all three modifier sources when deciding whether
  * EXTERNAL mods were held at press time. Only get_mods() is stubbed upstream. */
-uint8_t get_oneshot_mods(void) { return 0; }
 uint8_t get_weak_mods(void) { return 0; }
+
+/* One-shot modifiers, which SMART_SHIFT sets on a tap. Modelled for real
+ * rather than stubbed to zero: the Backspace/Delete shift inversion reads
+ * get_oneshot_mods(), so a fake would hide exactly the behaviour under test. */
+static uint8_t oneshot_mods = 0;
+void    set_oneshot_mods(uint8_t mods) { oneshot_mods = mods; }
+uint8_t get_oneshot_mods(void) { return oneshot_mods; }
+void    clear_oneshot_mods(void) { oneshot_mods = 0; }
+
+/* Caps Word. is_caps_word_on() is stubbed by sm_td's shim (always false); these
+ * two only need to record that they were called. */
+static int caps_word_on_calls = 0;
+void caps_word_on(void) { caps_word_on_calls++; }
+void caps_word_off(void) {}
 
 /* Supplied by the Svalboard keyboard code on-device. Recorded here so tests can
  * assert on mouse-mode transitions, which are otherwise invisible. */
@@ -87,13 +84,24 @@ typedef struct {
 
 report_mouse_t pointing_device_task_user(report_mouse_t report) { return report; }
 
-/* Layer test, matching the shim's model of layer_state. NOTE the fidelity gap:
- * the shim stores layer_state as a plain layer NUMBER (layer_move assigns it),
- * whereas QMK stores a bitmask and can have several layers on at once. On the
- * real board _NAV and _MBO are both active during a click; here only the last
- * one moved to is. Adequate for asserting the click-modifier rule, but not a
- * place to test layer stacking. */
-bool layer_state_is(uint8_t layer) { return layer_state == layer; }
+/* Layers. sm_td's shim models layer_state as a plain layer NUMBER, which cannot
+ * represent the several-layers-at-once state QMK really has -- and that state is
+ * the whole point here, since _NAV and _MBO must be able to coexist. Track a
+ * proper bitmask alongside it: the shim keeps its number (sm_td reads it via
+ * get_highest_layer), and layer_on/off/is work additively as on the board. */
+static uint32_t layer_bits = 0;
+
+void layer_on(uint8_t layer) {
+    layer_bits |= (uint32_t)1 << layer;
+    layer_state = layer;
+}
+
+void layer_off(uint8_t layer) {
+    layer_bits &= ~((uint32_t)1 << layer);
+    layer_state = 0;
+}
+
+bool layer_state_is(uint8_t layer) { return (layer_bits & ((uint32_t)1 << layer)) != 0; }
 
 /* ------------------------------------------------------------------------ *
  * SM_TD hooks every fixture must define
@@ -139,20 +147,10 @@ uint16_t const keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [0] = {{MB_GUI, CKC_SPC, KC_BTN1, KC_NO}},
 };
 
-/* Mirrors the contract of the real on_smtd_action() in users/townk/townk_smtd.c:
- * an SM_TD key being touched must commit any pending MB_* key to its modifier
- * role. Only the contract is reproduced here -- compiling the real townk_smtd.c
- * would additionally need caps_word.h, action_util.h, keycodes.h, modifiers.h
- * and townk_layers.h stubbed. */
-smtd_resolution on_smtd_action(uint16_t keycode, smtd_action action, uint8_t tap_count) {
-    (void)tap_count;
-
-    if (action == SMTD_ACTION_TOUCH) {
-        confirm_pending_modifiers(keycode);
-    }
-
-    return SMTD_RESOLUTION_UNHANDLED;
-}
+/* The REAL SM_TD action handler -- the shift-inverted Backspace/Delete, the
+ * layer-taps and Smart Shift, not a paraphrase. This is what lets a test say
+ * anything trustworthy about Shift+Backspace. */
+#include "../users/townk/townk_smtd.c"
 
 /* ------------------------------------------------------------------------ *
  * Test driver, called over ctypes
@@ -164,11 +162,19 @@ void T_key(uint16_t keycode, bool pressed) {
     process_special_mouse_keys(keycode, &record);
 }
 
-/* Simulate an SM_TD-managed keypress: it reaches on_smtd_action() and never
- * process_record_user(). This is the path that produced the phantom click. */
-void T_smtd_touch(uint16_t keycode) {
-    on_smtd_action(keycode, SMTD_ACTION_TOUCH, 0);
-}
+/* Drive the SM_TD action handler directly. SM_TD-managed keys reach
+ * on_smtd_action() and never process_record_user() -- that asymmetry is what
+ * produced the phantom click, and it is also why nothing here could be tested
+ * until the real townk_smtd.c was compiled in.
+ *
+ * TOUCH fires on press; TAP or HOLD when SM_TD resolves the key; RELEASE on
+ * let-go. tap_count is how many taps preceded this one. */
+void T_smtd_touch(uint16_t keycode) { on_smtd_action(keycode, SMTD_ACTION_TOUCH, 0); }
+void T_smtd_tap(uint16_t keycode, uint8_t tap_count) { on_smtd_action(keycode, SMTD_ACTION_TAP, tap_count); }
+void T_smtd_hold(uint16_t keycode, uint8_t tap_count) { on_smtd_action(keycode, SMTD_ACTION_HOLD, tap_count); }
+void T_smtd_release(uint16_t keycode, uint8_t tap_count) { on_smtd_action(keycode, SMTD_ACTION_RELEASE, tap_count); }
+
+int T_caps_word_calls(void) { return caps_word_on_calls; }
 
 /* Trackball motion. Pointer movement (x/y) is what converts a held key to a
  * held mouse button; h/v are scroll. */
@@ -192,7 +198,11 @@ void T_reset(void) {
     mods_reset();
     mouse_mode_calls = 0;
     mouse_mode_state = false;
+    caps_word_on_calls = 0;
+    oneshot_mods = 0;
     set_mods(0);
+    layer_bits = 0;
+    layer_move(_BASE);
 }
 
 /* Reference-counted modifier ownership, driven directly. Going through gestures
@@ -201,7 +211,17 @@ void T_reset(void) {
  * modifiers to clicks. */
 /* Hold / release the left thumb pad, whose SM_TD hold is the only thing that
  * activates _NAV -- which is exactly how townk_mouse.c knows the key is down. */
-void T_hold_backspace(bool held) { layer_move(held ? _NAV : _BASE); }
+void T_hold_backspace(bool held) {
+    if (held) { layer_on(_NAV); } else { layer_off(_NAV); }
+}
+
+/* Mouse mode raises _MBO additively, which is what must survive the pad's
+ * hold for a click to be reachable at all. */
+void T_mouse_layer(bool on) {
+    if (on) { layer_on(_MBO); } else { layer_off(_MBO); }
+}
+
+bool T_layer_is(uint8_t layer) { return layer_state_is(layer); }
 
 void T_mods_acquire(uint8_t mods) { mods_acquire(mods); }
 void T_mods_release(uint8_t mods) { mods_release(mods); }
@@ -214,6 +234,11 @@ uint16_t T_kc_mb_alt(void) { return MB_ALT; }
 uint16_t T_kc_mb_gui(void) { return MB_GUI; }
 uint16_t T_kc_mb_ctl(void) { return MB_CTL; }
 uint16_t T_kc_ckc_spc(void) { return CKC_SPC; }
+uint16_t T_kc_ckc_bspc(void) { return CKC_BSPC; }
+uint8_t  T_layer_nav(void) { return _NAV; }
+uint8_t  T_layer_mbo(void) { return _MBO; }
+uint16_t T_kc_del(void) { return KC_DEL; }
+uint16_t T_kc_bspc(void) { return KC_BSPC; }
 uint16_t T_kc_btn1(void) { return KC_BTN1; }
 uint16_t T_kc_btn2(void) { return KC_BTN2; }
 uint16_t T_kc_btn3(void) { return KC_BTN3; }

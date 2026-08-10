@@ -23,7 +23,11 @@
 #    include "keymap_support.h"
 #    define LAST_LAYER MH_AUTO_BUTTONS_LAYER
 #else
-#    define LAST_LAYER 6
+/* Off-device (host tests) there is no MH_AUTO_BUTTONS_LAYER, so pin the value
+ * the Svalboard actually uses. This was 6, which made _SYS and _MBO collide
+ * with _NUM and _SYM and gave host builds layer numbers that did not match the
+ * board. */
+#    define LAST_LAYER 15
 #endif
 
 extern const rgblight_segment_t* const rgb_layers[];

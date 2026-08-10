@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Host tests now compile the **real** `townk_smtd.c` — the shift-inverted
+  Backspace/Delete, the layer-taps and Smart Shift — instead of a fixture that
+  only mirrored its contract. Needed stubs for `caps_word.h`, `action_util.h`,
+  `keycodes.h`, `modifiers.h` and `rgblight.h`, plus a proper additive layer
+  model (the sm_td shim tracks a single layer number, which cannot represent
+  `_NAV` and `_MBO` being on together — exactly the state under test)
 - The left thumb pad (`CKC_BSPC`) now means **Option when you click**, on top
   of Backspace on tap and the navigation layer on hold — so Option+click and
   Option+drag are reachable without leaving the mouse layer. The modifier is
@@ -94,6 +100,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Holding the left thumb pad removed the mouse layer, making Option+click
+  unreachable — the feature added above could never fire. `mouse_mode(false)`
+  turned `_MBO` off and `LAYER_PUSH` is `layer_move()`, which *replaces* the
+  layer state rather than adding to it; either alone left no `MB_*` key on any
+  active layer while the pad was held. The pad now uses `layer_on()`/
+  `layer_off()` and no longer exits mouse mode when its layer goes up. Tapping
+  it for Backspace still does, which is where "I am typing now" is actually
+  evidenced
 - Modifiers pressed mid-drag had no effect — starting a drag and then holding
   Option to turn a Finder move into a copy never registered Option, so the copy
   cursor never appeared and the file was moved. A key pressed while a mouse

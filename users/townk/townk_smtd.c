@@ -264,6 +264,18 @@ extern void mouse_mode(bool on);
     }
 
 /**
+ * @note Uses layer_on()/layer_off() rather than SM_TD's LAYER_PUSH/
+ *       LAYER_RESTORE, and deliberately does NOT call mouse_mode(false) when
+ *       the layer goes up. Both of those removed the auto-mouse layer:
+ *       mouse_mode(false) turns it off directly, and LAYER_PUSH is
+ *       layer_move(), which REPLACES the layer state instead of adding to it.
+ *       Either one alone meant that while this key was held there were no MB_*
+ *       keys on any active layer -- so the key could not contribute Option to a
+ *       click, because no click was reachable to contribute to. Adding the
+ *       layer keeps the mouse layer underneath, where MB_* stays clickable.
+ *       Tapping for Backspace still exits mouse mode, which is where "I am
+ *       typing now" is actually evidenced.
+ *
  * @brief Creates a shift-aware Layer-Tap behavior with inverted shift logic.
  *
  * This macro combines layer-tap functionality with shift-inverted key behavior:
@@ -298,11 +310,10 @@ extern void mouse_mode(bool on);
                SHIFT_TAP(normal_key, shifted_key);                   \
                mouse_mode(false),                                    \
                SMTD_LIMIT(1,                                         \
-                          mouse_mode(false);                         \
-                          LAYER_PUSH(layer),                         \
+                          layer_on(layer),                           \
                           SHIFT_REGISTER(normal_key, shifted_key)),  \
                SMTD_LIMIT(1,                                         \
-                          LAYER_RESTORE(),                           \
+                          layer_off(layer),                          \
                           SHIFT_UNREGISTER(normal_key, shifted_key); \
                           mouse_mode(false)))
 

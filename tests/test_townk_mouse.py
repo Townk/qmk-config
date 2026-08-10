@@ -39,6 +39,7 @@ MOD_LCTL = 1 << 0
 MOD_LSFT = 1 << 1
 MOD_LALT = 1 << 2
 MOD_LGUI = 1 << 3
+MOD_MASK_SHIFT = (1 << 1) | (1 << 5)  # MOD_BIT(KC_LSFT) | MOD_BIT(KC_RSFT)
 
 
 class Event(NamedTuple):
@@ -58,6 +59,7 @@ def _build() -> ctypes.CDLL:
     cmd = [
         "clang", "-shared", "-o", lib_path, "-fPIC", src,
         "-I" + SUBMODULE,
+        "-I" + os.path.join(SUBMODULE, "sm_td"),  # townk_smtd.c includes "sm_td.h"
         "-I" + os.path.join(REPO, "tests", "stubs"),
         "-DSMTD_UNIT_TEST",
         "-std=c11",
@@ -77,10 +79,18 @@ def _build() -> ctypes.CDLL:
 
     lib.T_key.argtypes = [ctypes.c_uint16, ctypes.c_bool]
     lib.T_smtd_touch.argtypes = [ctypes.c_uint16]
+    lib.T_smtd_tap.argtypes = [ctypes.c_uint16, ctypes.c_uint8]
+    lib.T_smtd_hold.argtypes = [ctypes.c_uint16, ctypes.c_uint8]
+    lib.T_smtd_release.argtypes = [ctypes.c_uint16, ctypes.c_uint8]
     lib.T_pointing.argtypes = [ctypes.c_int8] * 4
     lib.T_set_external_mods.argtypes = [ctypes.c_uint8]
     lib.T_reset.argtypes = []
     lib.T_hold_backspace.argtypes = [ctypes.c_bool]
+    lib.T_mouse_layer.argtypes = [ctypes.c_bool]
+    lib.T_layer_is.argtypes = [ctypes.c_uint8]
+    lib.T_layer_is.restype = ctypes.c_bool
+    lib.T_layer_nav.restype = ctypes.c_uint8
+    lib.T_layer_mbo.restype = ctypes.c_uint8
     lib.T_mods_acquire.argtypes = [ctypes.c_uint8]
     lib.T_mods_release.argtypes = [ctypes.c_uint8]
     lib.T_mods_claims.argtypes = [ctypes.c_uint8]
@@ -94,8 +104,8 @@ def _build() -> ctypes.CDLL:
     lib.get_mods.restype = ctypes.c_uint8
 
     for name in ("T_kc_mb_sft", "T_kc_mb_alt", "T_kc_mb_gui", "T_kc_mb_ctl",
-                 "T_kc_ckc_spc", "T_kc_btn1", "T_kc_btn2", "T_kc_btn3",
-                 "T_kc_plain"):
+                 "T_kc_ckc_spc", "T_kc_ckc_bspc", "T_kc_btn1", "T_kc_btn2",
+                 "T_kc_btn3", "T_kc_del", "T_kc_bspc", "T_kc_plain"):
         getattr(lib, name).restype = ctypes.c_uint16
 
     return lib
@@ -107,12 +117,18 @@ MB_GUI: int = int(LIB.T_kc_mb_gui())
 MB_SFT: int = int(LIB.T_kc_mb_sft())
 MB_ALT: int = int(LIB.T_kc_mb_alt())
 CKC_SPC: int = int(LIB.T_kc_ckc_spc())
+CKC_BSPC: int = int(LIB.T_kc_ckc_bspc())
+KC_DEL: int = int(LIB.T_kc_del())
+KC_BSPC: int = int(LIB.T_kc_bspc())
+MOD_RSFT = 1 << 5  # MOD_BIT(KC_RSFT); R1 double-south is a plain KC_RIGHT_SHIFT
 KC_BTN1: int = int(LIB.T_kc_btn1())
 KC_BTN2: int = int(LIB.T_kc_btn2())
 KC_BTN3: int = int(LIB.T_kc_btn3())
 KC_PLAIN: int = int(LIB.T_kc_plain())
 
 MOUSE_BUTTONS = (KC_BTN1, KC_BTN2, KC_BTN3)
+LAYER_NAV: int = int(LIB.T_layer_nav())
+LAYER_MBO: int = int(LIB.T_layer_mbo())
 
 
 class TownkMouseTest(unittest.TestCase):
@@ -319,6 +335,106 @@ class TownkMouseTest(unittest.TestCase):
         LIB.T_key(MB_SFT, False)
         LIB.T_key(MB_ALT, False)
         LIB.T_key(MB_GUI, False)
+
+    # -- the shift-inverted Backspace / Delete thumb pad -------------------
+
+    def test_plain_tap_sends_backspace(self) -> None:
+        """No shift: the pad is Backspace."""
+        LIB.T_smtd_touch(CKC_BSPC)
+        LIB.T_smtd_tap(CKC_BSPC, 0)
+
+        self.assertEqual(
+            [e.keycode for e in self.history()], [KC_BSPC, KC_BSPC]
+        )
+
+    def test_shift_tap_sends_forward_delete(self) -> None:
+        """Shift+tap is forward Delete, and the Shift must NOT reach it.
+
+        The user's Shift is R1 double-south, a plain KC_RIGHT_SHIFT. The
+        inversion has to strip it before tapping KC_DEL, or the host receives
+        Shift+Delete instead of Delete -- which most apps ignore, looking
+        exactly like "forward delete does nothing".
+        """
+        LIB.T_set_external_mods(MOD_RSFT)
+
+        LIB.T_smtd_touch(CKC_BSPC)
+        LIB.T_smtd_tap(CKC_BSPC, 0)
+
+        emitted = [e for e in self.history() if e.keycode in (KC_DEL, KC_BSPC)]
+        self.assertTrue(emitted, "something must be emitted")
+        self.assertEqual(
+            emitted[0].keycode, KC_DEL, "Shift+tap must send forward Delete"
+        )
+        self.assertEqual(
+            emitted[0].mods & MOD_MASK_SHIFT, 0,
+            f"Delete must go out WITHOUT shift, got {emitted[0]}",
+        )
+
+        LIB.T_set_external_mods(0)
+
+    def test_holding_the_pad_keeps_the_mouse_layer(self) -> None:
+        """Holding the pad must not take the mouse layer away.
+
+        It used to. `mouse_mode(false)` turned _MBO off, and LAYER_PUSH is
+        `layer_move()`, which REPLACES the layer state rather than adding to
+        it -- either alone left no MB_* key on any active layer while the pad
+        was held. So the pad could not contribute Option to a click, because
+        no click was reachable to contribute to. The feature was unreachable
+        by construction, and no test at the engine seam could see it: the
+        engine is driven directly here, bypassing keymap and layer lookup.
+        """
+        LIB.T_mouse_layer(True)  # trackball activity raised _MBO
+        self.assertTrue(LIB.T_layer_is(LAYER_MBO))
+
+        LIB.T_smtd_touch(CKC_BSPC)
+        LIB.T_smtd_hold(CKC_BSPC, 0)
+
+        self.assertTrue(LIB.T_layer_is(LAYER_NAV), "the pad must raise _NAV")
+        self.assertTrue(
+            LIB.T_layer_is(LAYER_MBO),
+            "and the mouse layer must survive, or there is nothing to click",
+        )
+
+        LIB.T_smtd_release(CKC_BSPC, 0)
+        self.assertFalse(LIB.T_layer_is(LAYER_NAV), "_NAV goes away on release")
+
+        LIB.T_mouse_layer(False)
+
+    def test_holding_the_pad_gives_nav_not_delete(self) -> None:
+        """A press long enough to resolve as HOLD is the layer, not a Delete.
+
+        Documents the trap rather than a defect: SM_TD picks TAP or HOLD by
+        timing, and the hold branch is `mouse_mode(false); LAYER_PUSH(_NAV)`.
+        So a *deliberate*, slightly slow Shift+Backspace -- a two-handed
+        gesture, so easily slower than a reflexive Backspace -- silently
+        becomes "activate the navigation layer" and emits nothing at all.
+        """
+        LIB.T_set_external_mods(MOD_RSFT)
+
+        LIB.T_smtd_touch(CKC_BSPC)
+        LIB.T_smtd_hold(CKC_BSPC, 0)
+
+        self.assertNotIn(
+            KC_DEL, [e.keycode for e in self.history()],
+            "the hold branch emits no Delete -- it raises the layer instead",
+        )
+
+        LIB.T_smtd_release(CKC_BSPC, 0)
+        LIB.T_set_external_mods(0)
+
+    def test_shift_is_restored_after_the_delete(self) -> None:
+        """The user is still holding Shift; it must come back afterwards."""
+        LIB.T_set_external_mods(MOD_RSFT)
+
+        LIB.T_smtd_touch(CKC_BSPC)
+        LIB.T_smtd_tap(CKC_BSPC, 0)
+
+        self.assertEqual(
+            self.mods() & MOD_MASK_SHIFT, MOD_RSFT,
+            "shift must be re-registered after the inverted tap",
+        )
+
+        LIB.T_set_external_mods(0)
 
     # -- modifiers contributed to a click by a held key -------------------
 
