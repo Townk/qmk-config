@@ -80,6 +80,10 @@ def _build() -> ctypes.CDLL:
     lib.T_pointing.argtypes = [ctypes.c_int8] * 4
     lib.T_set_external_mods.argtypes = [ctypes.c_uint8]
     lib.T_reset.argtypes = []
+    lib.T_mods_acquire.argtypes = [ctypes.c_uint8]
+    lib.T_mods_release.argtypes = [ctypes.c_uint8]
+    lib.T_mods_claims.argtypes = [ctypes.c_uint8]
+    lib.T_mods_claims.restype = ctypes.c_uint8
     lib.T_mouse_mode_calls.restype = ctypes.c_int
     lib.T_mouse_mode_state.restype = ctypes.c_bool
     lib.TEST_reset.argtypes = []
@@ -314,6 +318,53 @@ class TownkMouseTest(unittest.TestCase):
         LIB.T_key(MB_SFT, False)
         LIB.T_key(MB_ALT, False)
         LIB.T_key(MB_GUI, False)
+
+    # -- reference-counted modifier ownership -----------------------------
+
+    def test_two_claims_need_two_releases(self) -> None:
+        """A modifier stays held until the LAST owner gives it up.
+
+        Once a held key can contribute a modifier to a click, two things can
+        want the same bit at once -- MB_ALT acting as Alt while CKC_BSPC also
+        contributes Alt. Whoever finishes first must not switch it off under
+        the other, which a bare unregister_mods() would do silently.
+        """
+        LIB.T_mods_acquire(MOD_LALT)
+        self.assertEqual(self.mods(), MOD_LALT)
+
+        LIB.T_mods_acquire(MOD_LALT)
+        self.assertEqual(int(LIB.T_mods_claims(MOD_LALT)), 2)
+
+        LIB.T_mods_release(MOD_LALT)
+        self.assertEqual(
+            self.mods(), MOD_LALT, "still wanted by the second owner"
+        )
+
+        LIB.T_mods_release(MOD_LALT)
+        self.assertEqual(self.mods(), 0, "last owner gone, modifier released")
+
+    def test_claims_are_tracked_per_modifier(self) -> None:
+        """Claims on one modifier must not affect another."""
+        LIB.T_mods_acquire(MOD_LALT | MOD_LGUI)
+        LIB.T_mods_acquire(MOD_LALT)
+
+        LIB.T_mods_release(MOD_LALT)
+        self.assertEqual(
+            self.mods(), MOD_LALT | MOD_LGUI, "Cmd untouched, Alt still claimed"
+        )
+
+        LIB.T_mods_release(MOD_LALT | MOD_LGUI)
+        self.assertEqual(self.mods(), 0)
+
+    def test_releasing_an_unclaimed_modifier_is_ignored(self) -> None:
+        """A stray release must not steal a modifier somebody else holds."""
+        LIB.T_mods_acquire(MOD_LGUI)
+
+        LIB.T_mods_release(MOD_LALT)  # never claimed
+        self.assertEqual(self.mods(), MOD_LGUI, "Cmd must survive")
+
+        LIB.T_mods_release(MOD_LGUI)
+        self.assertEqual(self.mods(), 0)
 
     # -- a gesture already in flight --------------------------------------
 

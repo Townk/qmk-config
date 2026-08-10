@@ -75,6 +75,7 @@
  */
 
 #include "townk_keycodes.h"
+#include "townk_mods.h"
 #include "townk_mouse.h"
 
 /**
@@ -215,7 +216,7 @@ void confirm_pending_modifiers(uint16_t keycode) {
             // process_record_user() returns true afterwards, and
             // on_smtd_action() runs this ahead of its own switch -- so the
             // modifier is down in time to apply to that key.
-            register_mods(get_modifier(i));
+            mods_acquire(get_modifier(i));
 
             // Defer mouse_mode(false) until release, only for non-mouse
             // keys
@@ -275,7 +276,7 @@ bool process_special_mouse_keys(uint16_t keycode, keyrecord_t *record) {
                 // time makes the key a button, a button held at press time
                 // makes it a modifier.
                 state->used_as_modifier = true;
-                register_mods(get_modifier(mb_index));
+                mods_acquire(get_modifier(mb_index));
             }
             // Otherwise commit to NOTHING yet. On this layer the key is a
             // button by default and a modifier only by exception, so the
@@ -293,7 +294,7 @@ bool process_special_mouse_keys(uint16_t keycode, keyrecord_t *record) {
                 unregister_code(get_mouse_button(mb_index));
             } else if (state->used_as_modifier) {
                 // Was used as a modifier (another key was pressed, or a scroll)
-                unregister_mods(get_modifier(mb_index));
+                mods_release(get_modifier(mb_index));
             } else {
                 // Nothing ever competed for this press, so it keeps its
                 // default role: a click. No modifier to release first --
@@ -374,7 +375,7 @@ report_mouse_t pointing_device_task_kb(report_mouse_t report) {
                 // through it -- this is what keeps Cmd+scroll as zoom. It
                 // also stops the release from firing a stray click, which
                 // is the same defect as a modifier-less phantom press.
-                register_mods(get_modifier(i));
+                mods_acquire(get_modifier(i));
                 state->used_as_modifier = true;
             }
         }

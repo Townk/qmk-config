@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Reference-counted modifier ownership (`townk_mods.c`). `mods_acquire()` /
+  `mods_release()` register a modifier on its first claim and unregister it
+  only when the last claim goes away, so two owners wanting the same modifier
+  can no longer switch it off underneath each other. `MB_*` keys now claim
+  their modifiers through it. No behaviour change on its own — each `MB_*` key
+  owns a distinct modifier — but it is the groundwork for keys that contribute
+  a modifier to mouse clicks
 - Host test suite for the `MB_*` dual-role mouse/modifier engine
   (`python3 tests/run_tests.py`). Compiles the real `townk_mouse.c` into a
   shared library via sm_td's own test shim and drives it directly, asserting

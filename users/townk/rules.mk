@@ -17,6 +17,7 @@ VPATH += keyboards/svalboard/keymaps
 SRC += keymap_support.c
 
 SRC += townk_layers.c
+SRC += townk_mods.c
 SRC += townk_mouse.c
 SRC += townk_overrides.c
 SRC += townk_smtd.c

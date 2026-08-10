@@ -120,6 +120,7 @@ void post_process_record(keyrecord_t *record) { (void)record; }
  * The code under test -- the real file, compiled as-is
  * ------------------------------------------------------------------------ */
 
+#include "../users/townk/townk_mods.c"
 #include "../users/townk/townk_mouse.c"
 
 /* ------------------------------------------------------------------------ *
@@ -180,10 +181,19 @@ void T_reset(void) {
     for (int i = 0; i < 4; i++) {
         mb_states[i] = (mb_state_t){0};
     }
+    mods_reset();
     mouse_mode_calls = 0;
     mouse_mode_state = false;
     set_mods(0);
 }
+
+/* Reference-counted modifier ownership, driven directly. Going through gestures
+ * cannot exercise a second claim on the same bit: each MB_* key owns a distinct
+ * modifier, so the counting only becomes reachable once keys contribute
+ * modifiers to clicks. */
+void T_mods_acquire(uint8_t mods) { mods_acquire(mods); }
+void T_mods_release(uint8_t mods) { mods_release(mods); }
+uint8_t T_mods_claims(uint8_t mod_bit) { return mods_claim_count(mod_bit); }
 
 /* Keycode values, exported rather than duplicated in Python so the tests
  * cannot drift from the enum in townk_keycodes.h. */
