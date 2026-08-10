@@ -413,7 +413,6 @@ smtd_resolution on_smtd_action(uint16_t keycode, smtd_action action, uint8_t tap
         CUSTOM_LT(CKC_SPC, KC_SPC, _NUM);
         SHIFTED_LT(CKC_BSPC, KC_DEL, KC_BSPC, _NAV);
         SMART_SHIFT(CKC_SMSFT);
-        CUSTOM_MT(MB_ESC, KC_ESC, KC_LEFT_ALT);
     }
 
     return SMTD_RESOLUTION_UNHANDLED;

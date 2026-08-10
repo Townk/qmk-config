@@ -80,6 +80,7 @@ def _build() -> ctypes.CDLL:
     lib.T_pointing.argtypes = [ctypes.c_int8] * 4
     lib.T_set_external_mods.argtypes = [ctypes.c_uint8]
     lib.T_reset.argtypes = []
+    lib.T_hold_backspace.argtypes = [ctypes.c_bool]
     lib.T_mods_acquire.argtypes = [ctypes.c_uint8]
     lib.T_mods_release.argtypes = [ctypes.c_uint8]
     lib.T_mods_claims.argtypes = [ctypes.c_uint8]
@@ -318,6 +319,88 @@ class TownkMouseTest(unittest.TestCase):
         LIB.T_key(MB_SFT, False)
         LIB.T_key(MB_ALT, False)
         LIB.T_key(MB_GUI, False)
+
+    # -- modifiers contributed to a click by a held key -------------------
+
+    def test_held_backspace_contributes_alt_to_a_click(self) -> None:
+        """Hold the left thumb pad, click: the click carries Option."""
+        LIB.T_hold_backspace(True)
+
+        LIB.T_key(MB_SFT, True)
+        LIB.T_key(MB_SFT, False)
+
+        self.assertEqual(
+            self.history(),
+            [
+                Event(KC_BTN1, pressed=True, mods=MOD_LALT),
+                Event(KC_BTN1, pressed=False, mods=MOD_LALT),
+            ],
+            "the click must carry Option contributed by the held key",
+        )
+
+        LIB.T_hold_backspace(False)
+
+    def test_contributed_modifier_does_not_outlive_the_click(self) -> None:
+        """Option is scoped to the click, not to how long the key is held.
+
+        If it stayed on for as long as the pad was down it would leak into
+        _NAV, silently turning every navigation keypress into Option+key --
+        Option+arrow being word-jump rather than character-move.
+        """
+        LIB.T_hold_backspace(True)
+
+        LIB.T_key(MB_SFT, True)
+        LIB.T_key(MB_SFT, False)
+        self.assertEqual(
+            self.mods(), 0, "Option must be gone once the click is over"
+        )
+
+        LIB.T_hold_backspace(False)
+
+    def test_contributed_modifier_refcounts_against_a_held_key(self) -> None:
+        """The case reference counting exists for.
+
+        MB_ALT is acting as Option while the thumb pad also contributes
+        Option to a click. When the click ends, Option must stay held --
+        MB_ALT still wants it. A bare unregister_mods() here would drop the
+        modifier out from under a key the user is still holding.
+        """
+        LIB.T_key(MB_ALT, True)
+        LIB.T_key(KC_PLAIN, True)   # resolves MB_ALT to its modifier role
+        LIB.T_key(KC_PLAIN, False)
+        self.assertEqual(self.mods(), MOD_LALT, "MB_ALT holds Option")
+
+        LIB.T_hold_backspace(True)
+        LIB.T_key(MB_SFT, True)
+        LIB.T_key(MB_SFT, False)    # a click that also contributes Option
+
+        self.assertEqual(
+            self.mods(), MOD_LALT,
+            "Option must survive the click -- MB_ALT is still holding it",
+        )
+
+        LIB.T_hold_backspace(False)
+        LIB.T_key(MB_ALT, False)
+        self.assertEqual(self.mods(), 0, "and released once MB_ALT lets go")
+
+    def test_drag_carries_the_contributed_modifier(self) -> None:
+        """Option+drag: the modifier is live for the whole gesture."""
+        LIB.T_hold_backspace(True)
+
+        LIB.T_key(MB_SFT, True)
+        LIB.T_pointing(5, 5, 0, 0)
+        self.assertEqual(
+            self.history(), [Event(KC_BTN1, pressed=True, mods=MOD_LALT)]
+        )
+
+        LIB.T_key(MB_SFT, False)
+        self.assertEqual(
+            self.history()[-1], Event(KC_BTN1, pressed=False, mods=MOD_LALT),
+            "the drop must still carry Option",
+        )
+        self.assertEqual(self.mods(), 0, "and Option is released after it")
+
+        LIB.T_hold_backspace(False)
 
     # -- reference-counted modifier ownership -----------------------------
 

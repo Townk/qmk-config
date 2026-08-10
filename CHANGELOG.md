@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- The left thumb pad (`CKC_BSPC`) now means **Option when you click**, on top
+  of Backspace on tap and the navigation layer on hold — so Option+click and
+  Option+drag are reachable without leaving the mouse layer. The modifier is
+  scoped to the button's press..release rather than to how long the pad is
+  held, so it cannot leak into `_NAV` and turn navigation keys into
+  Option+arrow word-jumps. Held-ness is read from `_NAV` being active (that
+  key's hold is its only activation route) rather than from a flag of our own,
+  which could get stuck and put Option on every click for the rest of the
+  session. To add another contributor, OR its modifier into
+  `click_modifiers()` in `townk_mouse.c`
 - Reference-counted modifier ownership (`townk_mods.c`). `mods_acquire()` /
   `mods_release()` register a modifier on its first claim and unregister it
   only when the last claim goes away, so two owners wanting the same modifier
@@ -74,6 +84,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- `MB_ESC` (Esc on tap, Alt on hold) — the right thumb cluster now carries a
+  plain `KC_ESC`. The Alt-on-hold was never used, and with the thumb pad
+  contributing Option to clicks there is no reason to keep a second, differently
+  behaved Alt around. Stale `MB_ESC` / `USER29` entries removed from
+  `skim-config.yaml` too
 - Game-layer key overrides for `Shift + 0/1/2/3/4` → `9/5/6/7/8`. `GAM2`
   now exposes the digits directly, so the workaround is no longer needed.
 

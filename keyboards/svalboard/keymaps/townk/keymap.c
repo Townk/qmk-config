@@ -630,7 +630,7 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
         /*L4*/ _______,  _______,  _______,  _______,    _______,  MB_CTL,
 
         /*     Down      Pad       Up        Nail        Knuckle   Double Down   */
-        /*RT*/ _______,  CKC_SPC,  MB_ESC,   CKC_BKTAB,  _______,  SV_SNIPER_5,
+        /*RT*/ _______,  CKC_SPC,  KC_ESC,   CKC_BKTAB,  _______,  SV_SNIPER_5,
         /*LT*/ KC_LSFT,  CKC_BSPC, ML_CMD,   CKC_TAB,    _______,  SV_SNIPER_3
         )
 };

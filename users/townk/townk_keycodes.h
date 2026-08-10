@@ -59,7 +59,6 @@ enum custom_keycodes {
     MB_ALT,    ///< Mouse button 2 (lift-click) on tap, Alt on hold.
     MB_GUI,    ///< Mouse button 3 (middle-click) on tap, Gui on hold.
     MB_CTL,    ///< Mouse button 4 on tap, Ctrl on hold.
-    MB_ESC,    ///< Esc on tap, Alt on hold.
 };
 
 #endif // QMK_USERSPACE_TOWNK_KEYMAPS_H

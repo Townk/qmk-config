@@ -66,10 +66,6 @@ keycodes:
     target: LT(_FUN, MKC_BKTAB)
   - keycode: USER23
     target: LT(_FUN, MKC_BKTAB)
-  - keycode: MB_ESC
-    target: MT(MOD_LOPT, KC_ESC)
-  - keycode: USER29
-    target: MT(MOD_LOPT, KC_ESC)
   overrides:
   - keycode: MKC_BKTAB
     target: '%%nf-md-keyboard_tab_reverse;'
@@ -118,7 +114,6 @@ keycodes:
     MB_ALT: KC_BTN2
     MB_GUI: KC_BTN3
     MB_CTL: KC_BTN4
-    MB_ESC: KC_ESC
   symbol_descriptions:
     Modifiers:
       CKC_SMSFT: Smart shift

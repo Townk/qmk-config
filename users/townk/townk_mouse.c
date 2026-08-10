@@ -38,6 +38,14 @@
  * | Another key is PRESSED       | modifier      | applies to that key      |
  * | Another MB_* key is pressed  | modifier      | giving e.g. Cmd+click    |
  *
+ * Separately, a key that is not an MB_* key at all may still **contribute a
+ * modifier to a click** while it is held -- the left thumb pad (CKC_BSPC)
+ * means Option when you click, on top of being Backspace on tap and the
+ * navigation layer on hold. That is not a role this key resolves to; it is a
+ * qualifier applied by somebody else, scoped to the button's press..release so
+ * it cannot leak into the layer that key is holding open. See
+ * click_modifiers().
+ *
  * Two cases are decided immediately at press time instead, by whatever is
  * already in flight. They are mirrors of each other:
  *
@@ -75,6 +83,7 @@
  */
 
 #include "townk_keycodes.h"
+#include "townk_layers.h"
 #include "townk_mods.h"
 #include "townk_mouse.h"
 
@@ -97,6 +106,7 @@ typedef struct {
     bool converted_to_mouse;       ///< True if the key was converted to mouse button due to mouse movement
     bool mods_on_press;            ///< True if external modifiers were active when this key was pressed
     bool should_exit_mouse_mode;   ///< True if mouse mode should be exited when this key is released
+    uint8_t click_mods;            ///< Modifiers contributed by OTHER held keys, claimed for this button's press
 } mb_state_t;
 
 /**
@@ -182,6 +192,65 @@ static bool is_mouse_button(uint16_t keycode) {
  * @return true if some OTHER special key is currently acting as a mouse button
  * @private
  */
+/**
+ * @brief Modifiers that other currently-held keys contribute to a mouse click
+ *
+ * Some keys are not mouse buttons at all, but should still qualify a click
+ * while they are held -- the left thumb pad (CKC_BSPC) is Backspace on tap and
+ * the navigation layer on hold, and should additionally mean Option when you
+ * click.
+ *
+ * Held-ness is read from the layer rather than from a flag of our own.
+ * CKC_BSPC's hold is the ONLY thing that activates _NAV, so the layer being on
+ * is exactly equivalent to that key being down -- and unlike a flag we would
+ * have to set and clear around SM_TD's state machine, a layer cannot get stuck
+ * on. A stuck flag here would be nasty and near-undiagnosable: Option silently
+ * added to every click for the rest of the session.
+ *
+ * If _NAV ever gains a second activation route, this stops being equivalent
+ * and needs a different signal.
+ *
+ * To add another contributor, OR in its modifier here.
+ *
+ * @return MOD_BIT mask to apply for the duration of a click, 0 for none
+ * @private
+ */
+static uint8_t click_modifiers(void) {
+    uint8_t mods = 0;
+
+    if (layer_state_is(_NAV)) {
+        mods |= MOD_BIT(KC_LALT);
+    }
+
+    return mods;
+}
+
+/**
+ * @brief Claim the contributed modifiers for a button that is going down
+ *
+ * Called BEFORE the button is emitted, so the press already carries them.
+ * @private
+ */
+static void acquire_click_modifiers(mb_state_t *state) {
+    state->click_mods = click_modifiers();
+    mods_acquire(state->click_mods);
+}
+
+/**
+ * @brief Give up the modifiers claimed for a button that has gone up
+ *
+ * Called AFTER the button is released, so the release still carries them --
+ * which is what makes Finder treat a drop as a copy. Scoped to the button
+ * rather than to how long the contributing key is held, so the modifier cannot
+ * leak into the layer that key is also holding open (Option+arrow is
+ * word-jump, not character-move).
+ * @private
+ */
+static void release_click_modifiers(mb_state_t *state) {
+    mods_release(state->click_mods);
+    state->click_mods = 0;
+}
+
 static bool button_gesture_in_flight(int except_index) {
     for (int i = 0; i < 4; i++) {
         if (i == except_index) continue;
@@ -264,6 +333,7 @@ bool process_special_mouse_keys(uint16_t keycode, keyrecord_t *record) {
 
             // If external modifiers are active, act as mouse button
             if (state->mods_on_press) {
+                acquire_click_modifiers(state);
                 register_code(get_mouse_button(mb_index));
             } else if (button_gesture_in_flight(mb_index)) {
                 // A drag or held click is already in flight, so this key is
@@ -289,9 +359,11 @@ bool process_special_mouse_keys(uint16_t keycode, keyrecord_t *record) {
             if (state->mods_on_press) {
                 // Was used as mouse button due to external modifiers
                 unregister_code(get_mouse_button(mb_index));
+                release_click_modifiers(state);
             } else if (state->converted_to_mouse) {
                 // Was converted to mouse button by mouse movement
                 unregister_code(get_mouse_button(mb_index));
+                release_click_modifiers(state);
             } else if (state->used_as_modifier) {
                 // Was used as a modifier (another key was pressed, or a scroll)
                 mods_release(get_modifier(mb_index));
@@ -299,7 +371,9 @@ bool process_special_mouse_keys(uint16_t keycode, keyrecord_t *record) {
                 // Nothing ever competed for this press, so it keeps its
                 // default role: a click. No modifier to release first --
                 // none was ever registered.
+                acquire_click_modifiers(state);
                 tap_code(get_mouse_button(mb_index));
+                release_click_modifiers(state);
             }
 
             // Exit mouse mode on release if flagged
@@ -368,6 +442,7 @@ report_mouse_t pointing_device_task_kb(report_mouse_t report) {
 
             if (moved) {
                 // Dragging: hold the button down for the whole gesture.
+                acquire_click_modifiers(state);
                 register_code(get_mouse_button(i));
                 state->converted_to_mouse = true;
             } else {

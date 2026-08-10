@@ -87,6 +87,14 @@ typedef struct {
 
 report_mouse_t pointing_device_task_user(report_mouse_t report) { return report; }
 
+/* Layer test, matching the shim's model of layer_state. NOTE the fidelity gap:
+ * the shim stores layer_state as a plain layer NUMBER (layer_move assigns it),
+ * whereas QMK stores a bitmask and can have several layers on at once. On the
+ * real board _NAV and _MBO are both active during a click; here only the last
+ * one moved to is. Adequate for asserting the click-modifier rule, but not a
+ * place to test layer stacking. */
+bool layer_state_is(uint8_t layer) { return layer_state == layer; }
+
 /* ------------------------------------------------------------------------ *
  * SM_TD hooks every fixture must define
  * ------------------------------------------------------------------------ */
@@ -191,6 +199,10 @@ void T_reset(void) {
  * cannot exercise a second claim on the same bit: each MB_* key owns a distinct
  * modifier, so the counting only becomes reachable once keys contribute
  * modifiers to clicks. */
+/* Hold / release the left thumb pad, whose SM_TD hold is the only thing that
+ * activates _NAV -- which is exactly how townk_mouse.c knows the key is down. */
+void T_hold_backspace(bool held) { layer_move(held ? _NAV : _BASE); }
+
 void T_mods_acquire(uint8_t mods) { mods_acquire(mods); }
 void T_mods_release(uint8_t mods) { mods_release(mods); }
 uint8_t T_mods_claims(uint8_t mod_bit) { return mods_claim_count(mod_bit); }
