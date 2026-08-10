@@ -52,6 +52,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Phantom mouse click when an `MB_*` key was combined with an SM_TD key
+  (e.g. Cmd+Space, Cmd+Tab, Cmd+Backspace). SM_TD hooks
+  `pre_process_record_sm_td()`, which sits ahead of `process_record_user()`
+  on the `&&`-chain in `pre_process_record_quantum()`, so the held `MB_*`
+  key never learned it had been used as a modifier and fired its "tapped
+  alone" mouse-button tap on release — a real, modifier-less click as far
+  as the OS was concerned (it pasted in any app bound to middle-click
+  paste, and opened context menus over the Dock). `on_smtd_action()` now
+  commits pending `MB_*` keys to their modifier role as well
 - `ML_CMD` now resolves to `KC_LCMD` instead of `KC_LGUI`, so generated
   keymap images label the Command key correctly
 - Documentation: corrected the Backspace/Delete shift behavior on

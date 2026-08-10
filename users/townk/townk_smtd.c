@@ -23,6 +23,7 @@
 #include "modifiers.h"
 #include "townk_layers.h"
 #include "townk_keycodes.h"
+#include "townk_mouse.h"
 
 #include "sm_td.h"
 
@@ -390,6 +391,15 @@ extern void mouse_mode(bool on);
 smtd_resolution on_smtd_action(uint16_t keycode, smtd_action action, uint8_t tap_count) {
     static bool    delkey_registered = false;
     static uint8_t shift_mod         = 0;
+
+    // An SM_TD key being touched is a key press like any other, and must
+    // commit a held MB_* key to its modifier role. process_record_user() --
+    // where that normally happens -- is never reached for these keycodes, so
+    // without this a held MB_* key still looks untouched at release and fires
+    // a phantom mouse click. See confirm_pending_modifiers() in townk_mouse.h.
+    if (action == SMTD_ACTION_TOUCH) {
+        confirm_pending_modifiers(keycode);
+    }
 
 #ifndef NO_ACTION_ONESHOT
     const uint8_t mods = get_mods() | get_oneshot_mods();

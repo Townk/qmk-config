@@ -132,31 +132,38 @@ static bool is_mouse_button(uint16_t keycode) {
     return keycode >= KC_BTN1 && keycode <= KC_BTN8;
 }
 
+void confirm_pending_modifiers(uint16_t keycode) {
+    int  mb_index       = get_mb_index(keycode);
+    bool is_special_key = (mb_index >= 0);
+    bool is_mouse_btn   = is_mouse_button(keycode);
+
+    for (int i = 0; i < 4; i++) {
+        // Skip the key being pressed if it's also a special key
+        if (i == mb_index) continue;
+
+        mb_state_t *state = &mb_states[i];
+
+        // If a special key is held but hasn't committed to a role yet,
+        // make it a modifier
+        if (state->is_held && !state->used_as_modifier && !state->converted_to_mouse && !state->mods_on_press) {
+            state->used_as_modifier = true;
+
+            // Defer mouse_mode(false) until release, only for non-mouse
+            // keys
+            if (!is_mouse_btn && !is_special_key) {
+                state->should_exit_mouse_mode = true;
+            }
+        }
+    }
+}
+
 bool process_special_mouse_keys(uint16_t keycode, keyrecord_t *record) {
     int mb_index = get_mb_index(keycode);
     bool is_special_key = (mb_index >= 0);
-    bool is_mouse_btn = is_mouse_button(keycode);
 
     // FIRST: For ANY key press, confirm pending special keys as modifiers
     if (record->event.pressed) {
-        for (int i = 0; i < 4; i++) {
-            // Skip the key being pressed if it's also a special key
-            if (i == mb_index) continue;
-
-            mb_state_t *state = &mb_states[i];
-
-            // If a special key is held but hasn't committed to a role yet,
-            // make it a modifier
-            if (state->is_held && !state->used_as_modifier && !state->converted_to_mouse && !state->mods_on_press) {
-                state->used_as_modifier = true;
-
-                // Defer mouse_mode(false) until release, only for non-mouse
-                // keys
-                if (!is_mouse_btn && !is_special_key) {
-                    state->should_exit_mouse_mode = true;
-                }
-            }
-        }
+        confirm_pending_modifiers(keycode);
     }
 
     // THEN: Handle our custom mouse/modifier keys
