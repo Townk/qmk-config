@@ -372,6 +372,32 @@ class TownkMouseTest(unittest.TestCase):
 
         LIB.T_set_external_mods(0)
 
+    def test_ctrl_shift_tap_sends_ctrl_delete(self) -> None:
+        """Ctrl+Shift+Backspace is how you reach Ctrl+Delete.
+
+        The inversion consumes ONLY shift -- unregister_mods(MOD_MASK_SHIFT) --
+        so every other modifier you are holding rides along to the KC_DEL.
+        That makes Ctrl+Delete (and Alt+Delete, Cmd+Delete) reachable by adding
+        the modifier to the Shift+Backspace gesture, with no extra firmware
+        support needed.
+        """
+        LIB.T_set_external_mods(MOD_LCTL | MOD_RSFT)
+
+        LIB.T_smtd_touch(CKC_BSPC)
+        LIB.T_smtd_tap(CKC_BSPC, 0)
+
+        deletes = [e for e in self.history() if e.keycode == KC_DEL]
+        self.assertTrue(deletes, "a Delete must be emitted")
+        self.assertEqual(
+            deletes[0].mods & MOD_MASK_SHIFT, 0, "shift is consumed by the inversion"
+        )
+        self.assertEqual(
+            deletes[0].mods & MOD_LCTL, MOD_LCTL,
+            f"but Ctrl must survive onto the Delete, got {deletes[0]}",
+        )
+
+        LIB.T_set_external_mods(0)
+
     def test_holding_the_pad_keeps_the_mouse_layer(self) -> None:
         """Holding the pad must not take the mouse layer away.
 
