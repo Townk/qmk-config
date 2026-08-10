@@ -630,7 +630,13 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
         /*L4*/ _______,  _______,  _______,  _______,    _______,  MB_CTL,
 
         /*     Down      Pad       Up        Nail        Knuckle   Double Down   */
-        /*RT*/ _______,  CKC_SPC,  KC_ESC,   CKC_BKTAB,  _______,  SV_SNIPER_5,
+        /* Pad is transparent rather than an explicit CKC_SPC. This layer now
+         * stays active while the left thumb pad holds _NAV open, and _MBO
+         * outranks _NAV — so spelling CKC_SPC out here shadowed _NAV's Tab.
+         * Falling through gives CKC_SPC over _BASE exactly as before, and Tab
+         * over _NAV. Esc and back-tab stay explicit: _NAV leaves those
+         * positions empty, so transparency would lose them for no gain. */
+        /*RT*/ _______,  _______,  KC_ESC,   CKC_BKTAB,  _______,  SV_SNIPER_5,
         /*LT*/ KC_LSFT,  CKC_BSPC, ML_CMD,   CKC_TAB,    _______,  SV_SNIPER_3
         )
 };

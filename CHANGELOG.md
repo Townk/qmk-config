@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `docs/sm_td-upgrade-notes.md` — what the host suite does and does not cover,
+  the `smtd_apply_stage()` / `static smtd_active_states` blocker, and a
+  step-at-a-time sequence for moving off the pinned SM_TD version
 - Host tests now compile the **real** `townk_smtd.c` — the shift-inverted
   Backspace/Delete, the layer-taps and Smart Shift — instead of a fixture that
   only mirrored its contract. Needed stubs for `caps_word.h`, `action_util.h`,
@@ -64,6 +67,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `_MBO`'s right-thumb Pad is transparent instead of an explicit `CKC_SPC`.
+  That layer now stays active while the left thumb pad holds `_NAV` open, and
+  `_MBO` outranks `_NAV`, so spelling the keycode out shadowed `_NAV`'s Tab.
+  Falling through gives `CKC_SPC` over `_BASE` exactly as before, and Tab over
+  `_NAV`
 - `MB_*` keys are now **button-first**: a press commits to nothing and emits
   nothing, and the modifier role must be earned by a competing signal (another
   keypress, or a scroll) before release. Previously the modifier was claimed on
@@ -90,6 +98,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- `CUSTOM_MT` macro — `MB_ESC` was its only caller, and it went with it
 - `MB_ESC` (Esc on tap, Alt on hold) — the right thumb cluster now carries a
   plain `KC_ESC`. The Alt-on-hold was never used, and with the thumb pad
   contributing Option to clicks there is no reason to keep a second, differently
