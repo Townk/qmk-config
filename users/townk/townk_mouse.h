@@ -51,6 +51,8 @@
  *    - Initialize state tracking
  *    - Check for external modifiers (modifiers not from our special keys)
  *    - If external mods active: act as a mouse button immediately
+ *    - Else if a mouse button is already held (drag in flight): act as a
+ *      modifier immediately -- the next event is the drop, not a keypress
  *    - Otherwise: commit to nothing, and emit nothing. The key is a button by
  *      default; the modifier has to be earned before release.
  *

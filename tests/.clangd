@@ -1,0 +1,21 @@
+# The host test fixture is not part of any firmware build, so the ARM flags in
+# the generated compile_commands.json do not describe it. Without this, clangd
+# guesses a nearby firmware entry and reports errors that are not real for this
+# file: inline-asm constraints from ChibiOS headers, and redefinitions of
+# MATRIX_ROWS / SAFE_RANGE / the KC_* enumerators that the fixture defines on
+# purpose because no QMK headers are present.
+#
+# The real build of this file is the clang invocation in test_townk_mouse.py;
+# these flags mirror it.
+If:
+  PathMatch: .*\.c
+
+CompileFlags:
+  Compiler: clang
+  Remove: [-m*, -D__has_include*, -f*]
+  Add:
+    - -std=c11
+    - -DSMTD_UNIT_TEST
+    - -I..
+    - -I../modules/stasmarkin
+    - -Istubs

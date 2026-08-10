@@ -89,7 +89,8 @@ def _build() -> ctypes.CDLL:
     lib.get_mods.restype = ctypes.c_uint8
 
     for name in ("T_kc_mb_sft", "T_kc_mb_alt", "T_kc_mb_gui", "T_kc_mb_ctl",
-                 "T_kc_ckc_spc", "T_kc_btn1", "T_kc_btn3", "T_kc_plain"):
+                 "T_kc_ckc_spc", "T_kc_btn1", "T_kc_btn2", "T_kc_btn3",
+                 "T_kc_plain"):
         getattr(lib, name).restype = ctypes.c_uint16
 
     return lib
@@ -99,12 +100,14 @@ LIB = _build()
 
 MB_GUI: int = int(LIB.T_kc_mb_gui())
 MB_SFT: int = int(LIB.T_kc_mb_sft())
+MB_ALT: int = int(LIB.T_kc_mb_alt())
 CKC_SPC: int = int(LIB.T_kc_ckc_spc())
 KC_BTN1: int = int(LIB.T_kc_btn1())
+KC_BTN2: int = int(LIB.T_kc_btn2())
 KC_BTN3: int = int(LIB.T_kc_btn3())
 KC_PLAIN: int = int(LIB.T_kc_plain())
 
-MOUSE_BUTTONS = (KC_BTN1, KC_BTN3)
+MOUSE_BUTTONS = (KC_BTN1, KC_BTN2, KC_BTN3)
 
 
 class TownkMouseTest(unittest.TestCase):
@@ -269,6 +272,54 @@ class TownkMouseTest(unittest.TestCase):
 
         LIB.T_key(MB_GUI, False)
         self.assertNoMouseButton("releasing after a scroll must not click")
+
+    # -- a gesture already in flight --------------------------------------
+
+    def test_key_pressed_during_a_drag_becomes_a_modifier(self) -> None:
+        """Finder copy-on-drop: hold Option mid-drag to copy instead of move.
+
+        A drag is already in flight, so a key pressed during it is qualifying
+        that drag, not starting a click of its own -- and it has to be live
+        immediately, because no further keypress is coming to earn it. The
+        drop itself is the next event.
+
+        This is the mirror of the external-modifier rule: a modifier held at
+        press time makes the key a button, and a button held at press time
+        makes it a modifier.
+        """
+        LIB.T_key(MB_SFT, True)
+        LIB.T_pointing(5, 5, 0, 0)  # motion -> BTN1 held: the drag
+        self.assertEqual(self.history(), [Event(KC_BTN1, pressed=True, mods=0)])
+
+        LIB.T_key(MB_ALT, True)
+        self.assertEqual(
+            self.mods(), MOD_LALT, "Option must be live while the button is down"
+        )
+        self.assertNotIn(
+            KC_BTN2, [e.keycode for e in self.history()],
+            "Option must not also press its own mouse button mid-drag",
+        )
+
+        # Drop while Option is still held -- that is what makes it a copy.
+        LIB.T_key(MB_SFT, False)
+        self.assertEqual(
+            self.history()[-1], Event(KC_BTN1, pressed=False, mods=MOD_LALT),
+            "the drop must carry Option, or Finder moves instead of copying",
+        )
+
+        LIB.T_key(MB_ALT, False)
+
+    def test_key_pressed_during_a_held_click_becomes_a_modifier(self) -> None:
+        """Same rule when the button is held by external mods rather than motion."""
+        LIB.T_set_external_mods(MOD_LSFT)
+        LIB.T_key(MB_GUI, True)  # external mods -> immediately a button
+        LIB.T_set_external_mods(0)
+
+        LIB.T_key(MB_ALT, True)
+        self.assertEqual(self.mods(), MOD_LALT, "Option qualifies the held button")
+
+        LIB.T_key(MB_ALT, False)
+        LIB.T_key(MB_GUI, False)
 
     # -- multiple keys ----------------------------------------------------
 

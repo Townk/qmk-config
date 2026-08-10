@@ -193,5 +193,6 @@ uint16_t T_kc_mb_gui(void) { return MB_GUI; }
 uint16_t T_kc_mb_ctl(void) { return MB_CTL; }
 uint16_t T_kc_ckc_spc(void) { return CKC_SPC; }
 uint16_t T_kc_btn1(void) { return KC_BTN1; }
+uint16_t T_kc_btn2(void) { return KC_BTN2; }
 uint16_t T_kc_btn3(void) { return KC_BTN3; }
 uint16_t T_kc_plain(void) { return 0x0004; } /* KC_A -- an ordinary, non-SM_TD key */

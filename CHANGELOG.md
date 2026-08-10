@@ -72,6 +72,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Modifiers pressed mid-drag had no effect — starting a drag and then holding
+  Option to turn a Finder move into a copy never registered Option, so the copy
+  cursor never appeared and the file was moved. A key pressed while a mouse
+  button is already held now becomes a modifier immediately, since the next
+  event is the drop rather than a keypress that could earn it. The mirror of
+  the existing rule that a modifier held at press time makes the key a button
 - Phantom mouse click after scrolling with an `MB_*` key held — ⌘+scroll to
   zoom, then release, emitted a stray modifier-less middle click. Same defect
   as the SM_TD case below (an undecided key falling through to its release-time

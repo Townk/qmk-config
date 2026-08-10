@@ -38,8 +38,15 @@
  * | Another key is PRESSED       | modifier      | applies to that key      |
  * | Another MB_* key is pressed  | modifier      | giving e.g. Cmd+click    |
  *
- * External modifiers already held at press time are decided immediately: the
- * key is a mouse button, so Shift+click and friends work.
+ * Two cases are decided immediately at press time instead, by whatever is
+ * already in flight. They are mirrors of each other:
+ *
+ * - **A modifier is already held** -> the key is a mouse button, so
+ *   Shift+click and friends work.
+ * - **A mouse button is already held** (a drag, or a click held down) -> the
+ *   key is a modifier, live at once. Finder's hold-Option-to-copy depends on
+ *   this: mid-drag the next event is the drop, so there is never a later
+ *   keypress for the modifier to be earned by.
  *
  * Two properties of that table are load-bearing, and both were learned the
  * hard way:
@@ -163,6 +170,30 @@ static bool is_mouse_button(uint16_t keycode) {
     return keycode >= KC_BTN1 && keycode <= KC_BTN8;
 }
 
+/**
+ * @brief True while another special key is committed to its mouse-button role
+ *
+ * That is: a drag (converted by pointer motion) or a click being held down
+ * (decided at press time by external modifiers). Either way a mouse gesture is
+ * already in flight.
+ *
+ * @param except_index State index to ignore, normally the key being pressed
+ * @return true if some OTHER special key is currently acting as a mouse button
+ * @private
+ */
+static bool button_gesture_in_flight(int except_index) {
+    for (int i = 0; i < 4; i++) {
+        if (i == except_index) continue;
+
+        mb_state_t *state = &mb_states[i];
+        if (state->is_held && (state->converted_to_mouse || state->mods_on_press)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void confirm_pending_modifiers(uint16_t keycode) {
     int  mb_index       = get_mb_index(keycode);
     bool is_special_key = (mb_index >= 0);
@@ -233,6 +264,18 @@ bool process_special_mouse_keys(uint16_t keycode, keyrecord_t *record) {
             // If external modifiers are active, act as mouse button
             if (state->mods_on_press) {
                 register_code(get_mouse_button(mb_index));
+            } else if (button_gesture_in_flight(mb_index)) {
+                // A drag or held click is already in flight, so this key is
+                // qualifying that gesture rather than starting one of its
+                // own -- and it must be live NOW, because the next event is
+                // the drop, not another keypress that could earn it. This is
+                // what makes Finder's hold-Option-to-copy work mid-drag.
+                //
+                // The mirror of the branch above: a modifier held at press
+                // time makes the key a button, a button held at press time
+                // makes it a modifier.
+                state->used_as_modifier = true;
+                register_mods(get_modifier(mb_index));
             }
             // Otherwise commit to NOTHING yet. On this layer the key is a
             // button by default and a modifier only by exception, so the
