@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Host test suite for the `MB_*` dual-role mouse/modifier engine
+  (`python3 tests/run_tests.py`). Compiles the real `townk_mouse.c` into a
+  shared library via sm_td's own test shim and drives it directly, asserting
+  on the mouse buttons and modifiers emitted — no firmware build, no flashing,
+  no keyboard attached. Includes a regression test for the phantom middle
+  click fixed below, verified to fail when the fix is removed. Because the
+  shim `#include`s `sm_td.c` directly, the suite also runs against whatever
+  sm_td version is checked out, making it a safety net for future upgrades
+
 - `QWT` layer (1) — QWERTY letter arrangement with the same modifier,
   symbol, and thumb cluster layout as `BASE`, for situations that assume
   the default layout

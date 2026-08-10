@@ -18,5 +18,9 @@ compile_commands.json
 # python
 __pycache__/
 
+# host test artefacts (tests/run_tests.py rebuilds these every run)
+tests/libtownk_mouse.dylib
+tests/libtownk_mouse.so
+
 # Virtualenv
 .venv

@@ -267,6 +267,21 @@ docker run -v $(pwd):/workspace ghcr.io/qmk/qmk_cli
 
 ### Testing Changes
 
+Run the host test suite first — it needs no firmware build, no flashing, and no
+keyboard attached:
+
+```bash
+python3 tests/run_tests.py
+```
+
+It compiles the real `users/townk/townk_mouse.c` into a shared library and
+drives the `MB_*` dual-role engine directly, asserting on the exact mouse
+buttons and modifiers emitted (see `tests/townk_mouse_layout.c` for the QMK
+stubs). A full run takes milliseconds, so it is a practical inner loop for any
+change to the mouse/modifier rules.
+
+Then, for anything it cannot cover:
+
 1. Build locally to check for compilation errors
 2. Flash to keyboard and test functionality
 3. Check RGB indicators for each layer
