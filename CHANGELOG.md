@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- SM_TD bumped from the pinned `v0.5.4` to `v0.5.6` (first stop on the way to
+  `v0.6.x`). Taps now go through the full QMK pipeline upstream, so Caps Word
+  and friends finally see them; the host-test shim consequently models weak
+  mods and Caps Word state for real, and the fixture's own always-zero /
+  call-counting stand-ins were removed in its favour
+
 ### Added
 
 - `docs/sm_td-upgrade-notes.md` — what the host suite does and does not cover,

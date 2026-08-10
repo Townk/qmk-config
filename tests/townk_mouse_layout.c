@@ -24,6 +24,11 @@
 
 #include "../modules/stasmarkin/tests/sm_td_bindings.c"
 
+/* The shim (0.5.6+) defines KC_LSFT as a macro for its own internal use; every
+ * use inside it has expanded by now, and the macro would otherwise mangle the
+ * enumerator of the same name (and value) in keycodes.h below. */
+#undef KC_LSFT
+
 /* townk_keycodes.h picks RANGE_START = SAFE_RANGE when SVALBOARD is undefined,
  * which is what lets it compile off-device. Deliberately do NOT define
  * SVALBOARD: that path would pull in keymap_support.h and QK_KB_20. */
@@ -44,10 +49,6 @@ void register_code(uint16_t keycode) { register_code16(keycode); }
 void unregister_code(uint16_t keycode) { unregister_code16(keycode); }
 void tap_code(uint16_t keycode) { tap_code16(keycode); }
 
-/* townk_mouse.c consults all three modifier sources when deciding whether
- * EXTERNAL mods were held at press time. Only get_mods() is stubbed upstream. */
-uint8_t get_weak_mods(void) { return 0; }
-
 /* One-shot modifiers, which SMART_SHIFT sets on a tap. Modelled for real
  * rather than stubbed to zero: the Backspace/Delete shift inversion reads
  * get_oneshot_mods(), so a fake would hide exactly the behaviour under test. */
@@ -55,12 +56,6 @@ static uint8_t oneshot_mods = 0;
 void    set_oneshot_mods(uint8_t mods) { oneshot_mods = mods; }
 uint8_t get_oneshot_mods(void) { return oneshot_mods; }
 void    clear_oneshot_mods(void) { oneshot_mods = 0; }
-
-/* Caps Word. is_caps_word_on() is stubbed by sm_td's shim (always false); these
- * two only need to record that they were called. */
-static int caps_word_on_calls = 0;
-void caps_word_on(void) { caps_word_on_calls++; }
-void caps_word_off(void) {}
 
 /* Supplied by the Svalboard keyboard code on-device. Recorded here so tests can
  * assert on mouse-mode transitions, which are otherwise invisible. */
@@ -174,8 +169,6 @@ void T_smtd_tap(uint16_t keycode, uint8_t tap_count) { on_smtd_action(keycode, S
 void T_smtd_hold(uint16_t keycode, uint8_t tap_count) { on_smtd_action(keycode, SMTD_ACTION_HOLD, tap_count); }
 void T_smtd_release(uint16_t keycode, uint8_t tap_count) { on_smtd_action(keycode, SMTD_ACTION_RELEASE, tap_count); }
 
-int T_caps_word_calls(void) { return caps_word_on_calls; }
-
 /* Trackball motion. Pointer movement (x/y) is what converts a held key to a
  * held mouse button; h/v are scroll. */
 void T_pointing(int8_t x, int8_t y, int8_t h, int8_t v) {
@@ -198,7 +191,7 @@ void T_reset(void) {
     mods_reset();
     mouse_mode_calls = 0;
     mouse_mode_state = false;
-    caps_word_on_calls = 0;
+    caps_word_off();
     oneshot_mods = 0;
     set_mods(0);
     layer_bits = 0;
