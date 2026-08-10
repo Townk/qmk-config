@@ -19,18 +19,49 @@
  * @brief Special mouse button implementation with dual-function modifier/mouse
  *        keys
  *
- * This file implements a sophisticated dual-function key system where certain
- * keys (MB_SFT, MB_ALT, MB_GUI, MB_CTL) can behave as either keyboard
- * modifiers or mouse buttons depending on context:
+ * On the mouse layer, MB_SFT / MB_ALT / MB_GUI / MB_CTL are each both a mouse
+ * button and a keyboard modifier. Which one a given press turns out to be is
+ * decided by what happens next.
  *
- * **Behavior Rules:**
- * - When pressed alone and released: Sends a mouse button tap
- * - When pressed and another key is pressed: Acts as a modifier
- * - When external modifiers are active on press: Acts as a mouse button
- * - When pressed and mouse moves: Converts to mouse button automatically
+ * **The key is a BUTTON first.** A press commits to nothing and emits nothing.
+ * The modifier is the exceptional role and must be EARNED by a competing
+ * signal arriving before release. Nothing happening is not a signal -- it is
+ * the default, and the default is a click.
  *
- * This allows for efficient single-key usage while maintaining full modifier
- * functionality when needed for key combinations.
+ * **Behavior Rules** -- while a press is still undecided:
+ *
+ * | What happens next            | Role it takes | What is emitted          |
+ * |------------------------------|---------------|--------------------------|
+ * | Released, nothing else       | button        | a click, at any duration |
+ * | Pointer moves                | button, held  | button down -> drag      |
+ * | Scroll                       | modifier      | keeps Cmd+scroll as zoom |
+ * | Another key is PRESSED       | modifier      | applies to that key      |
+ * | Another MB_* key is pressed  | modifier      | giving e.g. Cmd+click    |
+ *
+ * External modifiers already held at press time are decided immediately: the
+ * key is a mouse button, so Shift+click and friends work.
+ *
+ * Two properties of that table are load-bearing, and both were learned the
+ * hard way:
+ *
+ * 1. Resolution happens on the other key's PRESS, never its release -- by
+ *    release the key has already been sent, and the modifier would be too
+ *    late to apply to it.
+ *
+ * 2. The button role is the DEFAULT rather than a fallback. The previous
+ *    design registered the modifier on press and emitted the button at
+ *    release only if nothing had contradicted it -- which meant proving a
+ *    negative from observed keypresses, and it could not observe the ones
+ *    SM_TD consumed upstream of process_record_user(). Every press of
+ *    Cmd+Space therefore emitted a real, modifier-less middle click; it only
+ *    looked intermittent because it was invisible unless the pointer happened
+ *    to rest over something that reacts to one. Scrolling with a key held had
+ *    the same defect. Under these rules an unobserved keypress can no longer
+ *    manufacture a click, because a click requires the absence of every
+ *    signal rather than the absence of the ones we managed to see.
+ *
+ * The rules are executable: tests/test_townk_mouse.py drives this file on the
+ * host and asserts the table above, one test per row.
  *
  * @author Thiago Alves
  * @date 2024
@@ -148,6 +179,13 @@ void confirm_pending_modifiers(uint16_t keycode) {
         if (state->is_held && !state->used_as_modifier && !state->converted_to_mouse && !state->mods_on_press) {
             state->used_as_modifier = true;
 
+            // Register the modifier HERE, not at press time. Every caller
+            // reaches this before the key that triggered it is emitted --
+            // process_record_user() returns true afterwards, and
+            // on_smtd_action() runs this ahead of its own switch -- so the
+            // modifier is down in time to apply to that key.
+            register_mods(get_modifier(i));
+
             // Defer mouse_mode(false) until release, only for non-mouse
             // keys
             if (!is_mouse_btn && !is_special_key) {
@@ -195,11 +233,12 @@ bool process_special_mouse_keys(uint16_t keycode, keyrecord_t *record) {
             // If external modifiers are active, act as mouse button
             if (state->mods_on_press) {
                 register_code(get_mouse_button(mb_index));
-            } else {
-                // Otherwise start as a modifier (may convert to mouse on
-                // movement)
-                register_mods(get_modifier(mb_index));
             }
+            // Otherwise commit to NOTHING yet. On this layer the key is a
+            // button by default and a modifier only by exception, so the
+            // modifier has to be earned by something happening next --
+            // another key, or a scroll. Claiming it up-front is what made
+            // the old design have to prove a negative at release time.
         } else {
             // Key release - determine what to release based on how the key was
             // used
@@ -210,11 +249,12 @@ bool process_special_mouse_keys(uint16_t keycode, keyrecord_t *record) {
                 // Was converted to mouse button by mouse movement
                 unregister_code(get_mouse_button(mb_index));
             } else if (state->used_as_modifier) {
-                // Was used as a modifier (another key was pressed)
+                // Was used as a modifier (another key was pressed, or a scroll)
                 unregister_mods(get_modifier(mb_index));
             } else {
-                // Was tapped alone - release modifier and tap mouse button
-                unregister_mods(get_modifier(mb_index));
+                // Nothing ever competed for this press, so it keeps its
+                // default role: a click. No modifier to release first --
+                // none was ever registered.
                 tap_code(get_mouse_button(mb_index));
             }
 
@@ -268,16 +308,31 @@ bool process_special_mouse_keys(uint16_t keycode, keyrecord_t *record) {
  *       pointing_device_task_user() for further user-level processing.
  */
 report_mouse_t pointing_device_task_kb(report_mouse_t report) {
-    // Only convert on actual movement
-    if (report.x != 0 || report.y != 0) {
+    bool moved      = (report.x != 0 || report.y != 0);
+    bool scrolled   = (report.h != 0 || report.v != 0);
+
+    // Pointer motion and scrolling resolve an undecided key in OPPOSITE
+    // directions, so motion is checked first and wins when a report carries
+    // both (a drag with a little scroll noise is still a drag).
+    if (moved || scrolled) {
         for (int i = 0; i < 4; i++) {
             mb_state_t *state = &mb_states[i];
 
-            // Convert held modifiers to mouse buttons on movement
-            if (state->is_held && !state->used_as_modifier && !state->converted_to_mouse && !state->mods_on_press) {
-                unregister_mods(get_modifier(i));
+            if (!state->is_held || state->used_as_modifier || state->converted_to_mouse || state->mods_on_press) {
+                continue;
+            }
+
+            if (moved) {
+                // Dragging: hold the button down for the whole gesture.
                 register_code(get_mouse_button(i));
                 state->converted_to_mouse = true;
+            } else {
+                // Scrolling: the key is qualifying the scroll, not clicking
+                // through it -- this is what keeps Cmd+scroll as zoom. It
+                // also stops the release from firing a stray click, which
+                // is the same defect as a modifier-less phantom press.
+                register_mods(get_modifier(i));
+                state->used_as_modifier = true;
             }
         }
     }

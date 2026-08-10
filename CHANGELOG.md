@@ -41,6 +41,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `MB_*` keys are now **button-first**: a press commits to nothing and emits
+  nothing, and the modifier role must be earned by a competing signal (another
+  keypress, or a scroll) before release. Previously the modifier was claimed on
+  press and the mouse button was a release-time fallback, reached only when
+  nothing had contradicted it — which required proving a negative from observed
+  keypresses. Nothing happening is no longer evidence of a tap; it *is* the
+  default. Scrolling with a key held now resolves it to a modifier (keeping
+  ⌘+scroll as zoom) rather than leaving it undecided, and pointer motion still
+  wins over scroll when a report carries both. The rules are documented as a
+  table at the top of `townk_mouse.c` and asserted one test per row
+
 - Renumbered layers to make room for the new typing/gaming layers:
   `NAV` 1→4, `NUM` 2→5, `SYM` 3→6, `FUN` 4→7, `MED` 5→8 (`SYS` stays at
   14 and `MBO` at 15)
@@ -61,6 +72,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Phantom mouse click after scrolling with an `MB_*` key held — ⌘+scroll to
+  zoom, then release, emitted a stray modifier-less middle click. Same defect
+  as the SM_TD case below (an undecided key falling through to its release-time
+  tap), found by the new host test suite on its first run
 - Phantom mouse click when an `MB_*` key was combined with an SM_TD key
   (e.g. Cmd+Space, Cmd+Tab, Cmd+Backspace). SM_TD hooks
   `pre_process_record_sm_td()`, which sits ahead of `process_record_user()`

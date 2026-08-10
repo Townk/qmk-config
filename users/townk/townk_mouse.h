@@ -43,22 +43,22 @@
  *
  * **Key Processing Logic:**
  *
- * 1. **On ANY key press:** Check all held special keys and mark them as
- *    modifiers if they haven't been used yet. This ensures they act as
- *    modifiers when another key is pressed while they're held.
+ * 1. **On ANY key press:** commit every still-undecided held special key to
+ *    its modifier role, registering the modifier now so it applies to the key
+ *    that triggered this. See confirm_pending_modifiers() below.
  *
  * 2. **On special key press:**
  *    - Initialize state tracking
  *    - Check for external modifiers (modifiers not from our special keys)
- *    - If external mods active: Act as mouse button immediately
- *    - Otherwise: Act as modifier (may convert to mouse later)
+ *    - If external mods active: act as a mouse button immediately
+ *    - Otherwise: commit to nothing, and emit nothing. The key is a button by
+ *      default; the modifier has to be earned before release.
  *
  * 3. **On special key release:**
- *    - If was used with external mods: Release mouse button
- *    - Else if converted to mouse (by movement): Release mouse button
- *    - Else if used as modifier: Just release modifier
- *    - Else (tapped alone): Release modifier and tap mouse button
- *    - Clean up state and exit mouse mode if needed
+ *    - If was used with external mods: release mouse button
+ *    - Else if converted to mouse (by movement): release mouse button
+ *    - Else if used as a modifier (another key, or a scroll): release modifier
+ *    - Else nothing ever competed for it: tap the mouse button
  *
  * @param keycode The keycode being processed
  * @param record Pointer to the key event record
