@@ -28,6 +28,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (including the bolt-on `layer_bits` mask) were deleted in the shim's
   favour
 
+### Fixed
+
+- The repeat key (`QK_REP`), dead since SM_TD 0.5.6: sm_td consumes every
+  record and re-resolves it by matrix *position*, so Repeat Key's replayed
+  records — last keycode, but `QK_REP`'s own position — turned back into
+  `QK_REP` and were swallowed by Repeat Key's recursion guard. sm_td is now
+  integrated manually (its documented non-module installation) instead of as
+  a community module, so `process_record_user()` can let records pass
+  untouched while `get_repeat_key_count()` is nonzero. Worth reporting
+  upstream: the same guard belongs in `process_smtd()` itself
+
 ### Removed
 
 - `-Wno-error=unused-variable` from `users/townk/rules.mk`: it existed for

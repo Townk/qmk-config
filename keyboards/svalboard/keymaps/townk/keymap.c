@@ -26,6 +26,8 @@
 #include "townk_mouse.h"
 #include "townk_overrides.h"
 
+#include "sm_td.h"
+
 extern void mouse_mode(bool on);
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -797,6 +799,22 @@ void keyboard_post_init_user(void) {
  * @see process_special_mouse_keys() in townk_mouse.c for special key handling.
  */
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    /* sm_td runs here, manually, instead of as a community module — the module
+     * hook offers no way to shield Repeat Key from it. Since 0.5.6 sm_td
+     * consumes every record and re-resolves it by matrix POSITION; Repeat
+     * Key's replays carry the last keycode but QK_REP's own position, so
+     * sm_td turned every replay back into QK_REP, which Repeat Key's
+     * recursion guard then swallowed — repeat produced nothing at all.
+     * get_repeat_key_count() is nonzero exactly while a replayed record is
+     * in flight; letting those records pass sm_td untouched makes them
+     * register natively, as they did before 0.5.6.
+     *
+     * Order matters: sm_td must run before the handlers below so that real
+     * presses are consumed here (as the module used to) and the ESC hook and
+     * mouse-keys engine keep seeing only sm_td's emulated replays. */
+    if (get_repeat_key_count() == 0 && !process_smtd(keycode, record)) {
+        return false;
+    }
     if (keycode == KC_ESC) {
         mouse_mode(false);
     }
