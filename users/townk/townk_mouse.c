@@ -33,10 +33,17 @@
  * | What happens next            | Role it takes | What is emitted          |
  * |------------------------------|---------------|--------------------------|
  * | Released, nothing else       | button        | a click, at any duration |
- * | Pointer moves                | button, held  | button down -> drag      |
+ * | Pointer MOVES (deliberately) | button, held  | button down -> drag      |
  * | Scroll                       | modifier      | keeps Cmd+scroll as zoom |
  * | Another key is PRESSED       | modifier      | applies to that key      |
  * | Another MB_* key is pressed  | modifier      | giving e.g. Cmd+click    |
+ *
+ * "Moves" is a judgement, not a raw report: motion only counts once it has
+ * accumulated MB_MOVE_THRESHOLD counts without going quiet for
+ * MB_MOVE_RESET_MS -- see pointer_is_moving(). A hand resting on the ball
+ * emits sparse one-count blips, and each of those used to convert a held key
+ * into its button on the spot (hold Cmd while touching the ball, get a
+ * middle click).
  *
  * Separately, a key that is not an MB_* key at all may still **contribute a
  * modifier to a click** while it is held -- the left thumb pad (CKC_BSPC)
@@ -82,10 +89,62 @@
  * @date 2024
  */
 
+#include "timer.h"
+
 #include "townk_keycodes.h"
 #include "townk_layers.h"
 #include "townk_mods.h"
 #include "townk_mouse.h"
+
+/* A hand merely RESTING on the trackball produces occasional one-count
+ * reports, and a single report is indistinguishable from the start of a
+ * deliberate drag -- so "the pointer moved" must be earned, not assumed.
+ * Deliberate motion is a dense stream of reports whose distance adds up
+ * within a few tens of milliseconds; resting jitter is sparse blips with
+ * long silences in between. Accumulate |x|+|y| across reports, forget the
+ * total when the stream goes quiet, and call the pointer moving only once
+ * the total crosses the threshold. Both knobs are overridable per build.
+ *
+ * The cost is that a real drag travels MB_MOVE_THRESHOLD counts before the
+ * button goes down -- at trackball resolution, an imperceptible slip. */
+#ifndef MB_MOVE_THRESHOLD
+#    define MB_MOVE_THRESHOLD 8
+#endif
+
+/** A gap this long without motion forgets the accumulated distance. */
+#ifndef MB_MOVE_RESET_MS
+#    define MB_MOVE_RESET_MS 50
+#endif
+
+static uint16_t mb_motion_accum     = 0;
+static uint32_t mb_motion_last_time = 0;
+
+/**
+ * @brief Decides whether this report is part of deliberate pointer motion.
+ *
+ * Feeds one report's x/y into the motion accumulator and answers whether
+ * enough distance has built up, densely enough in time, to treat the pointer
+ * as moving. Zero-motion reports leave the accumulator alone; the idle reset
+ * happens lazily on the next motion report instead.
+ */
+static bool pointer_is_moving(int8_t x, int8_t y) {
+    if (x == 0 && y == 0) {
+        return false;
+    }
+
+    if (timer_elapsed32(mb_motion_last_time) > MB_MOVE_RESET_MS) {
+        mb_motion_accum = 0;
+    }
+    mb_motion_last_time = timer_read32();
+
+    /* int promotion makes -x safe even for x == -128 */
+    uint16_t distance = (uint16_t)(x < 0 ? -x : x) + (uint16_t)(y < 0 ? -y : y);
+    if (mb_motion_accum < MB_MOVE_THRESHOLD) { /* saturate; a drag can outlast uint16_t */
+        mb_motion_accum += distance;
+    }
+
+    return mb_motion_accum >= MB_MOVE_THRESHOLD;
+}
 
 /**
  * @brief External function to toggle mouse mode on/off
@@ -403,7 +462,8 @@ bool process_special_mouse_keys(uint16_t keycode, keyrecord_t *record) {
  * modifiers to mouse buttons when the mouse/trackball/trackpad moves.
  *
  * **Conversion Logic:**
- * When mouse movement is detected (x or y != 0), this function checks each
+ * When deliberate mouse movement is detected (accumulated motion crossing
+ * MB_MOVE_THRESHOLD -- see pointer_is_moving()), this function checks each
  * special key to see if it should be converted to a mouse button. A key is
  * converted if:
  * - The key is currently held (is_held)
@@ -426,13 +486,15 @@ bool process_special_mouse_keys(uint16_t keycode, keyrecord_t *record) {
  *       pointing_device_task_user() for further user-level processing.
  */
 report_mouse_t pointing_device_task_kb(report_mouse_t report) {
-    bool moved      = (report.x != 0 || report.y != 0);
+    bool moving     = pointer_is_moving(report.x, report.y);
     bool scrolled   = (report.h != 0 || report.v != 0);
 
     // Pointer motion and scrolling resolve an undecided key in OPPOSITE
     // directions, so motion is checked first and wins when a report carries
-    // both (a drag with a little scroll noise is still a drag).
-    if (moved || scrolled) {
+    // both (a drag with a little scroll noise is still a drag). "Motion"
+    // means the accumulated threshold above, not any nonzero report: a
+    // sub-threshold wiggle riding on a scroll is treated as the scroll.
+    if (moving || scrolled) {
         for (int i = 0; i < 4; i++) {
             mb_state_t *state = &mb_states[i];
 
@@ -440,7 +502,7 @@ report_mouse_t pointing_device_task_kb(report_mouse_t report) {
                 continue;
             }
 
-            if (moved) {
+            if (moving) {
                 // Dragging: hold the button down for the whole gesture.
                 acquire_click_modifiers(state);
                 register_code(get_mouse_button(i));

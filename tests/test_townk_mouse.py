@@ -98,6 +98,7 @@ def _build() -> ctypes.CDLL:
     lib.T_mouse_mode_calls.restype = ctypes.c_int
     lib.T_mouse_mode_state.restype = ctypes.c_bool
     lib.TEST_reset.argtypes = []
+    lib.TEST_advance_time.argtypes = [ctypes.c_uint32]
     # TEST_get_record_history deliberately has no argtypes: ctypes already
     # passes an array and a byref() correctly, and declaring them would mean
     # ctypes.POINTER(), which is deprecated.
@@ -245,6 +246,81 @@ class TownkMouseTest(unittest.TestCase):
 
         LIB.T_key(MB_GUI, False)
         self.assertEqual(self.history()[-1], Event(KC_BTN3, pressed=False, mods=0))
+
+    def test_resting_jitter_does_not_convert(self) -> None:
+        """A one-count blip is a resting hand, not a drag.
+
+        The hand resting on the ball emits sparse tiny reports. Before the
+        motion threshold, each one converted a held key to its button on the
+        spot: holding Cmd while touching the ball produced a middle click.
+        The key must stay undecided, so releasing it is still a plain click.
+        """
+        LIB.T_key(MB_GUI, True)
+        LIB.T_pointing(1, 0, 0, 0)
+
+        self.assertNoMouseButton("a jitter blip must not press a button")
+        self.assertEqual(self.mods(), 0, "nor claim the modifier")
+
+        LIB.T_key(MB_GUI, False)
+        self.assertEqual(
+            self.history(),
+            [
+                Event(KC_BTN3, pressed=True, mods=0),
+                Event(KC_BTN3, pressed=False, mods=0),
+            ],
+            "released with nothing earned, the key is still a click",
+        )
+
+    def test_sparse_jitter_never_accumulates(self) -> None:
+        """Blips separated by quiet gaps reset the accumulator.
+
+        Four two-count blips total 8 -- enough to cross the threshold if they
+        merely added up. They must not: a quiet gap longer than
+        MB_MOVE_RESET_MS forgets the distance, so resting on the ball for a
+        long time is no closer to a drag than touching it once.
+        """
+        LIB.T_key(MB_GUI, True)
+        for _ in range(4):
+            LIB.T_pointing(2, 0, 0, 0)
+            LIB.TEST_advance_time(100)  # > MB_MOVE_RESET_MS: goes quiet
+
+        self.assertNoMouseButton("sparse jitter must never become a drag")
+
+        LIB.T_key(MB_GUI, False)
+
+    def test_slow_dense_motion_still_converts(self) -> None:
+        """A slow but continuous drag crosses the threshold and converts.
+
+        Per-report distance depends on CPI and polling rate, so a deliberate
+        precision drag may only produce a few counts per report. What makes
+        it deliberate is density: back-to-back reports with no quiet gap.
+        """
+        LIB.T_key(MB_GUI, True)
+        LIB.T_pointing(3, 0, 0, 0)
+        LIB.T_pointing(3, 0, 0, 0)
+        self.assertNoMouseButton("6 counts is still below the threshold")
+
+        LIB.T_pointing(3, 0, 0, 0)  # 9 counts: deliberate
+        self.assertEqual(self.history(), [Event(KC_BTN3, pressed=True, mods=0)])
+
+        LIB.T_key(MB_GUI, False)
+        self.assertEqual(self.history()[-1], Event(KC_BTN3, pressed=False, mods=0))
+
+    def test_scroll_with_motion_noise_is_a_scroll(self) -> None:
+        """Sub-threshold x/y riding on a scroll report resolves as scroll.
+
+        Motion only outranks scroll once it is deliberate. A wiggle of the
+        resting hand during Cmd+scroll must keep the zoom, not turn it into
+        a middle-button drag.
+        """
+        LIB.T_key(MB_GUI, True)
+        LIB.T_pointing(1, 0, 3, 3)
+
+        self.assertEqual(self.mods(), MOD_LGUI, "the scroll claims the modifier")
+        self.assertNoMouseButton("the wiggle must not press a button")
+
+        LIB.T_key(MB_GUI, False)
+        self.assertNoMouseButton("releasing after the scroll must not click")
 
     def test_external_modifier_makes_it_a_button(self) -> None:
         """Pressed while another modifier is already down: a mouse button."""

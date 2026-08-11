@@ -30,6 +30,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Resting a hand on the trackball no longer converts a held `MB_*` key into
+  its mouse button (holding Cmd while touching the ball produced a middle
+  click). Motion now has to be deliberate: `|x|+|y|` accumulated across
+  reports must cross `MB_MOVE_THRESHOLD` (8) without a quiet gap longer
+  than `MB_MOVE_RESET_MS` (50) resetting the total. Both are overridable
+  in `config.h`. A side effect pins the motion-vs-scroll tie-break: a
+  sub-threshold wiggle riding on a scroll report now resolves as the
+  scroll (modifier), not as a drag
 - The repeat key (`QK_REP`), dead since SM_TD 0.5.6: sm_td consumes every
   record and re-resolves it by matrix *position*, so Repeat Key's replayed
   records — last keycode, but `QK_REP`'s own position — turned back into

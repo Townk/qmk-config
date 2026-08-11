@@ -175,6 +175,8 @@ void T_reset(void) {
     for (int i = 0; i < 4; i++) {
         mb_states[i] = (mb_state_t){0};
     }
+    mb_motion_accum     = 0;
+    mb_motion_last_time = 0;
     mods_reset();
     mouse_mode_calls = 0;
     mouse_mode_state = false;
