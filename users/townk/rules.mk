@@ -23,5 +23,4 @@ SRC += townk_overrides.c
 SRC += townk_smtd.c
 
 CFLAGS += -fcommon
-CFLAGS += -Wno-error=unused-variable
 

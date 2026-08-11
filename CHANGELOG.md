@@ -28,6 +28,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (including the bolt-on `layer_bits` mask) were deleted in the shim's
   favour
 
+### Removed
+
+- `-Wno-error=unused-variable` from `users/townk/rules.mk`: it existed for
+  the `return_layer` statics `sm_td.h` used to define in every translation
+  unit, and SM_TD 0.6.2 removed them along with `LAYER_PUSH`; a clean build
+  is warning-free without it
+
 ### Added
 
 - `docs/sm_td-upgrade-notes.md` — what the host suite does and does not cover,
