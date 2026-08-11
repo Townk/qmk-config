@@ -29,7 +29,7 @@ SUBMODULE = os.path.join(REPO, "modules", "stasmarkin")
 # The recorded-event struct comes from the vendored shim rather than being
 # retyped here, so a change to it upstream surfaces as a test failure instead of
 # silently misreading memory.
-sys.path.insert(0, os.path.join(SUBMODULE, "tests"))
+sys.path.insert(0, os.path.join(SUBMODULE, "tests", "unit"))
 from sm_td_bindings import CHistory  # noqa: E402
 
 MAX_HISTORY = 100

@@ -88,6 +88,36 @@ extern void mouse_mode(bool on);
     BREAK_CAPS_WORD(tap_key);           \
     mouse_mode(false)
 
+/* SM_TD 0.6.2 deleted LAYER_PUSH/LAYER_RESTORE in favour of plain
+ * layer_on()/layer_off() (its SMTD_LT now adds and removes the hold layer
+ * additively). CUSTOM_LT relies on the old move-and-restore semantics --
+ * layer_move() REPLACES the layer state and the refcount restores whatever
+ * was highest at push time -- and switching it to the additive model would
+ * change how nested layer-tap holds resolve. Vendored here verbatim from
+ * the last SM_TD version that shipped them (v0.6.1), so the upgrade does
+ * not change behaviour. 13 is safe as the not-set sentinel: layers 9-13
+ * are unused in this keymap (see townk_layers.h). */
+#define RETURN_LAYER_NOT_SET 13
+
+static uint8_t smtd_return_layer     = RETURN_LAYER_NOT_SET;
+static uint8_t smtd_return_layer_cnt = 0;
+
+#define LAYER_PUSH(layer)                                   \
+    smtd_return_layer_cnt++;                                \
+    if (smtd_return_layer == RETURN_LAYER_NOT_SET) {        \
+        smtd_return_layer = get_highest_layer(layer_state); \
+    }                                                       \
+    layer_move(layer)
+
+#define LAYER_RESTORE()                               \
+    if (smtd_return_layer_cnt > 0) {                  \
+        smtd_return_layer_cnt--;                      \
+        if (smtd_return_layer_cnt == 0) {             \
+            layer_move(smtd_return_layer);            \
+            smtd_return_layer = RETURN_LAYER_NOT_SET; \
+        }                                             \
+    }
+
 /**
  * @brief Creates a custom Layer-Tap behavior using the SM_TD dance system.
  *

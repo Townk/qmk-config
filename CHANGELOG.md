@@ -9,11 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- SM_TD bumped from the pinned `v0.5.4` to `v0.5.6` (first stop on the way to
-  `v0.6.x`). Taps now go through the full QMK pipeline upstream, so Caps Word
-  and friends finally see them; the host-test shim consequently models weak
-  mods and Caps Word state for real, and the fixture's own always-zero /
-  call-counting stand-ins were removed in its favour
+- SM_TD bumped from the pinned `v0.5.4` to `v0.6.4`, in two commits
+  (`v0.5.6`, then straight to `v0.6.4` after on-keyboard testing found the
+  repeat key broken at `v0.5.6`, which removed the value of flashing each
+  intermediate tag). What changed underneath: taps now go through the full
+  QMK pipeline (`SMTD_GLOBAL_PIPELINE_TAPS`, default on — the escape hatch
+  back to 0.5.4 tap behaviour if the repeat key is still broken), the
+  tap-vs-hold release window is now rhythm-derived
+  (`SMTD_GLOBAL_RELEASE_RATIO`, default 5; 0 restores the fixed 0.5.x
+  window), and chordal hold exists but stays off (`SMTD_CHORDAL_HOLD 0`)
+- SM_TD 0.6.2 deleted `LAYER_PUSH`/`LAYER_RESTORE`; the v0.6.1 definitions
+  are vendored verbatim into `townk_smtd.c` so `CUSTOM_LT` keeps its
+  move-and-restore layer semantics instead of silently switching to the
+  additive `layer_on`/`layer_off` model upstream's `SMTD_LT` now uses
+- The host-test shim now models weak mods, Caps Word state, and — since
+  0.6.4 — layer state as a real bitmask with native additive
+  `layer_on`/`layer_off`; the fixture's own stand-ins for all of those
+  (including the bolt-on `layer_bits` mask) were deleted in the shim's
+  favour
 
 ### Added
 

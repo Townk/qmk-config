@@ -22,7 +22,7 @@
 #define MATRIX_COLS 4
 #define TAPPING_TERM 200
 
-#include "../modules/stasmarkin/tests/sm_td_bindings.c"
+#include "../modules/stasmarkin/tests/unit/sm_td_bindings.c"
 
 /* The shim (0.5.6+) defines KC_LSFT as a macro for its own internal use; every
  * use inside it has expanded by now, and the macro would otherwise mangle the
@@ -79,24 +79,11 @@ typedef struct {
 
 report_mouse_t pointing_device_task_user(report_mouse_t report) { return report; }
 
-/* Layers. sm_td's shim models layer_state as a plain layer NUMBER, which cannot
- * represent the several-layers-at-once state QMK really has -- and that state is
- * the whole point here, since _NAV and _MBO must be able to coexist. Track a
- * proper bitmask alongside it: the shim keeps its number (sm_td reads it via
- * get_highest_layer), and layer_on/off/is work additively as on the board. */
-static uint32_t layer_bits = 0;
-
-void layer_on(uint8_t layer) {
-    layer_bits |= (uint32_t)1 << layer;
-    layer_state = layer;
-}
-
-void layer_off(uint8_t layer) {
-    layer_bits &= ~((uint32_t)1 << layer);
-    layer_state = 0;
-}
-
-bool layer_state_is(uint8_t layer) { return (layer_bits & ((uint32_t)1 << layer)) != 0; }
+/* Layers. Since 0.6.4 the shim models layer_state as a real bitmask with
+ * native additive layer_on/layer_off -- the fidelity this fixture used to
+ * bolt on with its own bitmask, now deleted in the shim's favour. Only
+ * layer_state_is is missing upstream; townk_mouse.c reads _NAV through it. */
+bool layer_state_is(uint8_t layer) { return (layer_state & ((uint32_t)1 << layer)) != 0; }
 
 /* ------------------------------------------------------------------------ *
  * SM_TD hooks every fixture must define
@@ -194,8 +181,12 @@ void T_reset(void) {
     caps_word_off();
     oneshot_mods = 0;
     set_mods(0);
-    layer_bits = 0;
     layer_move(_BASE);
+    /* The LAYER_PUSH/LAYER_RESTORE refcount lives in townk_smtd.c now that
+     * SM_TD 0.6.2 dropped the macros; the shim's TEST_reset no longer knows
+     * about it, so clear it here or a dangling push leaks across tests. */
+    smtd_return_layer     = RETURN_LAYER_NOT_SET;
+    smtd_return_layer_cnt = 0;
 }
 
 /* Reference-counted modifier ownership, driven directly. Going through gestures
