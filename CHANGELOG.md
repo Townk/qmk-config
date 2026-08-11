@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- CI actions bumped off the deprecated Node 20 runtime (`checkout` v4→v7,
+  `setup-python` v5→v7, `upload-artifact` v4→v7, `download-artifact`
+  v4→v8, `action-gh-release` v1→v3). No workflow inputs changed; the
+  breaking changes in between (by-ID download paths, ESM migrations, the
+  removed `pip-install` input, fork-PR restrictions) don't apply to how
+  this workflow uses them
 - SM_TD bumped from the pinned `v0.5.4` to `v0.6.4`, in two commits
   (`v0.5.6`, then straight to `v0.6.4` after on-keyboard testing found the
   repeat key broken at `v0.5.6`, which removed the value of flashing each

@@ -14,12 +14,12 @@ jobs:
 
         steps:
             - name: Set up Python 3.9
-              uses: actions/setup-python@v5
+              uses: actions/setup-python@v7
               with:
                   python-version: '3.9'
 
             - name: Checkout userspace
-              uses: actions/checkout@v4
+              uses: actions/checkout@v7
               with:
                   submodules: recursive
 
@@ -42,7 +42,7 @@ jobs:
                   echo "Building version: ${BUILD_VERSION} (found ${RELEASE_COUNT} existing releases)"
 
             - name: Checkout vial-qmk
-              uses: actions/checkout@v4
+              uses: actions/checkout@v7
               with:
                   repository: svalboard/vial-qmk
                   ref: vial
@@ -72,7 +72,7 @@ jobs:
                   mv svalboard_trackball_pmw3389_right_townk.uf2 "svalboard-colemak-dh-townk-${VERSION}.right.uf2"
 
             - name: Upload firmware artifacts
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v7
               with:
                   name: svalboard-colemak-townk
                   path: |
@@ -92,13 +92,13 @@ jobs:
 
         steps:
             - name: Download firmware artifacts
-              uses: actions/download-artifact@v4
+              uses: actions/download-artifact@v8
               with:
                   name: svalboard-colemak-townk
                   path: firmware
 
             - name: Create release
-              uses: softprops/action-gh-release@v1
+              uses: softprops/action-gh-release@v3
               with:
                   tag_name: v${{ needs.build.outputs.version }}
                   name: "Firmware v${{ needs.build.outputs.version }}"
