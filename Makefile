@@ -2,15 +2,25 @@
 
 MAKEFLAGS += --no-print-directory
 
-QMK_USERSPACE := $(patsubst %/,%,$(dir $(shell realpath "$(lastword $(MAKEFILE_LIST))")))
-ifeq ($(QMK_USERSPACE),)
-    QMK_USERSPACE := $(shell pwd)
-endif
+# Everything routes through the qmk CLI, which resolves this overlay's
+# keymap (keymap.json, the Vial feature flags, the keymap's config.h)
+# BEFORE invoking make inside qmk_home. Forwarding goals straight to
+# qmk_home's Makefile -- what this file used to do -- silently drops all of
+# that: the build loses VIAL_ENABLE/KEY_OVERRIDE_ENABLE and dies in
+# townk_overrides.c under -Werror. (That old path also mis-parsed the
+# current `qmk config` output, which appends " (config)" to values.)
 
-QMK_FIRMWARE_ROOT = $(shell qmk config -ro user.qmk_home | cut -d= -f2 | sed -e 's@^None$$@@g')
-ifeq ($(QMK_FIRMWARE_ROOT),)
-    $(error Cannot determine qmk_firmware location. `qmk config -ro user.qmk_home` is not set)
-endif
+.PHONY: all clean
+all:
+	qmk userspace-compile
 
+clean:
+	qmk clean
+
+# Forward keyboard:keymap goals unchanged, e.g.
+#     make svalboard/trackball/pmw3389/left:townk
+# Anything with a second colon (":flash", ":uf2") needs the qmk CLI's own
+# subcommands; refuse rather than quietly compile instead.
 %:
-	+$(MAKE) -C $(QMK_FIRMWARE_ROOT) $(MAKECMDGOALS) QMK_USERSPACE=$(QMK_USERSPACE)
+	$(if $(word 3,$(subst :, ,$@)),$(error target '$@' has a suffix this Makefile does not forward; use the qmk CLI directly, e.g. `qmk flash -kb <keyboard> -km <keymap>`))
+	qmk compile -kb $(firstword $(subst :, ,$@)) -km $(lastword $(subst :, ,$@))

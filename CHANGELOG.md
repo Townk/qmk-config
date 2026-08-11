@@ -33,6 +33,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The Makefile forwarded goals straight to qmk_home's own Makefile, which
+  cannot build this overlay: without the qmk CLI resolving the keymap
+  first, the build silently drops `VIAL_ENABLE`/`KEY_OVERRIDE_ENABLE` and
+  the keymap's `config.h`, then dies in `townk_overrides.c` under
+  `-Werror` (it also mis-parsed current `qmk config` output, which appends
+  " (config)" to values). It now routes through the qmk CLI: `make` runs
+  `qmk userspace-compile`, `make <keyboard>:<keymap>` runs `qmk compile`,
+  `make clean` runs `qmk clean`, and `:flash`-style suffixes are refused
+  with a pointer to the CLI
 - Every push to *any* branch created a public, non-draft GitHub release
   marked "latest" — and, because the build number is derived from the count
   of existing releases, permanently consumed the next `v1.0.N` for `main`.
