@@ -84,7 +84,10 @@ jobs:
     publish:
         name: "Publish Firmware"
         runs-on: ubuntu-latest
-        if: success()
+        # Only main may publish: a branch push would otherwise create a
+        # non-draft release marked "latest" AND consume the next v1.0.N
+        # patch number (the version is derived from the release count).
+        if: success() && github.ref == 'refs/heads/main'
         needs: build
 
         steps:

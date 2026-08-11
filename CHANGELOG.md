@@ -33,6 +33,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Every push to *any* branch created a public, non-draft GitHub release
+  marked "latest" — and, because the build number is derived from the count
+  of existing releases, permanently consumed the next `v1.0.N` for `main`.
+  The publish job is now gated to `refs/heads/main`; the build job still
+  runs on every branch, so pushing a work branch remains a free compile
+  check
 - Tapping the Backspace/Delete pad with Smart Shift's one-shot pending sent
   Shift+Delete (which most apps ignore — "forward delete does nothing") and
   then registered a real left Shift that no key release would ever clear.
