@@ -27,9 +27,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `layer_on`/`layer_off`; the fixture's own stand-ins for all of those
   (including the bolt-on `layer_bits` mask) were deleted in the shim's
   favour
+- The host fixture now compiles `townk_layers.c` too (via the shim's
+  `SMTD_LAYOUT_DEFINES_LAYER_HOOK`), so every layer mutation in tests runs
+  the real `layer_state_set_user()`; suite is 35 tests
 
 ### Fixed
 
+- Tapping the Backspace/Delete pad with Smart Shift's one-shot pending sent
+  Shift+Delete (which most apps ignore — "forward delete does nothing") and
+  then registered a real left Shift that no key release would ever clear.
+  `SHIFT_ACTION` now restores only the shift bits that were really held and
+  spends the one-shot itself: the inverted tap *is* the "next key" the
+  one-shot was armed for
+- `pointer_is_moving()` took `int8_t` x/y while the Svalboard defines
+  `MOUSE_EXTENDED_REPORT`, making reports `int16_t`: a 256-count flick
+  truncated to zero motion (a real drag read as silence, inverting the
+  motion-beats-scroll rule), and sub-multiples miscounted (200 became -56).
+  Widened to `mouse_xy_report_t`; the host fixture's `report_mouse_t` now
+  matches the board's 16-bit shape so this class of bug is visible to tests
+- Entering the game layers cleared `auto_mouse` *before* calling
+  `mouse_mode(false)`, whose entire body Svalboard gates on that very flag
+  — a guaranteed no-op teardown (masked today because `TO(_GAM1)` is a
+  `layer_move`). Worse, every non-game layer change force-enabled
+  `auto_mouse`, silently overriding the persisted `SV_TOGGLE_AUTOMOUSE`
+  preference. The teardown now runs while the flag is still up, and the
+  flag is saved/restored only on the transitions in and out of the game
+  layers
 - Resting a hand on the trackball no longer converts a held `MB_*` key into
   its mouse button (holding Cmd while touching the ball produced a middle
   click). Motion now has to be deliberate: `|x|+|y|` accumulated across

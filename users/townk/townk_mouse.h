@@ -96,19 +96,18 @@ bool process_special_mouse_keys(uint16_t keycode, keyrecord_t *record);
  *       harmless, which is what lets both call sites below invoke it
  *       without coordinating.
  *
- * @note **Two call sites, deliberately.** process_record_user() only ever
- *       sees keys that reach it, and SM_TD-managed keycodes never do: SM_TD
- *       hooks pre_process_record_sm_td(), which sits ahead of
- *       pre_process_record_kb() on the &&-chain in
- *       pre_process_record_quantum(), and emits its own output through
- *       tap_code()/register_code() rather than as a key record. So an
- *       SM_TD key pressed while a special key was held left that special
- *       key looking untouched, and releasing it fired the "tapped alone"
- *       branch -- a phantom mouse click with no modifiers, seen by the OS
- *       as a real click (e.g. Cmd+Space emitting a stray middle click, which
- *       pastes in any app bound to middle-click-paste). on_smtd_action()
- *       therefore calls this too, for the keys process_record_user() will
- *       never be given.
+ * @note **Two call sites, deliberately.** SM_TD-managed keycodes never make
+ *       it to the mouse-key handling: process_smtd() runs FIRST inside
+ *       process_record_user() and consumes the record (the function returns
+ *       false before process_special_mouse_keys() is reached), and SM_TD
+ *       emits its own output through tap_code16()/register_code16(), which
+ *       bypass process_record entirely. So an SM_TD key pressed while a
+ *       special key was held left that special key looking untouched, and
+ *       releasing it fired the "tapped alone" branch -- a phantom mouse
+ *       click with no modifiers, seen by the OS as a real click (e.g.
+ *       Cmd+Space emitting a stray middle click, which pastes in any app
+ *       bound to middle-click-paste). on_smtd_action() therefore calls this
+ *       too, for the keys the mouse-key handling will never be given.
  */
 void confirm_pending_modifiers(uint16_t keycode);
 

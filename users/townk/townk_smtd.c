@@ -180,26 +180,36 @@ static uint8_t smtd_return_layer_cnt = 0;
  *        state.
  *
  * This macro checks if a shift modifier is currently active:
- * - If shift IS active: Unregisters shift, executes normal_action, stores
- *   which shift (left or right) was active in shift_mod variable
+ * - If shift IS active: Consumes the shift, executes normal_action, and
+ *   stores the shift bits that were REALLY HELD in shift_mod so they can be
+ *   re-registered afterwards
  * - If shift is NOT active: Executes shift_action
  *
  * This enables creating keys that behave differently when shift is held, by
  * inverting the shift behavior (shifted becomes unshifted and vice versa).
  *
+ * Shift can be active two different ways, and they are consumed differently:
+ * a HELD shift (in get_mods()) is unregistered and must come back afterwards,
+ * because the user is still holding the key; a ONE-SHOT shift (pending in
+ * get_oneshot_mods(), set by a Smart Shift tap) is cleared and must NOT come
+ * back -- this action is the "next key" it was armed for, and re-registering
+ * it as a real modifier would leave a Shift that no key release ever clears.
+ * That is why shift_mod is captured from get_mods() alone, not from the
+ * combined `mods`.
+ *
  * @param normal_action The action to perform when shift is held (after
- *        unregistering shift).
+ *        consuming shift).
  * @param shift_action The action to perform when shift is not held.
  *
- * @note Requires a static uint8_t shift_mod variable in scope to store which
- *       shift modifier was active.
+ * @note Requires a static uint8_t shift_mod variable in scope to store the
+ *       shift bits that were held; 0 when the shift was purely one-shot
+ *       (register_mods(0) is a no-op, so restoring is unconditional).
  */
 #define SHIFT_ACTION(normal_action, shift_action)       \
     if (mods & MOD_MASK_SHIFT) {                        \
-        shift_mod = mods & MOD_BIT_LSHIFT               \
-            ? MOD_BIT_LSHIFT                            \
-            : MOD_BIT_RSHIFT;                           \
+        shift_mod = get_mods() & MOD_MASK_SHIFT;        \
         unregister_mods(MOD_MASK_SHIFT);                \
+        clear_oneshot_mods();                           \
         normal_action;                                  \
     } else {                                            \
         shift_action;                                   \

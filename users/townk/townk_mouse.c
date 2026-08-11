@@ -116,7 +116,7 @@
 #    define MB_MOVE_RESET_MS 50
 #endif
 
-static uint16_t mb_motion_accum     = 0;
+static uint32_t mb_motion_accum     = 0;
 static uint32_t mb_motion_last_time = 0;
 
 /**
@@ -127,7 +127,7 @@ static uint32_t mb_motion_last_time = 0;
  * as moving. Zero-motion reports leave the accumulator alone; the idle reset
  * happens lazily on the next motion report instead.
  */
-static bool pointer_is_moving(int8_t x, int8_t y) {
+static bool pointer_is_moving(mouse_xy_report_t x, mouse_xy_report_t y) {
     if (x == 0 && y == 0) {
         return false;
     }
@@ -137,9 +137,10 @@ static bool pointer_is_moving(int8_t x, int8_t y) {
     }
     mb_motion_last_time = timer_read32();
 
-    /* int promotion makes -x safe even for x == -128 */
-    uint16_t distance = (uint16_t)(x < 0 ? -x : x) + (uint16_t)(y < 0 ? -y : y);
-    if (mb_motion_accum < MB_MOVE_THRESHOLD) { /* saturate; a drag can outlast uint16_t */
+    /* mouse_xy_report_t is int16_t on this board (MOUSE_EXTENDED_REPORT);
+     * int promotion makes -x safe even for x == INT16_MIN */
+    uint32_t distance = (uint32_t)(x < 0 ? -x : x) + (uint32_t)(y < 0 ? -y : y);
+    if (mb_motion_accum < MB_MOVE_THRESHOLD) { /* saturate; a drag can outlast the accumulator */
         mb_motion_accum += distance;
     }
 

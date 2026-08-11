@@ -143,17 +143,32 @@ layer_state_t default_layer_state_set_user(layer_state_t state) {
  *
  * @see RGBLIGHT_LAYERS constant for the maximum number of RGB layers.
  */
+/* The game layers borrow the auto_mouse flag; they do not own it. It is a
+ * persisted user preference (SV_TOGGLE_AUTOMOUSE writes it to EEPROM), so it
+ * is saved on the way into the game layers and restored -- not force-enabled
+ * -- on the way out, and ordinary layer changes leave it alone entirely. */
+static bool game_layers_active = false;
+static bool saved_auto_mouse   = false;
+
 layer_state_t layer_state_set_user(layer_state_t state) {
   for (int i = 0; i < RGBLIGHT_LAYERS; ++i) {
       rgblight_set_layer_state(i, layer_state_cmp(state, i));
   }
 
-  // Disable auto-mouse when on the game layer
-  if (layer_state_cmp(state, _GAM1) || layer_state_cmp(state, _GAM2)) {
-      global_saved_values.auto_mouse = false;
+  // Game layers want the pointer dead: no auto-mouse layer popping up
+  // mid-game. Svalboard's mouse_mode() body is GATED on auto_mouse, so the
+  // teardown must run BEFORE the flag is cleared or it is a guaranteed
+  // no-op -- keymap_support.c orders the same pair this way, with the
+  // warning "needs to go first to avoid the lockout".
+  bool in_game = layer_state_cmp(state, _GAM1) || layer_state_cmp(state, _GAM2);
+  if (in_game && !game_layers_active) {
+      game_layers_active = true;
+      saved_auto_mouse   = global_saved_values.auto_mouse;
       mouse_mode(false);
-  } else {
-      global_saved_values.auto_mouse = true;
+      global_saved_values.auto_mouse = false;
+  } else if (!in_game && game_layers_active) {
+      game_layers_active = false;
+      global_saved_values.auto_mouse = saved_auto_mouse;
   }
 
   return state;

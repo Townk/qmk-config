@@ -22,6 +22,12 @@
 #define MATRIX_COLS 4
 #define TAPPING_TERM 200
 
+/* This fixture compiles the real townk_layers.c, whose layer_state_set_user
+ * is the code under test for the game-layer auto-mouse handling. The shim's
+ * layer_move/layer_on/layer_off route every mutation through that hook when
+ * this is defined -- exactly what QMK does on-device. */
+#define SMTD_LAYOUT_DEFINES_LAYER_HOOK
+
 #include "../modules/stasmarkin/tests/unit/sm_td_bindings.c"
 
 /* The shim (0.5.6+) defines KC_LSFT as a macro for its own internal use; every
@@ -57,24 +63,45 @@ void    set_oneshot_mods(uint8_t mods) { oneshot_mods = mods; }
 uint8_t get_oneshot_mods(void) { return oneshot_mods; }
 void    clear_oneshot_mods(void) { oneshot_mods = 0; }
 
+/* Svalboard persisted settings. On-device this lives in keymap_support.c;
+ * only the field townk_layers.c touches is modelled. */
+static struct {
+    bool auto_mouse;
+} global_saved_values = {.auto_mouse = true};
+
 /* Supplied by the Svalboard keyboard code on-device. Recorded here so tests can
- * assert on mouse-mode transitions, which are otherwise invisible. */
+ * assert on mouse-mode transitions, which are otherwise invisible.
+ *
+ * auto_mouse is captured at call time because that ordering is a real
+ * contract: Svalboard's mouse_mode() body is gated on
+ * global_saved_values.auto_mouse ("needs to go first to avoid the lockout",
+ * keymap_support.c), so a caller that clears the flag before calling has
+ * turned the call into a guaranteed no-op on-device. */
 static int  mouse_mode_calls = 0;
 static bool mouse_mode_state = false;
+static bool mouse_mode_saw_auto_mouse = false;
 
 void mouse_mode(bool on) {
     mouse_mode_calls++;
     mouse_mode_state = on;
+    mouse_mode_saw_auto_mouse = global_saved_values.auto_mouse;
 }
 
 /* Pointing-device plumbing. townk_mouse.c defines pointing_device_task_kb()
- * (the movement -> mouse-button conversion) and hands off to _user. */
+ * (the movement -> mouse-button conversion) and hands off to _user.
+ *
+ * The Svalboard defines MOUSE_EXTENDED_REPORT, so on-device x/y are int16_t
+ * (see tmk_core/protocol/report.h). The fixture must match, or a large
+ * report would be truncated HERE and hide exactly the truncation bugs the
+ * motion tests exist to catch. */
+typedef int16_t mouse_xy_report_t;
+
 typedef struct {
-    int8_t  x;
-    int8_t  y;
-    int8_t  h;
-    int8_t  v;
-    uint8_t buttons;
+    mouse_xy_report_t x;
+    mouse_xy_report_t y;
+    int8_t            h;
+    int8_t            v;
+    uint8_t           buttons;
 } report_mouse_t;
 
 report_mouse_t pointing_device_task_user(report_mouse_t report) { return report; }
@@ -84,6 +111,30 @@ report_mouse_t pointing_device_task_user(report_mouse_t report) { return report;
  * bolt on with its own bitmask, now deleted in the shim's favour. Only
  * layer_state_is is missing upstream; townk_mouse.c reads _NAV through it. */
 bool layer_state_is(uint8_t layer) { return (layer_state & ((uint32_t)1 << layer)) != 0; }
+
+/* townk_layers.c takes QMK's layer_state_t; the shim models the same state
+ * as a bare uint32_t, so the typedef makes the two one type. */
+typedef uint32_t layer_state_t;
+
+/* QMK's semantics: an empty state means only layer 0 is active. */
+bool layer_state_cmp(layer_state_t state, uint8_t layer) {
+    if (!state) {
+        return layer == 0;
+    }
+    return (state & ((layer_state_t)1 << layer)) != 0;
+}
+
+/* RGB plumbing for townk_layers.c: the layer table is registered and each
+ * layer's segment toggled on layer changes. Nothing under test reads RGB
+ * state, so recording is unnecessary -- the stub only has to link. */
+#include "rgblight.h" /* the stub in tests/stubs, not QMK's */
+
+const rgblight_segment_t *const *rgblight_layers = 0;
+
+void rgblight_set_layer_state(uint8_t layer, bool enabled) {
+    (void)layer;
+    (void)enabled;
+}
 
 /* ------------------------------------------------------------------------ *
  * SM_TD hooks every fixture must define
@@ -118,6 +169,7 @@ void post_process_record(keyrecord_t *record) { (void)record; }
  * The code under test -- the real file, compiled as-is
  * ------------------------------------------------------------------------ */
 
+#include "../users/townk/townk_layers.c"
 #include "../users/townk/townk_mods.c"
 #include "../users/townk/townk_mouse.c"
 
@@ -157,8 +209,8 @@ void T_smtd_hold(uint16_t keycode, uint8_t tap_count) { on_smtd_action(keycode, 
 void T_smtd_release(uint16_t keycode, uint8_t tap_count) { on_smtd_action(keycode, SMTD_ACTION_RELEASE, tap_count); }
 
 /* Trackball motion. Pointer movement (x/y) is what converts a held key to a
- * held mouse button; h/v are scroll. */
-void T_pointing(int8_t x, int8_t y, int8_t h, int8_t v) {
+ * held mouse button; h/v are scroll. x/y are 16-bit, as on the board. */
+void T_pointing(mouse_xy_report_t x, mouse_xy_report_t y, int8_t h, int8_t v) {
     report_mouse_t report = {.x = x, .y = y, .h = h, .v = v, .buttons = 0};
     pointing_device_task_kb(report);
 }
@@ -168,6 +220,14 @@ void T_set_external_mods(uint8_t mods) { set_mods(mods); }
 
 int  T_mouse_mode_calls(void) { return mouse_mode_calls; }
 bool T_mouse_mode_state(void) { return mouse_mode_state; }
+bool T_mouse_mode_saw_auto_mouse(void) { return mouse_mode_saw_auto_mouse; }
+
+/* The Svalboard's persisted auto-mouse preference, as townk_layers.c sees it. */
+bool T_auto_mouse(void) { return global_saved_values.auto_mouse; }
+void T_set_auto_mouse(bool on) { global_saved_values.auto_mouse = on; }
+
+uint8_t T_layer_gam1(void) { return _GAM1; }
+uint8_t T_layer_base(void) { return _BASE; }
 
 /* Clear the engine's own state between tests. TEST_reset() in the sm_td shim
  * clears the recorded history and sm_td, but knows nothing about mb_states. */
@@ -178,8 +238,12 @@ void T_reset(void) {
     mb_motion_accum     = 0;
     mb_motion_last_time = 0;
     mods_reset();
-    mouse_mode_calls = 0;
-    mouse_mode_state = false;
+    mouse_mode_calls          = 0;
+    mouse_mode_state          = false;
+    mouse_mode_saw_auto_mouse = false;
+    global_saved_values.auto_mouse = true; /* the Svalboard EEPROM default */
+    game_layers_active = false;
+    saved_auto_mouse   = false;
     caps_word_off();
     oneshot_mods = 0;
     set_mods(0);

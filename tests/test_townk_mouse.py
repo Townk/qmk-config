@@ -82,7 +82,9 @@ def _build() -> ctypes.CDLL:
     lib.T_smtd_tap.argtypes = [ctypes.c_uint16, ctypes.c_uint8]
     lib.T_smtd_hold.argtypes = [ctypes.c_uint16, ctypes.c_uint8]
     lib.T_smtd_release.argtypes = [ctypes.c_uint16, ctypes.c_uint8]
-    lib.T_pointing.argtypes = [ctypes.c_int8] * 4
+    # x/y are 16-bit (MOUSE_EXTENDED_REPORT, as on the Svalboard); h/v are not.
+    lib.T_pointing.argtypes = [ctypes.c_int16, ctypes.c_int16,
+                               ctypes.c_int8, ctypes.c_int8]
     lib.T_set_external_mods.argtypes = [ctypes.c_uint8]
     lib.T_reset.argtypes = []
     lib.T_hold_backspace.argtypes = [ctypes.c_bool]
@@ -99,6 +101,19 @@ def _build() -> ctypes.CDLL:
     lib.T_mouse_mode_state.restype = ctypes.c_bool
     lib.TEST_reset.argtypes = []
     lib.TEST_advance_time.argtypes = [ctypes.c_uint32]
+    # The fixture's one-shot model, driven directly: SMART_SHIFT's tap is
+    # set_oneshot_mods(MOD_LSFT), so a test can stand in for that tap.
+    lib.set_oneshot_mods.argtypes = [ctypes.c_uint8]
+    lib.get_oneshot_mods.restype = ctypes.c_uint8
+    # Layer moves route through the REAL layer_state_set_user (townk_layers.c
+    # is compiled into the fixture), which is how the game-layer tests drive
+    # the code under test the same way a TO(_GAM1) keypress would.
+    lib.layer_move.argtypes = [ctypes.c_uint8]
+    lib.T_layer_gam1.restype = ctypes.c_uint8
+    lib.T_layer_base.restype = ctypes.c_uint8
+    lib.T_auto_mouse.restype = ctypes.c_bool
+    lib.T_set_auto_mouse.argtypes = [ctypes.c_bool]
+    lib.T_mouse_mode_saw_auto_mouse.restype = ctypes.c_bool
     # TEST_get_record_history deliberately has no argtypes: ctypes already
     # passes an array and a byref() correctly, and declaring them would mean
     # ctypes.POINTER(), which is deprecated.
@@ -130,6 +145,8 @@ KC_PLAIN: int = int(LIB.T_kc_plain())
 MOUSE_BUTTONS = (KC_BTN1, KC_BTN2, KC_BTN3)
 LAYER_NAV: int = int(LIB.T_layer_nav())
 LAYER_MBO: int = int(LIB.T_layer_mbo())
+LAYER_GAM1: int = int(LIB.T_layer_gam1())
+LAYER_BASE: int = int(LIB.T_layer_base())
 
 
 class TownkMouseTest(unittest.TestCase):
@@ -246,6 +263,26 @@ class TownkMouseTest(unittest.TestCase):
 
         LIB.T_key(MB_GUI, False)
         self.assertEqual(self.history()[-1], Event(KC_BTN3, pressed=False, mods=0))
+
+    def test_fast_flick_in_one_extended_report_converts(self) -> None:
+        """A single 256-count report is a deliberate drag, not silence.
+
+        The Svalboard defines MOUSE_EXTENDED_REPORT, so a report's x/y are
+        int16_t and a fast flick (or a delayed task tick accumulating PMW3389
+        counts) can arrive as one large report. Narrowing it to int8_t on the
+        way into the motion test folds 256 to 0 -- a real drag reads as no
+        motion at all, and the accumulated distance of sub-multiples is
+        miscounted (200 becomes -56).
+        """
+        LIB.T_key(MB_GUI, True)
+        LIB.T_pointing(256, 0, 0, 0)
+
+        self.assertEqual(
+            self.history(), [Event(KC_BTN3, pressed=True, mods=0)],
+            "a 256-count report is far past the threshold and must convert",
+        )
+
+        LIB.T_key(MB_GUI, False)
 
     def test_resting_jitter_does_not_convert(self) -> None:
         """A one-count blip is a resting hand, not a drag.
@@ -447,6 +484,36 @@ class TownkMouseTest(unittest.TestCase):
         )
 
         LIB.T_set_external_mods(0)
+
+    def test_oneshot_shift_tap_sends_delete_and_consumes_the_oneshot(self) -> None:
+        """Smart Shift tap then pad tap: Delete, with the one-shot spent.
+
+        The one-shot shift set by a Smart Shift tap counts as shift for the
+        inversion (mods reads get_mods() | get_oneshot_mods()), so the pad
+        must send forward Delete. But the one-shot is PENDING, not held:
+        unregister_mods() cannot consume it, and re-registering it as a real
+        modifier afterwards would leave a Shift no key release ever clears.
+        The inversion has to spend the one-shot itself -- the Delete IS the
+        "next key" the one-shot was armed for.
+        """
+        LIB.set_oneshot_mods(MOD_LSFT)  # a Smart Shift tap
+
+        LIB.T_smtd_touch(CKC_BSPC)
+        LIB.T_smtd_tap(CKC_BSPC, 0)
+
+        emitted = [e for e in self.history() if e.keycode in (KC_DEL, KC_BSPC)]
+        self.assertTrue(emitted, "something must be emitted")
+        self.assertEqual(
+            emitted[0].keycode, KC_DEL, "one-shot shift must invert the pad too"
+        )
+        self.assertEqual(
+            int(LIB.get_oneshot_mods()), 0,
+            "the one-shot must be consumed by the inverted tap",
+        )
+        self.assertEqual(
+            self.mods() & MOD_MASK_SHIFT, 0,
+            "a one-shot must not become a real shift: nothing would release it",
+        )
 
     def test_ctrl_shift_tap_sends_ctrl_delete(self) -> None:
         """Ctrl+Shift+Backspace is how you reach Ctrl+Delete.
@@ -735,6 +802,78 @@ class TownkMouseTest(unittest.TestCase):
         self.assertNotIn(
             KC_BTN3, [e.keycode for e in self.history()],
             "MB_GUI acted as a modifier and must not also click",
+        )
+
+
+class TownkLayersTest(unittest.TestCase):
+    """The game-layer auto-mouse handling in townk_layers.c.
+
+    Drives the real layer_state_set_user() through the shim's layer_move(),
+    the same route a TO(_GAM1) keypress takes on-device.
+    """
+
+    def setUp(self) -> None:
+        LIB.TEST_reset()
+        LIB.T_reset()
+
+    def tearDown(self) -> None:
+        LIB.layer_move(LAYER_BASE)  # leave no game state for the next test
+
+    def test_entering_a_game_layer_tears_down_mouse_mode(self) -> None:
+        """Game layers kill the pointer: mouse_mode(false), while it can act.
+
+        Svalboard's mouse_mode() body is GATED on
+        global_saved_values.auto_mouse -- with the flag already cleared the
+        call returns without touching mouse_mode_enabled, the pressed-key
+        count, or the _MBO layer. So the teardown must be issued while the
+        flag is still up, exactly as keymap_support.c does it ("needs to go
+        first to avoid the lockout"). Clearing the flag first turns the
+        teardown into a no-op on-device, invisibly: the layer_move to _GAM1
+        happens to sweep _MBO away today, which is why this must be pinned
+        by a test rather than by symptom.
+        """
+        LIB.layer_move(LAYER_GAM1)
+
+        self.assertGreater(int(LIB.T_mouse_mode_calls()), 0)
+        self.assertFalse(bool(LIB.T_mouse_mode_state()), "must be a teardown")
+        self.assertTrue(
+            bool(LIB.T_mouse_mode_saw_auto_mouse()),
+            "mouse_mode(false) must run BEFORE auto_mouse is cleared",
+        )
+        self.assertFalse(bool(LIB.T_auto_mouse()), "and then the flag goes down")
+
+    def test_leaving_a_game_layer_restores_the_saved_preference(self) -> None:
+        """A user who disabled auto-mouse must find it still disabled.
+
+        auto_mouse is a PERSISTED preference (SV_TOGGLE_AUTOMOUSE writes it
+        to EEPROM). Game layers borrow the flag; they do not own it. On the
+        way out it must be restored to what the user had, not force-enabled.
+        """
+        LIB.T_set_auto_mouse(False)  # the user's persisted choice
+
+        LIB.layer_move(LAYER_GAM1)
+        LIB.layer_move(LAYER_BASE)
+
+        self.assertFalse(
+            bool(LIB.T_auto_mouse()),
+            "leaving the game layer must restore the preference, not force it on",
+        )
+
+    def test_ordinary_layer_changes_leave_the_preference_alone(self) -> None:
+        """A thumb-key hold is not permission to rewrite a saved setting.
+
+        Every layer change runs layer_state_set_user(). If each non-game
+        change force-enables auto_mouse, the next _NAV hold silently undoes
+        SV_TOGGLE_AUTOMOUSE, and a later EEPROM write persists the override.
+        """
+        LIB.T_set_auto_mouse(False)
+
+        LIB.T_hold_backspace(True)   # _NAV on -- an ordinary layer change
+        LIB.T_hold_backspace(False)
+
+        self.assertFalse(
+            bool(LIB.T_auto_mouse()),
+            "a non-game layer change must not touch auto_mouse",
         )
 
 
