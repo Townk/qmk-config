@@ -30,6 +30,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The host fixture now compiles `townk_layers.c` too (via the shim's
   `SMTD_LAYOUT_DEFINES_LAYER_HOOK`), so every layer mutation in tests runs
   the real `layer_state_set_user()`; suite is 35 tests
+- The keymap-image pre-commit hook moved from the untracked `.git/hooks/`
+  into the tracked `hooks/` directory, wired up via `core.hooksPath`.
+  Fresh clones must run `git config core.hooksPath hooks` once, but the
+  hook itself now travels with the repository instead of silently
+  vanishing on a new clone
 
 ### Fixed
 

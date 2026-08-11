@@ -1,0 +1,47 @@
+#!/bin/bash
+# Pre-commit hook to regenerate keymap images
+
+echo "Regenerating keymap images..."
+
+TMP_DIR=$(mktemp -d)
+REPO_ROOT=$(git rev-parse --show-toplevel)
+
+# Run the keymap generator script
+qmk c2json \
+    -kb svalboard/trackball/pmw3389/right \
+    -km townk \
+    --no-cpp \
+    "$REPO_ROOT/keyboards/svalboard/keymaps/townk/keymap.c" > "${TMP_DIR}/keymap.json"
+
+skim generate --keymap "${TMP_DIR}/keymap.json" \
+              --config "$REPO_ROOT/keyboards/svalboard/keymaps/townk/skim-config.yaml" \
+              --output-dir "$REPO_ROOT/docs" \
+              --layer all-layers \
+              --no-symbols \
+              --force && \
+  skim generate --keymap "${TMP_DIR}/keymap.json" \
+                --config "$REPO_ROOT/keyboards/svalboard/keymaps/townk/skim-config.yaml" \
+                --output-dir "$REPO_ROOT/docs" \
+                --layer overview \
+                --force && \
+  skim generate --keymap "${TMP_DIR}/keymap.json" \
+                --config "$REPO_ROOT/keyboards/svalboard/keymaps/townk/skim-config.yaml" \
+                --output-dir "$REPO_ROOT/docs" \
+                --layer symbols \
+                --symbol-columns 2 \
+                --force
+
+# Check if the script succeeded
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to update keymap images. Commit aborted." >&2
+    echo "Keymap JSON saved to '${TMP_DIR}/keymap.json'" >&2
+    exit 1
+fi
+
+rm -fr "${TMP_DIR}"
+
+# Stage any modified keymap images
+git add docs/keymap-*.svg 2>/dev/null || true
+
+echo "Keymap images regenerated successfully."
+exit 0
