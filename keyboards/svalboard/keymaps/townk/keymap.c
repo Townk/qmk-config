@@ -715,10 +715,15 @@ void keyboard_post_init_user(void) {
      *
      * - MOUSE_DPI_200 (0)
      * - MOUSE_DPI_400 (1)
-     * - MOUSE_DPI_800 (2)
-     * - MOUSE_DPI_1200 (3)
-     * - MOUSE_DPI_1600 (4)
-     * - MOUSE_DPI_2400 (5)
+     * - MOUSE_DPI_600 (2)
+     * - MOUSE_DPI_800 (3)
+     * - MOUSE_DPI_1200 (4)
+     * - MOUSE_DPI_1600 (5)
+     * - MOUSE_DPI_2400 (6)
+     * - MOUSE_DPI_3200 (7)
+     * - MOUSE_DPI_4800 (8)
+     * - MOUSE_DPI_6400 (9)
+     * - MOUSE_DPI_12000 (10)
      */
     global_saved_values.left_dpi_index = MOUSE_DPI_400;
 
@@ -733,10 +738,15 @@ void keyboard_post_init_user(void) {
      *
      * - MOUSE_DPI_200 (0)
      * - MOUSE_DPI_400 (1)
-     * - MOUSE_DPI_800 (2)
-     * - MOUSE_DPI_1200 (3)
-     * - MOUSE_DPI_1600 (4)
-     * - MOUSE_DPI_2400 (5)
+     * - MOUSE_DPI_600 (2)
+     * - MOUSE_DPI_800 (3)
+     * - MOUSE_DPI_1200 (4)
+     * - MOUSE_DPI_1600 (5)
+     * - MOUSE_DPI_2400 (6)
+     * - MOUSE_DPI_3200 (7)
+     * - MOUSE_DPI_4800 (8)
+     * - MOUSE_DPI_6400 (9)
+     * - MOUSE_DPI_12000 (10)
      */
     global_saved_values.right_dpi_index = MOUSE_DPI_1200;
 

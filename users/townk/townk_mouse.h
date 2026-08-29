@@ -19,12 +19,20 @@
 
 #include "action.h"
 
+/* Indices into Svalboard's dpi_choices[] table (svalboard.c):
+ * { 200, 400, 600, 800, 1200, 1600, 2400, 3200, 4800, 6400, 12000 }.
+ * Each name must map to the index holding that CPI value. */
 #define MOUSE_DPI_200 0
 #define MOUSE_DPI_400 1
-#define MOUSE_DPI_800 2
-#define MOUSE_DPI_1200 3
-#define MOUSE_DPI_1600 4
-#define MOUSE_DPI_2400 5
+#define MOUSE_DPI_600 2
+#define MOUSE_DPI_800 3
+#define MOUSE_DPI_1200 4
+#define MOUSE_DPI_1600 5
+#define MOUSE_DPI_2400 6
+#define MOUSE_DPI_3200 7
+#define MOUSE_DPI_4800 8
+#define MOUSE_DPI_6400 9
+#define MOUSE_DPI_12000 10
 
 #define MOUSE_LAYER_TIMEOUT_200_MS 0
 #define MOUSE_LAYER_TIMEOUT_300_MS 1
