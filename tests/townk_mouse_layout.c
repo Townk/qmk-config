@@ -172,6 +172,7 @@ void post_process_record(keyrecord_t *record) { (void)record; }
 #include "../users/townk/townk_layers.c"
 #include "../users/townk/townk_mods.c"
 #include "../users/townk/townk_mouse.c"
+#include "../users/townk/townk_switcher.c"
 
 /* ------------------------------------------------------------------------ *
  * Minimal keymap + SM_TD action handler
@@ -253,6 +254,7 @@ void T_reset(void) {
      * about it, so clear it here or a dangling push leaks across tests. */
     smtd_return_layer     = RETURN_LAYER_NOT_SET;
     smtd_return_layer_cnt = 0;
+    switcher_reset();
 }
 
 /* Reference-counted modifier ownership, driven directly. Going through gestures
@@ -289,6 +291,17 @@ uint8_t  T_layer_nav(void) { return _NAV; }
 uint8_t  T_layer_mbo(void) { return _MBO; }
 uint16_t T_kc_del(void) { return KC_DEL; }
 uint16_t T_kc_bspc(void) { return KC_BSPC; }
+uint16_t T_kc_ckc_tab(void) { return CKC_TAB; }
+uint16_t T_kc_ckc_bktab(void) { return CKC_BKTAB; }
+uint16_t T_kc_tab(void) { return KC_TAB; }
+uint16_t T_kc_bktab(void) { return MKC_BKTAB; }
+uint16_t T_kc_spc(void) { return KC_SPC; }
+uint16_t T_kc_grv(void) { return KC_GRV; }
+uint16_t T_kc_bkgrv(void) { return MKC_BKGRV; }
+uint16_t T_kc_b(void) { return KC_B; }
+
+/* The switcher chord's disarm point, as the QMK main loop would run it. */
+void T_switcher_task(void) { housekeeping_task_user(); }
 uint16_t T_kc_btn1(void) { return KC_BTN1; }
 uint16_t T_kc_btn2(void) { return KC_BTN2; }
 uint16_t T_kc_btn3(void) { return KC_BTN3; }

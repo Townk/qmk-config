@@ -28,6 +28,8 @@ enum qmk_keycodes {
     KC_SPC   = 0x002C,
     KC_MINS  = 0x002D,
 
+    KC_GRV = 0x0035,
+
     KC_DEL = 0x004C,
 
     /* Mouse buttons. macOS sees KC_BTN3 as the middle button. */

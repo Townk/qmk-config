@@ -32,6 +32,7 @@
 #endif
 
 #define MKC_BKTAB   S(KC_TAB)        ///< Back Tab (⇧ ⇥)
+#define MKC_BKGRV   S(KC_GRV)        ///< Back Grave (⇧ `), reverses ⌘` window cycling
 #define MKC_APPWIN  C(G(KC_DOWN))    ///< Show windows from current app (⌃ ⌘ ↓)
 #define MKC_DKTN    C(G(KC_RGHT))    ///< Next Desktop (⌃ ⌘ →)
 #define MKC_DKTP    C(G(KC_LEFT))    ///< Previous Desktop (⌃ ⌘ ←)

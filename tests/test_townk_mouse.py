@@ -119,9 +119,17 @@ def _build() -> ctypes.CDLL:
     # ctypes.POINTER(), which is deprecated.
     lib.get_mods.restype = ctypes.c_uint8
 
+    # The switcher-chord housekeeping, as housekeeping_task_user() would run it.
+    lib.T_switcher_task.argtypes = []
+    # The switcher's process_record seam, called for every plain key event.
+    lib.switcher_process_record.argtypes = [ctypes.c_uint16, ctypes.c_bool]
+    lib.switcher_process_record.restype = ctypes.c_bool
+
     for name in ("T_kc_mb_sft", "T_kc_mb_alt", "T_kc_mb_gui", "T_kc_mb_ctl",
                  "T_kc_ckc_spc", "T_kc_ckc_bspc", "T_kc_btn1", "T_kc_btn2",
-                 "T_kc_btn3", "T_kc_del", "T_kc_bspc", "T_kc_plain"):
+                 "T_kc_btn3", "T_kc_del", "T_kc_bspc", "T_kc_plain",
+                 "T_kc_ckc_tab", "T_kc_ckc_bktab", "T_kc_tab", "T_kc_bktab",
+                 "T_kc_spc", "T_kc_grv", "T_kc_bkgrv", "T_kc_b"):
         getattr(lib, name).restype = ctypes.c_uint16
 
     return lib
@@ -142,6 +150,14 @@ KC_BTN2: int = int(LIB.T_kc_btn2())
 KC_BTN3: int = int(LIB.T_kc_btn3())
 KC_PLAIN: int = int(LIB.T_kc_plain())
 
+CKC_TAB: int = int(LIB.T_kc_ckc_tab())
+CKC_BKTAB: int = int(LIB.T_kc_ckc_bktab())
+KC_TAB: int = int(LIB.T_kc_tab())
+KC_BKTAB: int = int(LIB.T_kc_bktab())  # S(KC_TAB), the 16-bit shifted keycode
+KC_SPC: int = int(LIB.T_kc_spc())
+KC_GRV: int = int(LIB.T_kc_grv())
+KC_BKGRV: int = int(LIB.T_kc_bkgrv())  # S(KC_GRV), the 16-bit shifted keycode
+KC_B: int = int(LIB.T_kc_b())
 MOUSE_BUTTONS = (KC_BTN1, KC_BTN2, KC_BTN3)
 LAYER_NAV: int = int(LIB.T_layer_nav())
 LAYER_MBO: int = int(LIB.T_layer_mbo())
@@ -875,6 +891,358 @@ class TownkLayersTest(unittest.TestCase):
             bool(LIB.T_auto_mouse()),
             "a non-game layer change must not touch auto_mouse",
         )
+
+
+class SwitcherChordTest(unittest.TestCase):
+    """The MOD+Tab switcher chord: each thumb Pad reverses its own Nail.
+
+    Pressing Tab (LT-Nail, CKC_TAB) with Ctrl/Alt/Gui held -- the app-switcher
+    or browser-tab gesture -- arms the LEFT pad (CKC_BSPC) to tap Shift+Tab
+    for as long as the MOD stays held, so the same hand can cycle backwards.
+    Entering with Shift+Tab (RT-Nail, CKC_BKTAB) arms the RIGHT pad (CKC_SPC)
+    to tap Tab instead. Trigger-specific by design: only the pad on the hand
+    whose nail started the chord changes role; the other keeps its normal tap.
+    """
+
+    def setUp(self) -> None:
+        LIB.TEST_reset()
+        LIB.T_reset()
+
+    def tearDown(self) -> None:
+        self.assertEqual(int(LIB.get_mods()), 0, "modifiers leaked past key release")
+
+    def _tap(self, keycode: int) -> None:
+        LIB.T_smtd_touch(keycode)
+        LIB.T_smtd_tap(keycode, 0)
+
+    def _pressed(self) -> list[Event]:
+        records = (CHistory * MAX_HISTORY)()
+        count = ctypes.c_uint8()
+        LIB.TEST_get_record_history(records, ctypes.byref(count))
+        return [
+            Event(
+                keycode=int(records[i].keycode),
+                pressed=bool(records[i].pressed),
+                mods=int(records[i].mods),
+            )
+            for i in range(count.value)
+            if records[i].pressed
+        ]
+
+    # -- arming the left pad (forward chord) -------------------------------
+
+    def test_cmd_tab_arms_left_pad_to_backtab(self) -> None:
+        """Cmd+Tab, Cmd still held: the left pad taps Shift+Tab, not Backspace."""
+        LIB.T_set_external_mods(MOD_LGUI)
+        self._tap(CKC_TAB)
+
+        self._tap(CKC_BSPC)
+
+        emitted = [e.keycode for e in self._pressed() if e.keycode != KC_TAB]
+        self.assertIn(KC_BKTAB, emitted, "armed pad must tap Shift+Tab")
+        self.assertNotIn(KC_BSPC, emitted, "and must NOT tap Backspace")
+
+        LIB.T_set_external_mods(0)
+
+    def test_ctrl_and_alt_also_arm(self) -> None:
+        """MOD is any of Ctrl/Alt/Gui -- Ctrl+Tab (browser tabs) included."""
+        for mod in (MOD_LCTL, MOD_LALT):
+            LIB.TEST_reset()
+            LIB.T_reset()
+            LIB.T_set_external_mods(mod)
+            self._tap(CKC_TAB)
+
+            self._tap(CKC_BSPC)
+
+            emitted = [e.keycode for e in self._pressed() if e.keycode != KC_TAB]
+            self.assertIn(
+                KC_BKTAB, emitted, f"mod {mod:#x} must arm the pad"
+            )
+
+            LIB.T_set_external_mods(0)
+
+    def test_repeated_pad_taps_keep_cycling(self) -> None:
+        """The pad's own Shift+Tab must not re-classify the direction."""
+        LIB.T_set_external_mods(MOD_LGUI)
+        self._tap(CKC_TAB)
+
+        self._tap(CKC_BSPC)
+        self._tap(CKC_BSPC)
+
+        backtabs = [e for e in self._pressed() if e.keycode == KC_BKTAB]
+        self.assertEqual(
+            len(backtabs), 2, "every tap while armed must cycle backwards"
+        )
+
+        LIB.T_set_external_mods(0)
+
+    # -- disarming ---------------------------------------------------------
+
+    def test_releasing_the_mod_disarms(self) -> None:
+        """Cmd+Tab, release Cmd, re-hold Cmd: the pad is Backspace again.
+
+        The stale-flag case: the chord ends when its MOD is released, and a
+        LATER hold of the same modifier -- for a click, a shortcut -- must not
+        resurrect it. Housekeeping observes the release, whatever its source.
+        """
+        LIB.T_set_external_mods(MOD_LGUI)
+        self._tap(CKC_TAB)
+
+        LIB.T_set_external_mods(0)  # switcher dismissed
+        LIB.T_switcher_task()       # the housekeeping loop notices
+
+        LIB.T_set_external_mods(MOD_LGUI)  # Cmd again, for something else
+        self._tap(CKC_BSPC)
+
+        emitted = [e.keycode for e in self._pressed() if e.keycode != KC_TAB]
+        self.assertIn(KC_BSPC, emitted, "a fresh Cmd hold must not re-arm the pad")
+        self.assertNotIn(KC_BKTAB, emitted)
+
+        LIB.T_set_external_mods(0)
+
+    def test_tab_without_mod_never_arms(self) -> None:
+        """A bare Tab is just typing; a later Cmd hold must find the pad normal."""
+        self._tap(CKC_TAB)
+
+        LIB.T_set_external_mods(MOD_LGUI)
+        self._tap(CKC_BSPC)
+
+        emitted = [e.keycode for e in self._pressed() if e.keycode != KC_TAB]
+        self.assertIn(KC_BSPC, emitted)
+        self.assertNotIn(KC_BKTAB, emitted)
+
+        LIB.T_set_external_mods(0)
+
+    def test_shift_only_does_not_arm(self) -> None:
+        """Shift alone is not a switcher MOD: Shift+Tab then pad = Delete.
+
+        The pad's existing shift inversion must win -- Shift was held, so the
+        tap is forward Delete, exactly as before this feature existed.
+        """
+        LIB.T_set_external_mods(MOD_RSFT)
+        self._tap(CKC_TAB)
+
+        self._tap(CKC_BSPC)
+
+        emitted = [e.keycode for e in self._pressed()]
+        self.assertIn(KC_DEL, emitted, "shift inversion must be untouched")
+        self.assertNotIn(KC_BKTAB, emitted)
+
+        LIB.T_set_external_mods(0)
+
+    # -- the backward chord and trigger specificity ------------------------
+
+    def test_cmd_backtab_arms_right_pad_to_tab(self) -> None:
+        """Entering backwards (Cmd+Shift+Tab): the right pad taps Tab, not Space."""
+        LIB.T_set_external_mods(MOD_LGUI)
+        self._tap(CKC_BKTAB)
+
+        self._tap(CKC_SPC)
+
+        emitted = [e.keycode for e in self._pressed() if e.keycode != KC_BKTAB]
+        self.assertIn(KC_TAB, emitted, "armed right pad must tap Tab")
+        self.assertNotIn(KC_SPC, emitted, "and must NOT tap Space")
+
+        LIB.T_set_external_mods(0)
+
+    def test_forward_chord_leaves_right_pad_alone(self) -> None:
+        """Armed by Tab: only the LEFT pad changes; the right still taps Space."""
+        LIB.T_set_external_mods(MOD_LGUI)
+        self._tap(CKC_TAB)
+
+        self._tap(CKC_SPC)
+
+        emitted = [e.keycode for e in self._pressed() if e.keycode != KC_TAB]
+        self.assertIn(KC_SPC, emitted)
+
+        LIB.T_set_external_mods(0)
+
+    def test_backward_chord_leaves_left_pad_alone(self) -> None:
+        """Armed by Shift+Tab: only the RIGHT pad changes; the left is Backspace."""
+        LIB.T_set_external_mods(MOD_LGUI)
+        self._tap(CKC_BKTAB)
+
+        self._tap(CKC_BSPC)
+
+        emitted = [
+            e.keycode for e in self._pressed() if e.keycode != KC_BKTAB
+        ]
+        self.assertIn(KC_BSPC, emitted)
+
+        LIB.T_set_external_mods(0)
+
+    # -- the pads' other roles are untouched -------------------------------
+
+    def test_hold_still_opens_nav_while_armed(self) -> None:
+        """Only the TAP changes: an armed left pad held down still opens _NAV."""
+        LIB.T_set_external_mods(MOD_LGUI)
+        self._tap(CKC_TAB)
+
+        LIB.T_smtd_touch(CKC_BSPC)
+        LIB.T_smtd_hold(CKC_BSPC, 0)
+        self.assertTrue(
+            bool(LIB.T_layer_is(LAYER_NAV)), "hold must still be the _NAV layer"
+        )
+        LIB.T_smtd_release(CKC_BSPC, 0)
+
+        LIB.T_set_external_mods(0)
+
+
+class GraveChordTest(unittest.TestCase):
+    """The MOD+Grave window-switcher chord: L2-East reverses L2-West.
+
+    macOS cycles a single app's windows with Cmd+Grave and reverses with
+    Cmd+Shift+Grave. On this keymap Grave is L2-West and B is L2-East, both
+    plain keycodes -- so the chord is observed and reversed in the
+    process_record path (switcher_process_record()), not in an SM_TD dance.
+    While a MOD+Grave chord is held open, pressing B taps Shift+Grave
+    instead of typing a b; everything disarms with the modifier, exactly
+    like the Tab chord.
+    """
+
+    def setUp(self) -> None:
+        LIB.TEST_reset()
+        LIB.T_reset()
+
+    def tearDown(self) -> None:
+        self.assertEqual(int(LIB.get_mods()), 0, "modifiers leaked past key release")
+
+    def _pressed(self) -> list[Event]:
+        records = (CHistory * MAX_HISTORY)()
+        count = ctypes.c_uint8()
+        LIB.TEST_get_record_history(records, ctypes.byref(count))
+        return [
+            Event(
+                keycode=int(records[i].keycode),
+                pressed=bool(records[i].pressed),
+                mods=int(records[i].mods),
+            )
+            for i in range(count.value)
+            if records[i].pressed
+        ]
+
+    def test_cmd_grave_arms_b_to_backgrave(self) -> None:
+        """Cmd+Grave, Cmd still held: B taps Shift+Grave and is consumed."""
+        LIB.T_set_external_mods(MOD_LGUI)
+        self.assertTrue(
+            bool(LIB.switcher_process_record(KC_GRV, True)),
+            "the arming Grave itself must still reach the host",
+        )
+
+        consumed = not bool(LIB.switcher_process_record(KC_B, True))
+
+        self.assertTrue(consumed, "the armed B press must be consumed")
+        self.assertIn(
+            KC_BKGRV, [e.keycode for e in self._pressed()],
+            "and must tap Shift+Grave in its place",
+        )
+
+        LIB.T_set_external_mods(0)
+
+    def test_repeated_b_presses_keep_cycling(self) -> None:
+        """Every B press while armed cycles backwards; nothing re-classifies."""
+        LIB.T_set_external_mods(MOD_LGUI)
+        LIB.switcher_process_record(KC_GRV, True)
+
+        LIB.switcher_process_record(KC_B, True)
+        LIB.switcher_process_record(KC_B, True)
+
+        backgraves = [e for e in self._pressed() if e.keycode == KC_BKGRV]
+        self.assertEqual(len(backgraves), 2)
+
+        LIB.T_set_external_mods(0)
+
+    def test_b_release_always_passes_through(self) -> None:
+        """Releases are never consumed.
+
+        A B pressed BEFORE the chord armed is a real, registered b; eating
+        its release would leave the key stuck down. The release of a
+        consumed press unregisters a key that was never registered, which
+        QMK treats as a no-op -- so passing every release through is safe
+        in both directions.
+        """
+        LIB.T_set_external_mods(MOD_LGUI)
+        LIB.switcher_process_record(KC_GRV, True)
+
+        self.assertTrue(bool(LIB.switcher_process_record(KC_B, False)))
+
+        LIB.T_set_external_mods(0)
+
+    def test_b_without_chord_passes_through(self) -> None:
+        """No chord: B is just the letter b, untouched and unconsumed."""
+        LIB.T_set_external_mods(MOD_LGUI)  # Cmd held, but no Grave pressed
+
+        self.assertTrue(bool(LIB.switcher_process_record(KC_B, True)))
+        self.assertEqual(self._pressed(), [], "nothing may be emitted")
+
+        LIB.T_set_external_mods(0)
+
+    def test_grave_without_mod_never_arms(self) -> None:
+        """A bare Grave is typing; a later Cmd hold must find B normal."""
+        LIB.switcher_process_record(KC_GRV, True)
+
+        LIB.T_set_external_mods(MOD_LGUI)
+        self.assertTrue(bool(LIB.switcher_process_record(KC_B, True)))
+
+        LIB.T_set_external_mods(0)
+
+    def test_releasing_the_mod_disarms(self) -> None:
+        """Chord over on Cmd release; a fresh Cmd hold must not resurrect it."""
+        LIB.T_set_external_mods(MOD_LGUI)
+        LIB.switcher_process_record(KC_GRV, True)
+
+        LIB.T_set_external_mods(0)
+        LIB.T_switcher_task()
+
+        LIB.T_set_external_mods(MOD_LGUI)
+        self.assertTrue(bool(LIB.switcher_process_record(KC_B, True)))
+        self.assertEqual(self._pressed(), [])
+
+        LIB.T_set_external_mods(0)
+
+    def test_tab_chord_does_not_arm_b(self) -> None:
+        """The two chords are separate: Cmd+Tab must leave B as the letter b."""
+        LIB.T_set_external_mods(MOD_LGUI)
+        LIB.switcher_process_record(KC_TAB, True)
+
+        self.assertTrue(bool(LIB.switcher_process_record(KC_B, True)))
+
+        LIB.T_set_external_mods(0)
+
+    def test_both_chords_coexist_under_one_mod_hold(self) -> None:
+        """Cmd+Tab then Cmd+Grave, all under one Cmd: both reversers live.
+
+        The real macOS flow -- switch app with Cmd+Tab, then cycle that
+        app's windows with Cmd+Grave without ever releasing Cmd. The pad
+        must still reverse the app switcher AND B must reverse the window
+        cycle.
+        """
+        LIB.T_set_external_mods(MOD_LGUI)
+        LIB.switcher_process_record(KC_TAB, True)
+        LIB.switcher_process_record(KC_GRV, True)
+
+        self.assertFalse(bool(LIB.switcher_process_record(KC_B, True)))
+
+        LIB.T_smtd_touch(CKC_BSPC)
+        LIB.T_smtd_tap(CKC_BSPC, 0)
+
+        emitted = [e.keycode for e in self._pressed()]
+        self.assertIn(KC_BKGRV, emitted, "B must reverse the window cycle")
+        self.assertIn(KC_BKTAB, emitted, "the pad must still reverse the app switcher")
+
+        LIB.T_set_external_mods(0)
+
+    def test_plain_tab_press_arms_the_pad_via_the_record_path(self) -> None:
+        """The _NAV layer's plain KC_TAB arms the Tab chord the same way."""
+        LIB.T_set_external_mods(MOD_LGUI)
+        LIB.switcher_process_record(KC_TAB, True)
+
+        LIB.T_smtd_touch(CKC_BSPC)
+        LIB.T_smtd_tap(CKC_BSPC, 0)
+
+        self.assertIn(KC_BKTAB, [e.keycode for e in self._pressed()])
+
+        LIB.T_set_external_mods(0)
 
 
 if __name__ == "__main__":

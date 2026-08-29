@@ -24,6 +24,7 @@
 #include "townk_layers.h"
 #include "townk_keycodes.h"
 #include "townk_mouse.h"
+#include "townk_switcher.h"
 
 #include "sm_td.h"
 
@@ -65,8 +66,16 @@ extern void mouse_mode(bool on);
  *
  * @note This uses SMTD_TAP_16 from the sm_td library with the first parameter
  *       set to false (no modifiers).
+ *
+ * @note The emission is reported to the switcher-chord tracker: a Tab or
+ *       Shift+Tab tapped with Ctrl/Alt/Gui held arms the MOD+Tab chord (any
+ *       other keycode is ignored there). Safe for every current caller
+ *       because the pads' REVERSED emissions go out through SMTD_TAP_16
+ *       directly, never through this macro -- if one ever did, its own
+ *       output would re-classify the chord's direction and disarm it.
  */
 #define CUSTOM_TAP(tap_key)      \
+    switcher_note_emit(tap_key); \
     SMTD_TAP_16(false, tap_key); \
     BREAK_CAPS_WORD(tap_key);    \
     mouse_mode(false)
@@ -140,6 +149,42 @@ static uint8_t smtd_return_layer_cnt = 0;
     SMTD_DANCE(macro_key,                                    \
                NOTHING,                                      \
                CUSTOM_TAP(tap_key),                          \
+               SMTD_LIMIT(1,                                 \
+                          mouse_mode(false);                 \
+                          LAYER_PUSH(layer),                 \
+                          switcher_note_emit(tap_key);       \
+                          SMTD_REGISTER_16(false, tap_key)), \
+               SMTD_LIMIT(1,                                 \
+                          LAYER_RESTORE(),                   \
+                          CUSTOM_UNTAP(tap_key));            \
+    )
+
+/**
+ * @brief A CUSTOM_LT whose tap reverses direction during a switcher chord.
+ *
+ * Identical to CUSTOM_LT except for the tap: while ready_fn() says this
+ * pad's chord is armed (see townk_switcher.h), the tap emits reverse_key
+ * instead of tap_key, so the hand that entered a MOD+Tab switcher can cycle
+ * the other way without leaving its pad. The reversed emission deliberately
+ * bypasses CUSTOM_TAP: reporting it to the chord tracker would re-classify
+ * the direction and disarm the very pad that produced it. Hold and release
+ * are untouched -- the layer-tap is still the layer-tap.
+ *
+ * @param macro_key The custom keycode that triggers this dance behavior.
+ * @param tap_key The keycode to send on a normal tap or register on hold.
+ * @param layer The layer to activate when the key is held.
+ * @param ready_fn Zero-argument predicate: is this pad's chord armed?
+ * @param reverse_key The keycode to tap while the chord is armed.
+ */
+#define REVERSED_LT(macro_key, tap_key, layer, ready_fn, reverse_key) \
+    SMTD_DANCE(macro_key,                                    \
+               NOTHING,                                      \
+               if (ready_fn()) {                             \
+                   SMTD_TAP_16(false, reverse_key);          \
+                   mouse_mode(false);                        \
+               } else {                                      \
+                   CUSTOM_TAP(tap_key);                      \
+               },                                            \
                SMTD_LIMIT(1,                                 \
                           mouse_mode(false);                 \
                           LAYER_PUSH(layer),                 \
@@ -332,8 +377,17 @@ static uint8_t smtd_return_layer_cnt = 0;
 #define SHIFTED_LT(macro_key, normal_key, shifted_key, layer)        \
     SMTD_DANCE(macro_key,                                            \
                NOTHING,                                              \
-               SHIFT_TAP(normal_key, shifted_key);                   \
-               mouse_mode(false),                                    \
+               /* During a forward MOD+Tab chord this pad cycles the \
+                * switcher backwards; see townk_switcher.h. The      \
+                * emission bypasses CUSTOM_TAP so it cannot          \
+                * re-classify the chord's direction. */              \
+               if (switcher_backtab_ready()) {                       \
+                   SMTD_TAP_16(false, MKC_BKTAB);                    \
+                   mouse_mode(false);                                \
+               } else {                                              \
+                   SHIFT_TAP(normal_key, shifted_key);               \
+                   mouse_mode(false);                                \
+               },                                                    \
                SMTD_LIMIT(1,                                         \
                           layer_on(layer),                           \
                           SHIFT_REGISTER(normal_key, shifted_key)),  \
@@ -365,13 +419,17 @@ static uint8_t smtd_return_layer_cnt = 0;
  *
  * **CKC_SPC** - Layer-tap with Space key:
  * - Tap: Sends Space
+ * - Tap during a backward MOD+Tab chord: Sends Tab (cycles the switcher
+ *   forward again; see townk_switcher.h)
  * - Hold: Activates Number layer (_NUM)
  *
- * **CKC_BSPC** - Shift-aware Layer-tap with Delete/Backspace:
- * - Tap (no shift): Sends Delete
- * - Tap (with shift): Sends Backspace
+ * **CKC_BSPC** - Shift-aware Layer-tap with Backspace/Delete:
+ * - Tap (no shift): Sends Backspace
+ * - Tap (with shift): Sends Delete, with the shift stripped off it
+ * - Tap during a forward MOD+Tab chord: Sends Shift+Tab (cycles the
+ *   switcher backwards; see townk_switcher.h)
  * - Hold: Activates Navigation layer (_NAV)
- * - This uses inverted shift logic for ergonomic Delete/Backspace access
+ * - This uses inverted shift logic for ergonomic Backspace/Delete access
  *
  * **CKC_SMART_SFT** - Smart Shift key:
  * - Single tap: One-shot shift (next key only)
@@ -446,7 +504,7 @@ smtd_resolution on_smtd_action(uint16_t keycode, smtd_action action, uint8_t tap
     switch (keycode) {
         CUSTOM_LT(CKC_TAB, KC_TAB, _SYM);
         CUSTOM_LT(CKC_BKTAB, MKC_BKTAB, _FUN);
-        CUSTOM_LT(CKC_SPC, KC_SPC, _NUM);
+        REVERSED_LT(CKC_SPC, KC_SPC, _NUM, switcher_tab_ready, KC_TAB);
         SHIFTED_LT(CKC_BSPC, KC_DEL, KC_BSPC, _NAV);
         SMART_SHIFT(CKC_SMSFT);
     }

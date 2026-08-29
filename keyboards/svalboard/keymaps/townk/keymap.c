@@ -25,6 +25,7 @@
 #include "townk_keycodes.h"
 #include "townk_mouse.h"
 #include "townk_overrides.h"
+#include "townk_switcher.h"
 
 #include "sm_td.h"
 
@@ -827,6 +828,15 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     }
     if (keycode == KC_ESC) {
         mouse_mode(false);
+    }
+    /* Switcher-chord keys that live on layers as PLAIN keycodes never reach
+     * on_smtd_action(), so they go through the switcher's record seam here:
+     * KC_TAB / MKC_BKTAB (the _NAV right thumb) and KC_GRV arm their chords
+     * and pass through; KC_B is consumed and taps Shift+Grave while the
+     * MOD+Grave chord is armed. The CKC_TAB / CKC_BKTAB dances report their
+     * own emissions from townk_smtd.c. */
+    if (!switcher_process_record(keycode, record->event.pressed)) {
+        return false;
     }
     if (!process_special_mouse_keys(keycode, record)) {
         return false;
