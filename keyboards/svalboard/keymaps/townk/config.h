@@ -27,4 +27,14 @@
 #define SMTD_GLOBAL_SEQUENCE_TERM 100
 #define SMTD_GLOBAL_RELEASE_TERM 15
 
+// Report the detected host OS once per boot and never again. Without this,
+// every later string-descriptor read on the bus keeps feeding the detector,
+// and a single mid-session read with wLength 0x04 flips the guess from
+// OS_MACOS to OS_WINDOWS (the Windows branch is matched first). Svalboard's
+// process_detected_host_os_kb() then drops the scroll divisor from 120 back
+// to 1, making the scroll trackball ~120x more sensitive until the next
+// reset. Host switches still re-detect: OS_DETECTION_KEYBOARD_RESET reboots
+// the board on USB re-enumeration, which clears the one-shot latch.
+#define OS_DETECTION_SINGLE_REPORT
+
 #endif  // QMK_USERSPACE_TOWNK_SVALBOARD_CONFIG_H
