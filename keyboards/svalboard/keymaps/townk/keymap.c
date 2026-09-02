@@ -16,11 +16,14 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 #include "keycodes.h"
 #include "modifiers.h"
 
 #include QMK_KEYBOARD_H
 #include "quantum_keycodes.h"
+#include "os_detection.h"
+#include "axis_scale.h"
 #include "townk_layers.h"
 #include "townk_keycodes.h"
 #include "townk_mouse.h"
@@ -30,6 +33,99 @@
 #include "sm_td.h"
 
 extern void mouse_mode(bool on);
+
+/* The Svalboard's per-axis scroll scaling and OS flag, defined in
+ * keymap_support.c. Owned there; seeded to the macOS profile below. */
+extern axis_scale_t l_x, l_y, r_x, r_y;
+extern bool         is_mac;
+
+/** keymap_support.c's MAC_DIVISOR, which it does not export: with hi-res
+ * scroll announcing 120 units per wheel click and macOS ignoring the
+ * announcement, mac hosts need the firmware to do the division. */
+#define TOWNK_MAC_SCROLL_DIVISOR 120
+
+/**
+ * @brief Seed the Svalboard's pointing profile with the macOS values.
+ *
+ * The keyboard's own boot state is the NON-mac profile (divisor 1), corrected
+ * only when OS detection positively reports macOS. That correction cannot be
+ * relied on: OS_DETECTION_KEYBOARD_RESET soft-reboots the keyboard on USB
+ * churn (host sleep/wake, hubs, KVMs), macOS commonly re-enumerates a
+ * reconnect from cached descriptors with fewer than the 3 string reads the
+ * fingerprinter needs, and os_detection.c reports its very first debounce
+ * even with no data at all -- as OS_UNSURE, which keymap_support.c's default
+ * branch treats as "not mac". Every such hidden reboot therefore used to
+ * come back with the scroll divisor at 1: a barely-touched trackball flinging
+ * the entire scroll buffer, fixed only by another reset. (Observed twice via
+ * SV_SOUT printing "is Mac: 0" mid-session on this very Mac.)
+ *
+ * This keyboard lives on a Mac, so invert the default: boot straight into
+ * the mac profile. Detection is not allowed to move it at all -- see
+ * process_detected_host_os_user().
+ */
+static void assume_mac_host(void) {
+    set_div_axis(&l_x, TOWNK_MAC_SCROLL_DIVISOR);
+    set_div_axis(&l_y, TOWNK_MAC_SCROLL_DIVISOR);
+    set_div_axis(&r_x, TOWNK_MAC_SCROLL_DIVISOR);
+    set_div_axis(&r_y, TOWNK_MAC_SCROLL_DIVISOR);
+    is_mac = true;
+}
+
+/**
+ * @brief Hard-pin the mac pointing profile: only a mac detection may pass.
+ *
+ * Returning false makes keymap_support.c's process_detected_host_os_kb()
+ * bail before touching the scroll divisors, so nothing detection says can
+ * take the mac profile from assume_mac_host() away. A MACOS/IOS report is
+ * allowed through only because it re-applies the same values.
+ *
+ * This began as a narrower rule -- block OS_UNSURE (the evidence-free
+ * report of a cached re-enumeration), trust a positive Linux/Windows
+ * fingerprint -- but "is Mac: 0" was still observed on a build carrying
+ * that rule, and a cached macOS re-enumeration that happens to answer with
+ * only-0xFF string reads legitimately fingerprints as OS_LINUX. The host
+ * this keyboard lives on does not change often enough to keep gambling on
+ * fingerprints: pin it. If it ever moves to a non-mac host, scroll will be
+ * 120x too slow there -- delete this override (and assume_mac_host) that
+ * day.
+ */
+bool process_detected_host_os_user(os_variant_t os) {
+    switch (os) {
+        case OS_MACOS:
+        case OS_IOS:
+            return true;
+        default:
+            return false;
+    }
+}
+
+/**
+ * @brief Names for os_variant_t, indexed by enum value, for SV_SOUT.
+ */
+static const char *os_variant_names[] = {"unsure", "linux", "windows", "macos", "ios"};
+
+/**
+ * @brief Prefix SV_SOUT's status dump with build identity and detection.
+ *
+ * The stock output cannot distinguish one build from another (it prints
+ * only the QMK fork version) nor say WHAT the fingerprinter decided -- both
+ * of which this bug hunt needed and did not have. Typed before the
+ * keyboard's own lines, from the same keypress:
+ *
+ *     townk built Sep  2 2026 09:15:00, detected os: macos
+ *
+ * "detected os" is the fingerprinter's raw verdict, NOT the active profile
+ * (the pin above may have refused it); compare it against the "is Mac"
+ * field in the keyboard's own output to see the pin doing its job.
+ */
+static void send_build_info(void) {
+    char          info[96];
+    os_variant_t  os      = detected_host_os();
+    const char   *os_name = (os <= OS_IOS) ? os_variant_names[os] : "?";
+
+    snprintf(info, sizeof(info), "townk built " __DATE__ " " __TIME__ ", detected os: %s\n", os_name);
+    send_string(info);
+}
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * DISCLAIMER                                                                *
@@ -770,6 +866,11 @@ void keyboard_post_init_user(void) {
      */
     global_saved_values.mh_timer_index = MOUSE_LAYER_TIMEOUT_NONE;
 
+    /* Boot as a mac host; OS detection may still move this on real evidence.
+     * Runs on every boot -- including the hidden soft reboots that used to
+     * come back with the non-mac scroll divisor. */
+    assume_mac_host();
+
     setup_rgb_light_layer();
     setup_dynamic_keymap();
 }
@@ -828,6 +929,11 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     }
     if (keycode == KC_ESC) {
         mouse_mode(false);
+    }
+    /* Prefix the keyboard's own SV_SOUT dump (keymap_support.c handles the
+     * key after us) with build identity + the fingerprinter's raw verdict. */
+    if (keycode == SV_SOUT && record->event.pressed) {
+        send_build_info();
     }
     /* Switcher-chord keys that live on layers as PLAIN keycodes never reach
      * on_smtd_action(), so they go through the switcher's record seam here:
