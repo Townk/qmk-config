@@ -27,6 +27,11 @@
 #define SMTD_GLOBAL_SEQUENCE_TERM 100
 #define SMTD_GLOBAL_RELEASE_TERM 15
 
+// Turn the LEDs off after this much input silence (keys, trackballs,
+// scroll -- either half) and back on at the first touch; see townk_idle.h.
+// Tune freely: 60000 = 1 minute, 120000 = 2 minutes.
+#define TOWNK_LED_IDLE_TIMEOUT_MS 60000
+
 // Report the detected host OS once per boot and never again. Without this,
 // every later string-descriptor read on the bus keeps feeding the detector,
 // and a single mid-session read with wLength 0x04 flips the guess from

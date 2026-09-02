@@ -95,9 +95,9 @@ bool switcher_tab_ready(void);
 /**
  * @brief Disarm the chord once no Ctrl/Alt/Gui modifier remains held.
  *
- * Runs from housekeeping_task_user() every main-loop pass, so the release is
- * observed no matter where the modifier came from -- a real mod key, an
- * SM_TD hold, or the MB_* mouse-layer engine.
+ * Runs from housekeeping_task_user() (keymap.c) every main-loop pass, so the
+ * release is observed no matter where the modifier came from -- a real mod
+ * key, an SM_TD hold, or the MB_* mouse-layer engine.
  */
 void switcher_task(void);
 

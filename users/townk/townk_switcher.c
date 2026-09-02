@@ -123,13 +123,6 @@ void switcher_task(void) {
 }
 
 void switcher_reset(void) {
-    switcher_direction    = SWITCHER_IDLE;
+    switcher_direction   = SWITCHER_IDLE;
     switcher_grave_armed = false;
-}
-
-/**
- * @brief QMK main-loop hook; the chord's only disarm point.
- */
-void housekeeping_task_user(void) {
-    switcher_task();
 }

@@ -124,6 +124,12 @@ def _build() -> ctypes.CDLL:
     # The switcher's process_record seam, called for every plain key event.
     lib.switcher_process_record.argtypes = [ctypes.c_uint16, ctypes.c_bool]
     lib.switcher_process_record.restype = ctypes.c_bool
+    # The LED idle engine and the fixture's model of QMK input-activity time.
+    lib.led_idle_task.argtypes = []
+    lib.T_set_input_idle_ms.argtypes = [ctypes.c_uint32]
+    lib.T_rgb_enabled.restype = ctypes.c_bool
+    lib.T_rgb_enable_calls.restype = ctypes.c_int
+    lib.T_rgb_disable_calls.restype = ctypes.c_int
 
     for name in ("T_kc_mb_sft", "T_kc_mb_alt", "T_kc_mb_gui", "T_kc_mb_ctl",
                  "T_kc_ckc_spc", "T_kc_ckc_bspc", "T_kc_btn1", "T_kc_btn2",
@@ -1243,6 +1249,75 @@ class GraveChordTest(unittest.TestCase):
         self.assertIn(KC_BKTAB, [e.keycode for e in self._pressed()])
 
         LIB.T_set_external_mods(0)
+
+
+class LedIdleTest(unittest.TestCase):
+    """LEDs off after an idle timeout, back at the first touch, on at boot.
+
+    The engine is one task function run from housekeeping every scan pass.
+    It reads QMK's own last_input_activity_elapsed() -- which covers keys,
+    both trackballs, and scroll, on either half -- so there is no per-event
+    plumbing to test, only the threshold behavior. The fixture models the
+    elapsed time directly (T_set_input_idle_ms) and records the
+    rgblight_disable/enable_noeeprom calls the engine makes.
+    """
+
+    TIMEOUT_MS: int = 60000  # must match TOWNK_LED_IDLE_TIMEOUT_MS in the fixture
+
+    def setUp(self) -> None:
+        LIB.TEST_reset()
+        LIB.T_reset()
+
+    def test_boot_state_leaves_leds_alone(self) -> None:
+        """A fresh, active board must not touch the LEDs at all."""
+        LIB.T_set_input_idle_ms(0)
+        LIB.led_idle_task()
+
+        self.assertTrue(bool(LIB.T_rgb_enabled()))
+        self.assertEqual(int(LIB.T_rgb_disable_calls()), 0)
+        self.assertEqual(int(LIB.T_rgb_enable_calls()), 0)
+
+    def test_leds_turn_off_after_the_idle_timeout(self) -> None:
+        LIB.T_set_input_idle_ms(self.TIMEOUT_MS + 1)
+        LIB.led_idle_task()
+
+        self.assertFalse(bool(LIB.T_rgb_enabled()), "LEDs must be off when idle")
+        self.assertEqual(int(LIB.T_rgb_disable_calls()), 1)
+
+    def test_exactly_at_the_threshold_is_not_yet_idle(self) -> None:
+        LIB.T_set_input_idle_ms(self.TIMEOUT_MS)
+        LIB.led_idle_task()
+
+        self.assertTrue(bool(LIB.T_rgb_enabled()))
+
+    def test_staying_idle_does_not_repeat_the_disable(self) -> None:
+        """Housekeeping runs every scan pass; the off transition fires once."""
+        LIB.T_set_input_idle_ms(self.TIMEOUT_MS + 1)
+        LIB.led_idle_task()
+        LIB.led_idle_task()
+        LIB.led_idle_task()
+
+        self.assertEqual(int(LIB.T_rgb_disable_calls()), 1)
+
+    def test_activity_restores_the_leds(self) -> None:
+        """The first touch after an idle-off brings the LEDs back."""
+        LIB.T_set_input_idle_ms(self.TIMEOUT_MS + 1)
+        LIB.led_idle_task()
+
+        LIB.T_set_input_idle_ms(0)  # a key press / ball touch just happened
+        LIB.led_idle_task()
+
+        self.assertTrue(bool(LIB.T_rgb_enabled()), "activity must wake the LEDs")
+        self.assertEqual(int(LIB.T_rgb_enable_calls()), 1)
+
+    def test_active_use_never_toggles(self) -> None:
+        """Continuous use must not generate enable/disable churn."""
+        for idle_ms in (0, 500, 5000, self.TIMEOUT_MS - 1):
+            LIB.T_set_input_idle_ms(idle_ms)
+            LIB.led_idle_task()
+
+        self.assertEqual(int(LIB.T_rgb_disable_calls()), 0)
+        self.assertEqual(int(LIB.T_rgb_enable_calls()), 0)
 
 
 if __name__ == "__main__":

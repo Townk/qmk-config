@@ -136,6 +136,26 @@ void rgblight_set_layer_state(uint8_t layer, bool enabled) {
     (void)enabled;
 }
 
+/* The LED idle engine's world: QMK's input-activity clock, modelled as a
+ * settable elapsed value, and the rgblight power switch, recorded so tests
+ * can assert on transitions (and on their absence -- no churn). */
+static uint32_t input_idle_ms     = 0;
+static bool     rgb_enabled       = true;
+static int      rgb_enable_calls  = 0;
+static int      rgb_disable_calls = 0;
+
+uint32_t last_input_activity_elapsed(void) { return input_idle_ms; }
+
+void rgblight_disable_noeeprom(void) {
+    rgb_enabled = false;
+    rgb_disable_calls++;
+}
+
+void rgblight_enable_noeeprom(void) {
+    rgb_enabled = true;
+    rgb_enable_calls++;
+}
+
 /* ------------------------------------------------------------------------ *
  * SM_TD hooks every fixture must define
  * ------------------------------------------------------------------------ */
@@ -173,6 +193,7 @@ void post_process_record(keyrecord_t *record) { (void)record; }
 #include "../users/townk/townk_mods.c"
 #include "../users/townk/townk_mouse.c"
 #include "../users/townk/townk_switcher.c"
+#include "../users/townk/townk_idle.c"
 
 /* ------------------------------------------------------------------------ *
  * Minimal keymap + SM_TD action handler
@@ -255,6 +276,11 @@ void T_reset(void) {
     smtd_return_layer     = RETURN_LAYER_NOT_SET;
     smtd_return_layer_cnt = 0;
     switcher_reset();
+    led_idle_reset();
+    input_idle_ms     = 0;
+    rgb_enabled       = true;
+    rgb_enable_calls  = 0;
+    rgb_disable_calls = 0;
 }
 
 /* Reference-counted modifier ownership, driven directly. Going through gestures
@@ -300,8 +326,16 @@ uint16_t T_kc_grv(void) { return KC_GRV; }
 uint16_t T_kc_bkgrv(void) { return MKC_BKGRV; }
 uint16_t T_kc_b(void) { return KC_B; }
 
-/* The switcher chord's disarm point, as the QMK main loop would run it. */
-void T_switcher_task(void) { housekeeping_task_user(); }
+/* The switcher chord's disarm point, as the QMK main loop would run it.
+ * (housekeeping_task_user() itself lives in keymap.c, outside this fixture,
+ * calling switcher_task() and led_idle_task() in turn.) */
+void T_switcher_task(void) { switcher_task(); }
+
+/* The LED idle engine's inputs and observable effects. */
+void T_set_input_idle_ms(uint32_t ms) { input_idle_ms = ms; }
+bool T_rgb_enabled(void) { return rgb_enabled; }
+int  T_rgb_enable_calls(void) { return rgb_enable_calls; }
+int  T_rgb_disable_calls(void) { return rgb_disable_calls; }
 uint16_t T_kc_btn1(void) { return KC_BTN1; }
 uint16_t T_kc_btn2(void) { return KC_BTN2; }
 uint16_t T_kc_btn3(void) { return KC_BTN3; }

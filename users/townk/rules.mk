@@ -25,6 +25,7 @@ VPATH += $(QMK_USERSPACE)/modules/stasmarkin/sm_td
 SRC += sm_td.c
 DEFERRED_EXEC_ENABLE = yes
 
+SRC += townk_idle.c
 SRC += townk_layers.c
 SRC += townk_mods.c
 SRC += townk_mouse.c

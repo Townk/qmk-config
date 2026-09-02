@@ -24,6 +24,7 @@
 #include "quantum_keycodes.h"
 #include "os_detection.h"
 #include "axis_scale.h"
+#include "townk_idle.h"
 #include "townk_layers.h"
 #include "townk_keycodes.h"
 #include "townk_mouse.h"
@@ -97,6 +98,26 @@ bool process_detected_host_os_user(os_variant_t os) {
         default:
             return false;
     }
+}
+
+/**
+ * @brief Main-loop hook: the switcher chord's disarm point and the LED
+ *        idle engine, every scan pass.
+ *
+ * Master only. Both engines read master-side state (USB modifiers; the
+ * combined input-activity clock -- a slave half only ever sees its LOCAL
+ * keys, so its own clock goes "idle" while you type on the other half),
+ * and the slave's LEDs follow the master's rgblight state over the split
+ * sync anyway. Letting the slave run its own copy would have it fighting
+ * that sync with a darkness of its own invention.
+ */
+void housekeeping_task_user(void) {
+    if (!is_keyboard_master()) {
+        return;
+    }
+
+    switcher_task();
+    led_idle_task();
 }
 
 /**
