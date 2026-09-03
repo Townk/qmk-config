@@ -44,6 +44,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The scroll trackball no longer turns 120x too sensitive on the Mac.
+  Root cause, captured on-device: this Mac (macOS 26) enumerates the
+  keyboard with three paired 0x02 length probes and then a single 0x04
+  LANGID read -- `02 10 02 14 02 1C | 04` -- and never the trailing 0xFF
+  that QMK's macOS rule requires, so QMK's fingerprint falls through to
+  its "PS5" branch and reports Linux; if some app reads a string with
+  0xFF before the 250 ms debounce, the macOS rule wins instead. That race
+  is why the divisor came and went, and `OS_DETECTION_KEYBOARD_RESET`
+  (Svalboard's config) re-ran it on every USB bus reset by soft-rebooting
+  the keyboard. Svalboard's handler maps the Linux verdict to a scroll
+  divisor of 1. The interim hard mac pin -- which made a Windows or Linux
+  host scroll 120x too slowly -- is gone; detection is automatic again,
+  through `users/townk/townk_hostos.c`: paired 0x02 probes decide macOS
+  outright (no Windows or Linux enumeration reads with wLength 2), only
+  string reads made before the host configures the device are classified,
+  the chosen profile survives the keyboard's own resets in
+  never-initialised RAM, and on such a warm boot only a positive
+  macOS/Windows fingerprint may change it -- an all-0xFF pattern cannot. A
+  cold boot (unplug, KVM switch) trusts every fingerprint, so a
+  Windows/Linux host is detected the moment it is plugged in. The reads
+  reach the module through `-Wl,--wrap=process_wlength`
+  in `users/townk/rules.mk`; no fork change. `OS_DETECTION_SINGLE_REPORT`
+  is dropped, QMK's own verdict is display-only
+
 - The Makefile forwarded goals straight to qmk_home's own Makefile, which
   cannot build this overlay: without the qmk CLI resolving the keymap
   first, the build silently drops `VIAL_ENABLE`/`KEY_OVERRIDE_ENABLE` and
@@ -104,6 +128,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   is warning-free without it
 
 ### Added
+
+- `SV_SOUT` now prefixes the keyboard's status dump with two lines: the
+  keymap build timestamp plus QMK's raw OS fingerprint, and the host
+  detector's own state -- cold/warm boot, active profile, verdict, the
+  string-descriptor reads it saw split at the configuration edge, and what
+  the previous boot on this power cycle concluded
+- `TOWNK_HOSTOS_COLD_DEFAULT` in the keymap's `config.h`: the profile a
+  cold boot starts in before the host says anything (`HOSTOS_MAC`;
+  `HOSTOS_PC` restores Svalboard's stock default)
+- Host tests for the detector (`tests/test_townk_hostos.py`, driven through
+  the shared fixture with QMK's recorded wLength sequences); suite is 89
+  tests
 
 - `docs/sm_td-upgrade-notes.md` — what the host suite does and does not cover,
   the `smtd_apply_stage()` / `static smtd_active_states` blocker, and a

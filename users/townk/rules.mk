@@ -25,6 +25,7 @@ VPATH += $(QMK_USERSPACE)/modules/stasmarkin/sm_td
 SRC += sm_td.c
 DEFERRED_EXEC_ENABLE = yes
 
+SRC += townk_hostos.c
 SRC += townk_idle.c
 SRC += townk_layers.c
 SRC += townk_mods.c
@@ -35,3 +36,8 @@ SRC += townk_switcher.c
 
 CFLAGS += -fcommon
 
+# Route every string-descriptor read the USB stack reports to QMK's OS
+# detection through townk_hostos.c first (__wrap_process_wlength), which
+# tags it with the configuration state it arrived in. No fork change: the
+# linker rewrites the one call site in tmk_core's usb_descriptor.c.
+LDFLAGS += -Wl,--wrap=process_wlength

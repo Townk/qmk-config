@@ -32,14 +32,10 @@
 // Tune freely: 60000 = 1 minute, 120000 = 2 minutes.
 #define TOWNK_LED_IDLE_TIMEOUT_MS 60000
 
-// Report the detected host OS once per boot and never again. Without this,
-// every later string-descriptor read on the bus keeps feeding the detector,
-// and a single mid-session read with wLength 0x04 flips the guess from
-// OS_MACOS to OS_WINDOWS (the Windows branch is matched first). Svalboard's
-// process_detected_host_os_kb() then drops the scroll divisor from 120 back
-// to 1, making the scroll trackball ~120x more sensitive until the next
-// reset. Host switches still re-detect: OS_DETECTION_KEYBOARD_RESET reboots
-// the board on USB re-enumeration, which clears the one-shot latch.
-#define OS_DETECTION_SINGLE_REPORT
+// The pointing profile (mac scroll divisor vs. PC) is decided by
+// users/townk/townk_hostos.c, not by QMK's OS detection verdict; see that
+// file's header for why. A cold boot starts in this profile until the
+// host's enumeration says otherwise (HOSTOS_MAC or HOSTOS_PC).
+#define TOWNK_HOSTOS_COLD_DEFAULT HOSTOS_MAC
 
 #endif  // QMK_USERSPACE_TOWNK_SVALBOARD_CONFIG_H

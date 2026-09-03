@@ -195,6 +195,17 @@ void post_process_record(keyrecord_t *record) { (void)record; }
 #include "../users/townk/townk_switcher.c"
 #include "../users/townk/townk_idle.c"
 
+/* The host-profile detector's one output, recorded: the keymap's real
+ * hostos_profile_changed() sets Svalboard's scroll divisors and is_mac. */
+#include "../users/townk/townk_hostos.h"
+static int     hostos_profile_calls = 0;
+static uint8_t hostos_last_profile  = 0;
+void hostos_profile_changed(hostos_profile_t profile) {
+    hostos_profile_calls++;
+    hostos_last_profile = (uint8_t)profile;
+}
+#include "../users/townk/townk_hostos.c"
+
 /* ------------------------------------------------------------------------ *
  * Minimal keymap + SM_TD action handler
  * ------------------------------------------------------------------------ */
@@ -277,6 +288,9 @@ void T_reset(void) {
     smtd_return_layer_cnt = 0;
     switcher_reset();
     led_idle_reset();
+    hostos_forget(false);
+    hostos_profile_calls = 0;
+    hostos_last_profile  = 0;
     input_idle_ms     = 0;
     rgb_enabled       = true;
     rgb_enable_calls  = 0;
@@ -340,3 +354,22 @@ uint16_t T_kc_btn1(void) { return KC_BTN1; }
 uint16_t T_kc_btn2(void) { return KC_BTN2; }
 uint16_t T_kc_btn3(void) { return KC_BTN3; }
 uint16_t T_kc_plain(void) { return 0x0004; } /* KC_A -- an ordinary, non-SM_TD key */
+
+/* The host-profile detector: its boot, USB and read events, driven
+ * directly, plus what it applied. */
+void    T_hostos_boot(void) { hostos_boot(); }
+void    T_hostos_forget(bool keep_memory) { hostos_forget(keep_memory); }
+void    T_hostos_read(uint16_t wlength, bool configured) { hostos_record_wlength(wlength, configured); }
+void    T_hostos_usb(bool configured) { hostos_usb_configured(configured); }
+uint8_t T_hostos_active(void) { return (uint8_t)hostos_active_profile(); }
+uint8_t T_hostos_classify(uint8_t count, uint8_t c02, uint8_t c04, uint8_t cff) { return (uint8_t)hostos_classify(count, c02, c04, cff); }
+int     T_hostos_profile_calls(void) { return hostos_profile_calls; }
+uint8_t T_hostos_last_profile(void) { return hostos_last_profile; }
+int     T_hostos_status(char *buf, size_t size) { return hostos_format_status(buf, size); }
+uint8_t T_hostos_mac(void) { return HOSTOS_MAC; }
+uint8_t T_hostos_pc(void) { return HOSTOS_PC; }
+uint8_t T_hostos_unknown(void) { return HOSTOS_UNKNOWN; }
+uint8_t T_hostos_v_none(void) { return HOSTOS_VERDICT_NONE; }
+uint8_t T_hostos_v_mac(void) { return HOSTOS_VERDICT_MAC; }
+uint8_t T_hostos_v_windows(void) { return HOSTOS_VERDICT_WINDOWS; }
+uint8_t T_hostos_v_linux(void) { return HOSTOS_VERDICT_LINUX; }

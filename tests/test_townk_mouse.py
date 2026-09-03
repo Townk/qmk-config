@@ -130,6 +130,22 @@ def _build() -> ctypes.CDLL:
     lib.T_rgb_enabled.restype = ctypes.c_bool
     lib.T_rgb_enable_calls.restype = ctypes.c_int
     lib.T_rgb_disable_calls.restype = ctypes.c_int
+    # The host-profile detector (townk_hostos.c), driven event by event.
+    lib.T_hostos_boot.argtypes = []
+    lib.T_hostos_forget.argtypes = [ctypes.c_bool]
+    lib.T_hostos_read.argtypes = [ctypes.c_uint16, ctypes.c_bool]
+    lib.T_hostos_usb.argtypes = [ctypes.c_bool]
+    lib.T_hostos_active.restype = ctypes.c_uint8
+    lib.T_hostos_classify.argtypes = [ctypes.c_uint8] * 4
+    lib.T_hostos_classify.restype = ctypes.c_uint8
+    lib.T_hostos_profile_calls.restype = ctypes.c_int
+    lib.T_hostos_last_profile.restype = ctypes.c_uint8
+    lib.T_hostos_status.argtypes = [ctypes.c_char_p, ctypes.c_size_t]
+    lib.T_hostos_status.restype = ctypes.c_int
+    for name in ("T_hostos_mac", "T_hostos_pc", "T_hostos_unknown",
+                 "T_hostos_v_none", "T_hostos_v_mac", "T_hostos_v_windows",
+                 "T_hostos_v_linux"):
+        getattr(lib, name).restype = ctypes.c_uint8
 
     for name in ("T_kc_mb_sft", "T_kc_mb_alt", "T_kc_mb_gui", "T_kc_mb_ctl",
                  "T_kc_ckc_spc", "T_kc_ckc_bspc", "T_kc_btn1", "T_kc_btn2",
