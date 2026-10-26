@@ -5,6 +5,13 @@ on: [push, workflow_dispatch]
 permissions:
     contents: write
 
+env:
+    # skim renders the overlay's layer images; 0.7.5 is the first with the
+    # key tags and layer_indicator.reserve_space the overlay needs.
+    SKIM_VERSION: "0.7.5"
+    # The overlay header's icon font (Symbols Nerd Font Mono).
+    NERD_FONTS_VERSION: "v3.4.0"
+
 jobs:
     build:
         name: "Svalboard QMK Userspace Build"
@@ -92,6 +99,81 @@ jobs:
                       *.bin
                   if-no-files-found: error
 
+            # svaloverlay's page: skim's layer images in the overlay's
+            # palette, built from the keymap with this job's QMK checkout.
+            # Platform-independent, so it is built here and handed to the
+            # macOS job that packs it with the binaries.
+            - name: Build the overlay page
+              run: |
+                  python3 -m pip install --quiet uv
+                  uv tool install --quiet "qmk-skim==${SKIM_VERSION}"
+
+                  curl -fsSL "https://github.com/ryanoasis/nerd-fonts/releases/download/${NERD_FONTS_VERSION}/NerdFontsSymbolsOnly.tar.xz" \
+                      | tar -xJ -C "$RUNNER_TEMP" SymbolsNerdFontMono-Regular.ttf
+
+                  "$(uv tool dir)/qmk-skim/bin/python" tools/svalwatch/overlay/build_assets.py \
+                      --repo "$GITHUB_WORKSPACE" \
+                      --qmk-home "$GITHUB_WORKSPACE/svalboard-qmk" \
+                      --icon-font "$RUNNER_TEMP/SymbolsNerdFontMono-Regular.ttf" \
+                      --out overlay-page
+
+            - name: Upload the overlay page
+              uses: actions/upload-artifact@v7
+              with:
+                  name: svaloverlay-page
+                  path: overlay-page/
+                  if-no-files-found: error
+
+    overlay:
+        name: "Svalboard Overlay (macOS)"
+        # Pinned for the same reason as the firmware runner; Xcode 16+ for
+        # Swift 6 tools.
+        runs-on: macos-15
+        needs: build
+
+        steps:
+            - name: Checkout userspace
+              uses: actions/checkout@v7
+
+            - name: Download the overlay page
+              uses: actions/download-artifact@v8
+              with:
+                  name: svaloverlay-page
+                  path: overlay-page
+
+            - name: Test
+              working-directory: tools/svalwatch
+              run: swift test
+
+            - name: Build svalwatch and svaloverlay
+              working-directory: tools/svalwatch
+              run: swift build -c release --arch arm64 --arch x86_64
+
+            # One archive with a fixed name, so dotfiles can always fetch
+            # releases/latest/download/svaloverlay-macos.tar.gz:
+            #   svaloverlay, svalwatch    -> ~/.local/bin
+            #   share/svaloverlay/...     -> ~/.local/share/svaloverlay
+            # Ad-hoc signed (Apple silicon refuses unsigned code); files
+            # fetched by a script carry no quarantine flag, so Gatekeeper
+            # does not ask for a Developer ID.
+            - name: Package
+              run: |
+                  BIN="$(cd tools/svalwatch && swift build -c release --arch arm64 --arch x86_64 --show-bin-path)"
+                  mkdir -p pkg/share
+                  cp "$BIN/svaloverlay" "$BIN/svalwatch" pkg/
+                  codesign --force --sign - pkg/svaloverlay pkg/svalwatch
+                  cp -R overlay-page pkg/share/svaloverlay
+                  tar -czf svaloverlay-macos.tar.gz -C pkg .
+                  tar -tzf svaloverlay-macos.tar.gz
+                  lipo -archs pkg/svaloverlay
+
+            - name: Upload the overlay
+              uses: actions/upload-artifact@v7
+              with:
+                  name: svaloverlay-macos
+                  path: svaloverlay-macos.tar.gz
+                  if-no-files-found: error
+
     publish:
         name: "Publish Firmware"
         runs-on: ubuntu-latest
@@ -99,13 +181,19 @@ jobs:
         # non-draft release marked "latest" AND consume the next v1.0.N
         # patch number (the version is derived from the release count).
         if: success() && github.ref == 'refs/heads/main'
-        needs: build
+        needs: [build, overlay]
 
         steps:
             - name: Download firmware artifacts
               uses: actions/download-artifact@v8
               with:
                   name: svalboard-colemak-townk
+                  path: firmware
+
+            - name: Download the overlay
+              uses: actions/download-artifact@v8
+              with:
+                  name: svaloverlay-macos
                   path: firmware
 
             - name: Create release
@@ -115,6 +203,9 @@ jobs:
                   name: "Firmware v${{ needs.build.outputs.version }}"
                   body: |
                       Firmware build version ${{ needs.build.outputs.version }}
+
+                      `svaloverlay-macos.tar.gz` is the matching layer overlay
+                      (svaloverlay, svalwatch and the overlay page), for macOS.
 
                       **Branch:** ${{ github.ref_name }}
                       **Commit:** ${{ github.sha }}

@@ -34,6 +34,8 @@ import yaml  # pyright: ignore[reportMissingModuleSource] -- skim's environment 
 HERE = Path(__file__).resolve().parent
 KEYMAP = "keyboards/svalboard/keymaps/townk"
 QMK_KEYBOARD = "svalboard/trackball/pmw3389/right"
+# The header's icons (keyboard, pin). Optional: without it they fall back
+# to whatever the system has, usually a missing-glyph box.
 ICON_FONT = Path.home() / "Library/Fonts/SymbolsNerdFontMono-Regular.ttf"
 
 
@@ -121,6 +123,8 @@ def main() -> None:
     parser.add_argument("--repo", type=Path, required=True)
     parser.add_argument("--qmk-home", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--icon-font", type=Path, default=ICON_FONT,
+                        help="Symbols Nerd Font Mono .ttf (default: the installed one)")
     args = parser.parse_args()
 
     with tempfile.TemporaryDirectory() as tmp:
@@ -137,8 +141,10 @@ def main() -> None:
     (args.out / "index.html").write_text(page)
     for name in ("page.css", "page.js"):
         shutil.copyfile(HERE / name, args.out / name)
-    if ICON_FONT.exists():
-        shutil.copyfile(ICON_FONT, args.out / "icons.ttf")
+    if args.icon_font.exists():
+        shutil.copyfile(args.icon_font, args.out / "icons.ttf")
+    else:
+        print(f"build_assets: no icon font at {args.icon_font}; header icons will not render")
     print(f"build_assets: {len(images)} layers -> {args.out}")
 
 
