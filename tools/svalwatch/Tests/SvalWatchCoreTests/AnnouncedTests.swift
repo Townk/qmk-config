@@ -166,7 +166,13 @@ let baseLayer = ConsoleParser.Line.layer(LayerState(active: 1, default: 1))
         #expect(p.feed(report("svw P 2EE0 00C8 06\n")) == [
             .pointer(PointerState(leftDPI: 12000, rightDPI: 200, leftScroll: false, rightScroll: true, scrollKey: true)),
         ])
-        for bad in ["svw P 190 0640 01\n", "svw P 0190 0640\n", "svw P 0190 0640 0G\n"] {
+        // Version 3 firmware adds the sniper divisor and boost multiplier.
+        #expect(p.feed(report("svw P 0190 0640 01 03 01\n")) == [
+            .pointer(PointerState(leftDPI: 400, rightDPI: 1600, leftScroll: true, rightScroll: false,
+                                  scrollKey: false, sniperDiv: 3, boostMult: 1)),
+        ])
+        for bad in ["svw P 190 0640 01\n", "svw P 0190 0640\n", "svw P 0190 0640 0G\n",
+                    "svw P 0190 0640 01 03\n", "svw P 0190 0640 01 00 01\n"] {
             #expect(p.feed(report(bad)).isEmpty, "\(bad)")
         }
     }

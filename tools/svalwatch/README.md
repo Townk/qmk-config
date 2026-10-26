@@ -16,7 +16,7 @@ make test                           # the SvalWatchCore tests
 {"type":"keys","pressed":[]}
 {"type":"layer","top":0,"active":1,"default":1,"mods":0,"caps_word":false,"caps_lock":false}
 {"type":"keys","pressed":[[1,2]]}
-{"type":"pointer","left":{"dpi":400,"scroll":true},"right":{"dpi":1600,"scroll":false},"scroll_key":false}
+{"type":"pointer","left":{"dpi":400,"scroll":true},"right":{"dpi":1600,"scroll":false},"scroll_key":false,"sniper":1,"boost":1}
 {"type":"disconnected"}
 ```
 
@@ -24,7 +24,8 @@ make test                           # the SvalWatchCore tests
 fields of Svalboard's `info.json` layout. `top` is the layer whose legends
 are showing. `pointer` is each trackball's DPI and whether it scrolls right
 now (after scroll hold/toggle; `scroll_key` says one of those keys is
-active); only firmware that announces it sends one. `svalwatch --help`
+active; `sniper` divides and `boost` multiplies both trackballs' motion,
+1 when no such key is held); only firmware that announces it sends one. `svalwatch --help`
 lists the options.
 
 ## svaloverlay
@@ -34,7 +35,9 @@ corner of the main display, a quarter of its width (`--width`), highlighting
 the keys being held, styled like the Hammerspoon which-key overlay. Its
 footer shows each trackball under its half: a cursor or (in green) a
 scroll glyph, a meter with one pip per DPI step, and the DPI, plus a
-yellow "scroll lock" while a scroll hold/toggle key holds the mode. It sits
+yellow "scroll lock" while a scroll hold/toggle key holds the mode. While a
+sniper (or boost) key is held, the centre shows its crosshair (rocket) and
+factor, ×1/3 say, and both DPIs and meters show the scaled speed. It sits
 below every window (like a desktop widget) or above every window, never in
 between, and never takes clicks or focus. It takes `top`, `bottom`,
 `toggle` and `quit` on stdin, and exits when stdin closes.

@@ -75,7 +75,7 @@ size_t announce_poll(const announce_state_t *state, uint32_t now, char *buf, siz
 
     bool layer_changed = full_needed || state->active != last.active || state->default_layers != last.default_layers || state->mods != last.mods || state->status != last.status;
     bool rows_changed  = full_needed || memcmp(state->rows, last.rows, sizeof(last.rows)) != 0;
-    bool pointer_changed = full_needed || state->left_dpi != last.left_dpi || state->right_dpi != last.right_dpi || state->pointer != last.pointer;
+    bool pointer_changed = full_needed || state->left_dpi != last.left_dpi || state->right_dpi != last.right_dpi || state->pointer != last.pointer || state->sniper_div != last.sniper_div || state->boost_mult != last.boost_mult;
     full_needed        = false;
     last               = *state;
 
@@ -94,7 +94,7 @@ size_t announce_poll(const announce_state_t *state, uint32_t now, char *buf, siz
         }
     }
     if (pointer_changed && n < size) {
-        n += snprintf(buf + n, size - n, "svw P %04X %04X %02X\n", state->left_dpi, state->right_dpi, state->pointer);
+        n += snprintf(buf + n, size - n, "svw P %04X %04X %02X %02X %02X\n", state->left_dpi, state->right_dpi, state->pointer, state->sniper_div, state->boost_mult);
     }
     return n < size ? n : size - 1;
 }
@@ -104,11 +104,16 @@ size_t announce_poll(const announce_state_t *state, uint32_t now, char *buf, siz
 #    include QMK_KEYBOARD_H
 #    include "print.h"
 #    include "pointing_motion.h"  // SVAL_MOTION_SCROLL_KEY
+#    include "axis_scale.h"       // axis_scale_t
 
 // From modules/svalboard/core/client_wrapper.h, declared here rather than
 // included so this file does not depend on the module's include path.
 bool client_wrapper_valid_id(uint32_t id);
 bool __real_client_wrapper_receive(uint8_t *data, uint8_t length);
+
+// keymap_support.c's sniper and boost scales, as svalboard.c reads boost_x:
+// update_sniper_divisor() / update_boost_multiplier() set every axis alike.
+extern axis_scale_t sniper_x, boost_x;
 
 /*
  * Every wrapped host packet ([DD][client:4][protocol][...]) reaches
@@ -157,10 +162,12 @@ void announce_task(void) {
     state.left_dpi  = (uint16_t)get_left_dpi();
     state.right_dpi = (uint16_t)get_right_dpi();
     state.pointer   = (modes.left_scroll ? ANNOUNCE_POINTER_LEFT_SCROLL : 0) | (modes.right_scroll ? ANNOUNCE_POINTER_RIGHT_SCROLL : 0) | (modes.global_bits & SVAL_MOTION_SCROLL_KEY ? ANNOUNCE_POINTER_SCROLL_KEY : 0);
+    state.sniper_div = sniper_x.div;
+    state.boost_mult = boost_x.mult;
 
     // Three lines at most: "svw L" is 29 bytes, "svw K" 7 + 2 per row,
-    // "svw P" 19.
-    char buf[40 + 8 + 2 * ANNOUNCE_ROWS + 20];
+    // "svw P" 25.
+    char buf[40 + 8 + 2 * ANNOUNCE_ROWS + 26];
     if (announce_poll(&state, timer_read32(), buf, sizeof(buf)) > 0) {
         uprintf("%s", buf);
     }

@@ -22,7 +22,7 @@ LIB.T_announce_subscribed.restype = ctypes.c_bool
 LIB.T_announce_poll.argtypes = [
     ctypes.c_uint32, ctypes.c_uint32, ctypes.c_uint8, ctypes.c_uint8,
     ctypes.c_char_p, ctypes.c_uint16, ctypes.c_uint16, ctypes.c_uint8,
-    ctypes.c_uint32, ctypes.c_char_p, ctypes.c_size_t,
+    ctypes.c_uint8, ctypes.c_uint8, ctypes.c_uint32, ctypes.c_char_p, ctypes.c_size_t,
 ]
 LIB.T_announce_poll.restype = ctypes.c_size_t
 
@@ -38,7 +38,7 @@ RIGHT_SCROLL = 0x02
 SCROLL_KEY = 0x04
 
 # This keymap's boot state: left 400 DPI scrolling, right 1600 DPI pointing.
-IDLE_POINTER = "svw P 0190 0640 01\n"
+IDLE_POINTER = "svw P 0190 0640 01 01 01\n"
 
 
 def command(data: bytes, now: int, length: int = 58) -> tuple[bool, bytes]:
@@ -55,10 +55,10 @@ def subscribe(now: int, lease_ms: int = 5000) -> bytes:
 
 def poll(now: int, active: int = 1, default: int = 1, mods: int = 0, status: int = 0,
          rows: bytes = IDLE_ROWS, left_dpi: int = 400, right_dpi: int = 1600,
-         pointer: int = LEFT_SCROLL, size: int = 128) -> str:
+         pointer: int = LEFT_SCROLL, sniper: int = 1, boost: int = 1, size: int = 128) -> str:
     out = ctypes.create_string_buffer(size)
     n = int(LIB.T_announce_poll(active, default, mods, status, rows,
-                                left_dpi, right_dpi, pointer, now, out, size))
+                                left_dpi, right_dpi, pointer, sniper, boost, now, out, size))
     assert n == len(out.value), (n, out.value)
     return out.value.decode()
 
@@ -73,7 +73,7 @@ class AnnounceTest(unittest.TestCase):
 
     def test_subscribe_reply_carries_signature_and_granted_lease(self) -> None:
         reply = subscribe(1000, lease_ms=5000)
-        self.assertEqual(reply[:9], bytes([0x08, CHANNEL, SUBSCRIBE]) + b"svw" + bytes([2, 0x88, 0x13]))
+        self.assertEqual(reply[:9], bytes([0x08, CHANNEL, SUBSCRIBE]) + b"svw" + bytes([3, 0x88, 0x13]))
         self.assertTrue(LIB.T_announce_subscribed())
 
     def test_lease_is_clamped(self) -> None:
@@ -101,16 +101,26 @@ class AnnounceTest(unittest.TestCase):
         subscribe(0)
         poll(10)
         # A DPI key on the right trackball: 1600 -> 2400.
-        self.assertEqual(poll(20, right_dpi=2400), "svw P 0190 0960 01\n")
+        self.assertEqual(poll(20, right_dpi=2400), "svw P 0190 0960 01 01 01\n")
         # Scroll toggle latched: both sides flip, flagged as a scroll key.
         self.assertEqual(poll(30, right_dpi=2400, pointer=RIGHT_SCROLL | SCROLL_KEY),
-                         "svw P 0190 0960 06\n")
+                         "svw P 0190 0960 06 01 01\n")
         self.assertEqual(poll(40, right_dpi=2400, pointer=RIGHT_SCROLL | SCROLL_KEY), "")
 
     def test_the_largest_dpi_fits(self) -> None:
         subscribe(0)
         poll(10)
-        self.assertEqual(poll(20, left_dpi=12000, right_dpi=12000), "svw P 2EE0 2EE0 01\n")
+        self.assertEqual(poll(20, left_dpi=12000, right_dpi=12000), "svw P 2EE0 2EE0 01 01 01\n")
+
+    def test_sniper_and_boost_are_announced(self) -> None:
+        subscribe(0)
+        poll(10)
+        # Sniper ×3 held: both trackballs move at a third.
+        self.assertEqual(poll(20, sniper=3), "svw P 0190 0640 01 03 01\n")
+        # ×3 and ×5 together: 15. Released: back to 1.
+        self.assertEqual(poll(30, sniper=15), "svw P 0190 0640 01 0F 01\n")
+        self.assertEqual(poll(40), "svw P 0190 0640 01 01 01\n")
+        self.assertEqual(poll(50, boost=2), "svw P 0190 0640 01 01 02\n")
 
     def test_renewal_reannounces_everything(self) -> None:
         subscribe(0)

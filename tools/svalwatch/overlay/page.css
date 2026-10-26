@@ -63,12 +63,16 @@ svg.defs { position: absolute; }
 /* The trackball footer, in which-key's footer type. Each side: its mode
  * glyph (cursor while pointing, which-key's group green while scrolling),
  * a meter with one pip per DPI step the board offers, rising like signal
- * bars, and the DPI itself. The centre "scroll lock" is the pin's sticky
- * yellow and shows only while a scroll hold/toggle key holds the mode. */
+ * bars, and the DPI itself. The centre holds what applies to both
+ * trackballs: the sniper/boost factor (Catppuccin peach for sniper, maroon
+ * for boost; the DPIs and meters take its colour, since they show the
+ * scaled speed) and "scroll lock", the pin's sticky yellow, while a scroll
+ * hold/toggle key holds the mode. A grid keeps the centre centred whatever
+ * the two sides' widths. */
 .footer {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 12px;
   color: rgba(128, 128, 128, 1);
@@ -76,6 +80,27 @@ svg.defs { position: absolute; }
 }
 
 .trackball { display: flex; align-items: center; gap: 8px; }
+.trackball[data-side="right"] { justify-self: end; }
+
+.centre { display: flex; align-items: center; gap: 14px; padding: 0 14px; }
+
+.factor {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: rgb(250, 179, 135); /* peach */
+  font-variant-numeric: tabular-nums;
+}
+.factor[hidden] { display: none; }
+.factor .icon { font-size: 14px; color: inherit; } /* not .icon's grey */
+.footer.boosted .factor { color: rgb(235, 160, 172); /* maroon */ }
+
+.footer.scaled .dpi b { color: rgb(250, 179, 135); }
+.footer.scaled .meter i.on,
+.footer.scaled .trackball.scrolling .meter i.on { background: rgba(250, 179, 135, 0.95); }
+.footer.boosted .dpi b { color: rgb(235, 160, 172); }
+.footer.boosted .meter i.on,
+.footer.boosted .trackball.scrolling .meter i.on { background: rgba(235, 160, 172, 0.95); }
 
 .trackball .mode {
   font-size: 15px;
@@ -104,9 +129,8 @@ svg.defs { position: absolute; }
 
 .scroll-lock {
   color: rgba(255, 199, 89, 1);
-  display: flex;
+  display: none;
   align-items: center;
   gap: 4px;
-  visibility: hidden;
 }
-.footer.locked .scroll-lock { visibility: visible; }
+.footer.locked .scroll-lock { display: flex; }

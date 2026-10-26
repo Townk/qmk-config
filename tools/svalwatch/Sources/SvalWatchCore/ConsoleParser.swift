@@ -8,7 +8,7 @@
 ///
 ///     svw L <active:8 hex> <default:8 hex> <mods:2 hex> <status:2 hex>
 ///     svw K <one 2-hex byte per matrix row, no spaces>
-///     svw P <left DPI:4 hex> <right DPI:4 hex> <pointer flags:2 hex>
+///     svw P <left DPI:4 hex> <right DPI:4 hex> <pointer flags:2 hex> [<sniper:2 hex> <boost:2 hex>]
 public struct ConsoleParser: Sendable {
     public enum Line: Equatable, Sendable {
         case layer(LayerState)
@@ -68,16 +68,27 @@ public struct ConsoleParser: Sendable {
             }
             return .keys(pressed)
         case "P":
-            guard fields.count == 5,
+            // Protocol version 2 firmware sends the first three fields only.
+            guard fields.count == 5 || fields.count == 7,
                   fields[2].count == 4, let left = UInt16(fields[2], radix: 16),
                   fields[3].count == 4, let right = UInt16(fields[3], radix: 16),
                   fields[4].count == 2, let flags = UInt8(fields[4], radix: 16)
             else { return nil }
+            var sniper: UInt8 = 1
+            var boost: UInt8 = 1
+            if fields.count == 7 {
+                guard fields[5].count == 2, let s = UInt8(fields[5], radix: 16), s > 0,
+                      fields[6].count == 2, let b = UInt8(fields[6], radix: 16), b > 0
+                else { return nil }
+                sniper = s
+                boost = b
+            }
             // Flags, from townk_announce.h's ANNOUNCE_POINTER_*.
             return .pointer(PointerState(
                 leftDPI: Int(left), rightDPI: Int(right),
                 leftScroll: flags & 0x01 != 0, rightScroll: flags & 0x02 != 0,
-                scrollKey: flags & 0x04 != 0))
+                scrollKey: flags & 0x04 != 0,
+                sniperDiv: Int(sniper), boostMult: Int(boost)))
         default:
             return nil
         }

@@ -6,7 +6,7 @@
 ///     {"type":"connected","serial":"sval:E464B4B2934E2C2A","protocol":3}
 ///     {"type":"layer","top":15,"active":32769,"default":1,"mods":0,"caps_word":false,"caps_lock":false}
 ///     {"type":"keys","pressed":[[0,3],[6,1]]}
-///     {"type":"pointer","left":{"dpi":400,"scroll":true},"right":{"dpi":1600,"scroll":false},"scroll_key":false}
+///     {"type":"pointer","left":{"dpi":400,"scroll":true},"right":{"dpi":1600,"scroll":false},"scroll_key":false,"sniper":1,"boost":1}
 ///     {"type":"disconnected"}
 ///
 /// `pressed` holds matrix [row, col] pairs; rows 0-4 are the left half,
@@ -33,7 +33,8 @@ public enum WatchEvent: Equatable, Sendable {
             return #"{"type":"keys","pressed":[\#(pairs)]}"#
         case let .pointer(p):
             return #"{"type":"pointer","left":{"dpi":\#(p.leftDPI),"scroll":\#(p.leftScroll)},"#
-                + #""right":{"dpi":\#(p.rightDPI),"scroll":\#(p.rightScroll)},"scroll_key":\#(p.scrollKey)}"#
+                + #""right":{"dpi":\#(p.rightDPI),"scroll":\#(p.rightScroll)},"scroll_key":\#(p.scrollKey),"#
+                + #""sniper":\#(p.sniperDiv),"boost":\#(p.boostMult)}"#
         case .disconnected:
             return #"{"type":"disconnected"}"#
         }
@@ -100,12 +101,19 @@ public struct PointerState: Equatable, Sendable {
     public var rightScroll: Bool
     /// A scroll hold or toggle key is active (it is what flipped them).
     public var scrollKey: Bool
+    /// Sniper keys divide both trackballs' motion by this, boost keys
+    /// multiply it; 1 when none is active. The DPIs stay the sensors' own.
+    public var sniperDiv: Int
+    public var boostMult: Int
 
-    public init(leftDPI: Int, rightDPI: Int, leftScroll: Bool, rightScroll: Bool, scrollKey: Bool) {
+    public init(leftDPI: Int, rightDPI: Int, leftScroll: Bool, rightScroll: Bool, scrollKey: Bool,
+                sniperDiv: Int = 1, boostMult: Int = 1) {
         self.leftDPI = leftDPI
         self.rightDPI = rightDPI
         self.leftScroll = leftScroll
         self.rightScroll = rightScroll
         self.scrollKey = scrollKey
+        self.sniperDiv = sniperDiv
+        self.boostMult = boostMult
     }
 }

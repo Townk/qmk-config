@@ -34,6 +34,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   glyph, a DPI meter and the DPI, with a "scroll lock" marker while a
   scroll key holds the mode. Older firmware never sends the line, and the
   footer stays hidden
+- The overlay footer shows sniper and boost. Announcement protocol
+  version 3 adds the sniper divisor and boost multiplier to the `svw P`
+  line (read from Svalboard's `sniper_x` / `boost_x` scales). While a
+  sniper key is held the footer's centre shows a crosshair and the factor
+  (×1/3, ×1/15 for two at once; a rocket and ×2 for boost), and both DPIs
+  and meters show the scaled speed in the factor's colour. svalwatch still
+  reads version 2's shorter line, as no factor
 
 ### Changed
 

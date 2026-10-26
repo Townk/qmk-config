@@ -25,9 +25,14 @@ const state = { active: 1, defaultLayers: 1, pressed: [], connected: false, poin
 const DPI_CHOICES = [200, 400, 600, 800, 1200, 1600, 2400, 3200, 4800, 6400, 12000];
 const GLYPH_POINTER = "\u{F01C0}"; // nf-md-cursor_default
 const GLYPH_SCROLL = "\u{F1552}"; // nf-md-mouse_move_vertical
+const GLYPH_SNIPER = "\u{F01A4}"; // nf-md-crosshairs_gps
+const GLYPH_BOOST = "\u{F14DE}"; // nf-md-rocket_launch
 
 const pointersEl = document.querySelector(".pointers");
 const footerEl = document.querySelector(".footer");
+const factorEl = document.querySelector(".factor");
+const factorGlyph = document.querySelector(".factor-glyph");
+const factorText = document.querySelector(".factor-text");
 const trackballs = {};
 for (const el of document.querySelectorAll(".trackball")) {
   const meter = el.querySelector(".meter");
@@ -148,6 +153,10 @@ function dpiStep(dpi) {
   return step;
 }
 
+function gcd(a, b) {
+  return b === 0 ? a : gcd(b, a % b);
+}
+
 function renderPointer() {
   const p = state.pointer;
   const shown = Boolean(p && state.connected);
@@ -156,9 +165,27 @@ function renderPointer() {
     reportSize(); // the footer changes the panel's height
   }
   if (!shown) return;
+
+  // Sniper keys divide both trackballs' motion, boost keys multiply it
+  // (absent from version 2 firmware: 1). Shown as one reduced factor, and
+  // applied to both DPIs, which then read as the speed the trackballs move
+  // at rather than the sensors' setting.
+  const sniper = p.sniper || 1;
+  const boost = p.boost || 1;
+  const common = gcd(boost, sniper);
+  const num = boost / common;
+  const den = sniper / common;
+  const scaled = num !== den;
+  factorEl.hidden = !scaled;
+  footerEl.classList.toggle("scaled", scaled && num < den);
+  footerEl.classList.toggle("boosted", scaled && num > den);
+  factorGlyph.textContent = num > den ? GLYPH_BOOST : GLYPH_SNIPER;
+  factorText.textContent = den === 1 ? `×${num}` : `×${num}/${den}`;
+
   for (const side of ["left", "right"]) {
     const t = trackballs[side];
-    const { dpi, scroll } = p[side];
+    const { scroll } = p[side];
+    const dpi = Math.round((p[side].dpi * num) / den);
     const step = dpiStep(dpi);
     t.el.classList.toggle("scrolling", scroll);
     t.mode.textContent = scroll ? GLYPH_SCROLL : GLYPH_POINTER;
