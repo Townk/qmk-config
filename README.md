@@ -169,7 +169,7 @@ qmk userspace-compile
 Default settings:
 
 - **Left Trackball**: Scroll mode enabled, 400 DPI
-- **Right Trackball**: Cursor mode, 1200 DPI
+- **Right Trackball**: Cursor mode, 1600 DPI
 - **Auto Mouse Layer**: Enabled
 - **DPI Options**: 200, 400, 800, 1200, 1600, 2400
 

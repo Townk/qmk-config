@@ -249,7 +249,7 @@ each side.
 **Right Trackball:**
 
 - **Mode**: Cursor mode (scroll disabled)
-- **DPI**: 1200
+- **DPI**: 1600
 - **Purpose**: Precise cursor control
 
 **Auto Mouse Layer**: Enabled (automatically activates MBO layer on trackball movement)

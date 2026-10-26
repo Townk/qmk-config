@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The right (cursor) trackball now boots at 1600 DPI, up from 1200
 - Base firmware moved from `svalboard/vial-qmk` (branch `vial`) to
   `svalboard/qmk` (branch `svalboard`), Svalboard's Keybard firmware. Vial
   is gone: the keymap now enables the `svalboard/core` community module and

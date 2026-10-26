@@ -763,7 +763,7 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
  *
  * **Configuration:**
  * - Left trackball: Scroll mode enabled, 400 DPI.
- * - Right trackball: Scroll mode disabled, 1200 DPI.
+ * - Right trackball: Scroll mode disabled, 1600 DPI.
  * - Auto mouse layer: Enabled (automatically activates mouse layer).
  * - Mouse hold timer: Disabled (mouse layer stays active indefinitely).
  *
@@ -849,7 +849,7 @@ void keyboard_post_init_user(void) {
      * - MOUSE_DPI_6400 (9)
      * - MOUSE_DPI_12000 (10)
      */
-    global_saved_values.right_dpi_index = MOUSE_DPI_1200;
+    global_saved_values.right_dpi_index = MOUSE_DPI_1600;
 
     /**
      * @var struct saved_values::mh_timer_index
