@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   userspace through a linker wrap of the svalboard/core module's
   `client_wrapper_receive()`, since neither Svalboard's VIA handler nor
   the module has a user hook
+- `tools/svalwatch`, a Swift command-line helper that prints the board's
+  layer and pressed switches as JSON lines, from the announcements when
+  the firmware has them and by adaptive polling otherwise. The keyboard
+  side of a planned layer overlay
 
 ### Changed
 
