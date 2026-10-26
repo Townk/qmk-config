@@ -104,7 +104,7 @@ static const char *os_variant_names[] = {"unsure", "linux", "windows", "macos", 
  * like -- both of which the scroll-runaway hunt needed and did not have.
  * Typed before the keyboard's own lines, from the same keypress:
  *
- *     townk built Sep  2 2026 09:15:00, qmk os: macos
+ *     townk built Sep  2 2026 09:15:00, qmk os: macos, scroll div: 120
  *     hostos: cold boot #0, active mac, verdict mac (pre 6: 02x3 04x0 ffx0;
  *       post 2), prev none (0/0), reads: 02 4E 02 1C 02 1A | FF FF
  *
@@ -113,14 +113,17 @@ static const char *os_variant_names[] = {"unsure", "linux", "windows", "macos", 
  * the string-descriptor reads it was made from ("|" marks the point where
  * the host configured the device; only reads before it count) and what
  * the previous boot on this power cycle concluded. Compare "active"
- * against the "is Mac" field in the keyboard's own output.
+ * against the "is Mac" field in the keyboard's own output. "scroll div"
+ * is the divisor the scroll axes are running with right now (read back
+ * from l_y, which hostos_profile_changed() sets on all four axes): the
+ * TOWNK_MAC_SCROLL_DIVISOR on a mac, TOWNK_PC_SCROLL_DIVISOR elsewhere.
  */
 static void send_build_info(void) {
     char          info[256];
     os_variant_t  os      = detected_host_os();
     const char   *os_name = (os <= OS_IOS) ? os_variant_names[os] : "?";
 
-    snprintf(info, sizeof(info), "townk built " __DATE__ " " __TIME__ ", qmk os: %s\n", os_name);
+    snprintf(info, sizeof(info), "townk built " __DATE__ " " __TIME__ ", qmk os: %s, scroll div: %u\n", os_name, l_y.div);
     send_string(info);
     hostos_format_status(info, sizeof(info));
     send_string(info);

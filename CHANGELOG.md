@@ -150,6 +150,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `SV_SOUT`'s first line ends with `scroll div: N`, the divisor the scroll
+  axes are running with right now
 - `SV_SOUT` now prefixes the keyboard's status dump with two lines: the
   keymap build timestamp plus QMK's raw OS fingerprint, and the host
   detector's own state -- cold/warm boot, active profile, verdict, the
