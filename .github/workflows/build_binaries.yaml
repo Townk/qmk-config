@@ -8,7 +8,11 @@ permissions:
 jobs:
     build:
         name: "Svalboard QMK Userspace Build"
-        runs-on: ubuntu-latest
+        # Pinned, not ubuntu-latest: setup-python has no 3.9 build for
+        # Ubuntu 26.04, and 3.9 is the version this build is tested with
+        # (mise.toml). Svalboard's own CI builds on a newer Python inside
+        # the qmk_cli container, so moving past 3.9 is an option.
+        runs-on: ubuntu-24.04
         outputs:
             version: ${{ steps.version.outputs.version }}
 
