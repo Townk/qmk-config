@@ -11,7 +11,10 @@ import IOKit.hid
 /// Without it, svalwatch still works and simply relies on its idle poll.
 @MainActor
 final class PassiveInput {
-    private let manager = IOHIDManagerCreate(kCFAllocatorDefault, IOOptionBits(kIOHIDOptionsTypeNone))
+    // nonisolated(unsafe) so deinit can reach it: deinit is nonisolated
+    // before Swift 6.2's isolated deinit, and Watcher only ever drops this
+    // object on the main thread anyway.
+    nonisolated(unsafe) private let manager = IOHIDManagerCreate(kCFAllocatorDefault, IOOptionBits(kIOHIDOptionsTypeNone))
     private let onInput: () -> Void
     private var available = false
     private(set) var armed = false
@@ -35,8 +38,8 @@ final class PassiveInput {
         }
     }
 
-    isolated deinit {
-        arm(false)
+    deinit {
+        IOHIDManagerRegisterInputValueCallback(manager, nil, nil)
         IOHIDManagerUnscheduleFromRunLoop(manager, CFRunLoopGetMain(), CFRunLoopMode.defaultMode.rawValue)
         IOHIDManagerClose(manager, IOOptionBits(kIOHIDOptionsTypeNone))
     }
