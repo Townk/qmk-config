@@ -106,12 +106,15 @@ let rowOne: [UInt8] = [0, 0b100, 0, 0, 0, 0, 0, 0, 0, 0]
     @Test func firstPollBootstrapsAndReportsEverything() {
         var s = makeSession()
         let actions = connect(&s, active: 0x8001, rows: rowOne)
-        #expect(sent(actions).map { Array($0.prefix(7)) } == [
+        // Typed up front: Xcode 16's type checker times out on this
+        // literal inside #expect.
+        let expected: [[UInt8]] = [
             [0xDD, 0, 0, 0, 0, 1, 2],    // bootstrap + nonce
             header + [0xDF, 0x00],       // info
             header + [0xFE, 0x02],       // matrix
             header + [0xDF, 0x16],       // layer
-        ])
+        ]
+        #expect(sent(actions).map { Array($0.prefix(7)) } == expected)
         #expect(emitted(actions) == [
             .connected(serial: "sval:TEST", protocolVersion: 3),
             .keys([KeyPosition(row: 1, col: 2)]),
