@@ -217,6 +217,12 @@ static void mouse_mode_layer(bool on) {
 
 /* The host-profile detector's one output, recorded: the keymap's real
  * hostos_profile_changed() sets Svalboard's scroll divisors and is_mac. */
+/* townk_announce.c: the subscription and change logic only (its QMK glue
+ * is under !SMTD_UNIT_TEST), at the real board's ten rows rather than
+ * this fixture's one. */
+#define ANNOUNCE_ROWS 10
+#include "../users/townk/townk_announce.c"
+
 #include "../users/townk/townk_hostos.h"
 static int     hostos_profile_calls = 0;
 static uint8_t hostos_last_profile  = 0;
@@ -419,3 +425,13 @@ uint8_t T_hostos_v_none(void) { return HOSTOS_VERDICT_NONE; }
 uint8_t T_hostos_v_mac(void) { return HOSTOS_VERDICT_MAC; }
 uint8_t T_hostos_v_windows(void) { return HOSTOS_VERDICT_WINDOWS; }
 uint8_t T_hostos_v_linux(void) { return HOSTOS_VERDICT_LINUX; }
+
+/* townk_announce.c */
+bool   T_announce_command(uint8_t *data, uint8_t length, uint32_t now) { return announce_handle_command(data, length, now); }
+bool   T_announce_subscribed(void) { return announce_subscribed(); }
+void   T_announce_reset(void) { announce_reset(); }
+size_t T_announce_poll(uint32_t active, uint32_t default_layers, uint8_t mods, uint8_t status, const uint8_t *rows, uint32_t now, char *buf, size_t size) {
+    announce_state_t state = {.active = active, .default_layers = default_layers, .mods = mods, .status = status};
+    memcpy(state.rows, rows, sizeof(state.rows));
+    return announce_poll(&state, now, buf, size);
+}

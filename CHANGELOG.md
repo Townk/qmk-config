@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Layer and switch announcements for host tools (`townk_announce.c`):
+  after a subscribe command over Raw HID, the board prints each layer or
+  switch change to its debug console until the subscription's 5 s lease
+  runs out. Nothing runs without a subscriber. The command reaches the
+  userspace through a linker wrap of the svalboard/core module's
+  `client_wrapper_receive()`, since neither Svalboard's VIA handler nor
+  the module has a user hook
+
 ### Changed
 
 - The right (cursor) trackball now boots at 1600 DPI, up from 1200

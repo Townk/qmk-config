@@ -24,6 +24,7 @@
 #include "quantum_keycodes.h"
 #include "os_detection.h"
 #include "axis_scale.h"
+#include "townk_announce.h"
 #include "townk_hostos.h"
 #include "townk_idle.h"
 #include "townk_layers.h"
@@ -73,10 +74,12 @@ void hostos_profile_changed(hostos_profile_t profile) {
 }
 
 /**
- * @brief Main-loop hook: the switcher chord's disarm point and the LED
- *        idle engine, every scan pass.
+ * @brief Main-loop hook: the switcher chord's disarm point, the LED idle
+ *        engine and the layer/switch announcements, every scan pass.
  *
- * Master only. Both engines read master-side state (USB modifiers; the
+ * Master only. The announcements live there because the host subscribes
+ * over the master's USB and only the master holds both halves' matrix.
+ * The other two engines read master-side state (USB modifiers; the
  * combined input-activity clock -- a slave half only ever sees its LOCAL
  * keys, so its own clock goes "idle" while you type on the other half),
  * and the slave's LEDs follow the master's rgblight state over the split
@@ -90,6 +93,7 @@ void housekeeping_task_user(void) {
 
     switcher_task();
     led_idle_task();
+    announce_task();
 }
 
 /**

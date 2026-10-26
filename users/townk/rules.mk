@@ -25,6 +25,7 @@ VPATH += $(QMK_USERSPACE)/modules/stasmarkin/sm_td
 SRC += sm_td.c
 DEFERRED_EXEC_ENABLE = yes
 
+SRC += townk_announce.c
 SRC += townk_hostos.c
 SRC += townk_idle.c
 SRC += townk_layers.c
@@ -42,3 +43,10 @@ CFLAGS += -fcommon
 # tags it with the configuration state it arrived in. No fork change: the
 # linker rewrites the one call site in tmk_core's usb_descriptor.c.
 LDFLAGS += -Wl,--wrap=process_wlength
+
+# Same trick for townk_announce.c's subscribe command: the svalboard/core
+# module's dispatcher (sval.c) calls client_wrapper_receive() for every
+# wrapped host packet, and the wrap lets the subscribe command be answered
+# before the module sees it. See townk_announce.h for why it is this
+# function and not one of VIA's handlers.
+LDFLAGS += -Wl,--wrap=client_wrapper_receive
