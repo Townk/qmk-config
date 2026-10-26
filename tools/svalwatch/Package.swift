@@ -9,7 +9,11 @@ let package = Package(
         // reply parsing, change detection, pacing, the output format.
         .target(name: "SvalWatchCore"),
         // The IOKit side: finding the board, talking to it, sleep/lock.
-        .executableTarget(name: "svalwatch", dependencies: ["SvalWatchCore"]),
+        .target(name: "SvalWatchDevice", dependencies: ["SvalWatchCore"]),
+        // JSON lines on stdout, for anything that wants the raw stream.
+        .executableTarget(name: "svalwatch", dependencies: ["SvalWatchCore", "SvalWatchDevice"]),
+        // The always-on layer overlay window.
+        .executableTarget(name: "svaloverlay", dependencies: ["SvalWatchCore", "SvalWatchDevice"]),
         .testTarget(name: "SvalWatchCoreTests", dependencies: ["SvalWatchCore"]),
     ]
 )

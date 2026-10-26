@@ -1,0 +1,61 @@
+/* svaloverlay's page. Same literal panel tokens as Hammerspoon's
+ * which-key-overlay.css and clipboard-picker.css (background, border,
+ * radius, breadcrumb and separator), so the overlay reads as one of
+ * them. */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+@font-face {
+  font-family: 'Symbols Nerd Font Mono';
+  src: url("icons.ttf") format("truetype");
+  font-display: block;
+}
+
+html, body { background: transparent; overflow: hidden; }
+
+.panel {
+  background: rgba(30, 30, 36, 0.88);
+  border: 1px solid rgba(217, 217, 217, 1);
+  border-radius: 12px;
+  padding: 10px 14px;
+  display: inline-block;
+}
+
+.breadcrumb {
+  font-family: -apple-system, BlinkMacSystemFont, 'Symbols Nerd Font Mono', sans-serif;
+  font-size: 14px;
+  color: rgba(128, 128, 128, 1);
+  white-space: nowrap;
+  padding: 4px 0 2px 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.icon {
+  font-family: 'Symbols Nerd Font Mono';
+  color: rgba(191, 191, 191, 1);
+}
+
+.layer-name { color: rgba(224, 224, 224, 1); }
+.spacer { flex: 1; }
+
+/* The on-top marker: which-key's sticky colour. */
+.pin { color: rgba(255, 199, 89, 1); visibility: hidden; }
+.panel.on-top .pin { visibility: visible; }
+
+hr.separator {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin: 4px 0 6px 0;
+}
+
+.keyboard svg { display: block; }
+.keyboard svg.hidden { display: none; }
+
+/* A held key: the #pressed filter in page.html (a CSS filter function
+ * would be ignored on an SVG element). */
+g[data-key].pressed { filter: url(#pressed); }
+
+svg.defs { position: absolute; }
+
+.panel.disconnected .keyboard { opacity: 0.35; }

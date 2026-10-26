@@ -7,16 +7,18 @@ import SvalWatchCore
 /// runs on the main run loop: IOKit callbacks, timers and notifications
 /// alike, so there is no locking anywhere.
 @MainActor
-final class Watcher {
-    struct Options {
-        var serial: String?
-        var session = Session.Config()
-        var passiveWake = true
-        var statsEvery: Double?
+public final class Watcher {
+    public struct Options: Sendable {
+        public var serial: String?
+        public var session = Session.Config()
+        public var passiveWake = true
+        public var statsEvery: Double?
+
+        public init() {}
     }
 
     private let options: Options
-    private let output: (String) -> Void
+    private let output: (WatchEvent) -> Void
     private let log: (String) -> Void
 
     private let manager = IOHIDManagerCreate(kCFAllocatorDefault, IOOptionBits(kIOHIDOptionsTypeNone))
@@ -30,13 +32,13 @@ final class Watcher {
     private var console: ConsoleReader?
     private var parser = ConsoleParser()
 
-    init(options: Options, output: @escaping (String) -> Void, log: @escaping (String) -> Void) {
+    public init(options: Options, output: @escaping (WatchEvent) -> Void, log: @escaping (String) -> Void) {
         self.options = options
         self.output = output
         self.log = log
     }
 
-    func start() {
+    public func start() {
         IOHIDManagerSetDeviceMatching(manager, [
             kIOHIDDeviceUsagePageKey: SvalProtocol.usagePage,
             kIOHIDDeviceUsageKey: SvalProtocol.usage,
@@ -71,7 +73,7 @@ final class Watcher {
     /// Lock, display sleep or system sleep: stop polling entirely. With
     /// announcements, stopping the renewals lets the lease run out, and
     /// the board goes quiet on its own.
-    func pause() {
+    public func pause() {
         guard !paused else { return }
         paused = true
         timer?.invalidate()
@@ -79,7 +81,7 @@ final class Watcher {
         passive?.arm(false)
     }
 
-    func resume() {
+    public func resume() {
         guard paused else { return }
         paused = false
         if session != nil { run(session!.poll(at: now())) }
@@ -129,7 +131,7 @@ final class Watcher {
         console?.follow(nil)
         let hadConnected = session.map { $0.stats.polls > 0 } ?? false
         session = nil
-        if hadConnected { output(WatchEvent.disconnected.jsonLine) }
+        if hadConnected { output(.disconnected) }
         log("svalwatch: board disconnected")
         // The manager calls attach() again when it (or another) comes back.
     }
@@ -147,7 +149,7 @@ final class Watcher {
             case let .send(bytes):
                 send(bytes)
             case let .emit(event):
-                output(event.jsonLine)
+                output(event)
             case let .pollAfter(delay):
                 schedule(after: delay) { s, t in s.poll(at: t) }
             case let .timeoutAfter(delay):

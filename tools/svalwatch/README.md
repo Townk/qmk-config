@@ -23,6 +23,32 @@ make test                           # the SvalWatchCore tests
 fields of Svalboard's `info.json` layout. `top` is the layer whose legends
 are showing. `svalwatch --help` lists the options.
 
+## svaloverlay
+
+The second executable: an overlay of the current layer in the bottom-left
+corner of the main display, a quarter of its width (`--width`), highlighting
+the keys being held, styled like the Hammerspoon which-key overlay. It sits
+below every window (like a desktop widget) or above every window, never in
+between, and never takes clicks or focus. It takes `top`, `bottom`,
+`toggle` and `quit` on stdin, and exits when stdin closes.
+
+Hammerspoon's `svalboard` module runs it in one of three modes, kept across
+reloads: off (not running at all), background, or on top. Leader, `t`, `k`
+steps to the next one, off → background → on top → off; the binding is
+sticky, so keep pressing `k` until Esc.
+
+Its page is built from the keymap with skim, in the overlay palette of
+`overlay/skim-overlay.yaml`, and needs a skim with key tags and
+`layer_indicator.reserve_space` (skim's `feat/key-tags`):
+
+```sh
+make install SKIM_PYTHON=~/Projects/langs/python/skim-key-tags/.venv/bin/python
+make overlay-assets SKIM_PYTHON=...   # after changing the keymap or its skim config
+```
+
+Memory, measured 2026-10-25: about 70 MB for svaloverlay plus about 130 MB
+across WebKit's helper processes (content, GPU, networking); 0% CPU idle.
+
 ## How it gets the state
 
 With this userspace's firmware, the board announces changes itself

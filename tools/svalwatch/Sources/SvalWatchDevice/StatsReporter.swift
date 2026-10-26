@@ -5,7 +5,7 @@ import SvalWatchCore
 /// own CPU use and poll rate over the interval. This is the profiling
 /// hook: run svalwatch, use the keyboard normally, read the numbers.
 @MainActor
-final class StatsReporter {
+public final class StatsReporter {
     private let every: Double
     private let log: (String) -> Void
     private let sample: () -> (Session.Stats?, Session.Mode?, Bool?)
@@ -48,7 +48,7 @@ final class StatsReporter {
         return user + system
     }
 
-    static func cpuSplit() -> (user: Double, system: Double) {
+    public static func cpuSplit() -> (user: Double, system: Double) {
         var usage = rusage()
         getrusage(RUSAGE_SELF, &usage)
         func seconds(_ t: timeval) -> Double { Double(t.tv_sec) + Double(t.tv_usec) / 1e6 }

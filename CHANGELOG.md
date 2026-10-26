@@ -20,6 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   layer and pressed switches as JSON lines, from the announcements when
   the firmware has them and by adaptive polling otherwise. The keyboard
   side of a planned layer overlay
+- `svaloverlay` (also in `tools/svalwatch`), the always-on layer overlay:
+  skim's layer images in a which-key-styled, click-through panel in the
+  bottom-left corner, with held keys highlighted. Below every window by
+  default, above every window on toggle. Started and toggled by the
+  Hammerspoon `svalboard` module (dotfiles)
 
 ### Changed
 

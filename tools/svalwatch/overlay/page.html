@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="page.css">
+  </head>
+  <body>
+    <div class="panel disconnected">
+      <div class="breadcrumb">
+        <span class="icon">&#xF030C;</span>
+        <span class="layer-name">Svalboard disconnected</span>
+        <span class="layer-variant"></span>
+        <span class="spacer"></span>
+        <span class="icon pin">&#xF0403;</span>
+      </div>
+      <hr class="separator">
+      <div class="keyboard">
+<!--LAYERS-->
+      </div>
+    </div>
+    <!-- The held-key look, as an SVG filter: WebKit ignores CSS filter
+         functions (brightness(), drop-shadow()) on elements inside an SVG,
+         but applies filter: url(#pressed). Lifted toward white, ringed in
+         which-key's key blue. -->
+    <svg class="defs" width="0" height="0" aria-hidden="true">
+      <filter id="pressed" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
+        <feComponentTransfer in="SourceGraphic" result="lit">
+          <feFuncR type="linear" slope="1.55"/>
+          <feFuncG type="linear" slope="1.55"/>
+          <feFuncB type="linear" slope="1.55"/>
+        </feComponentTransfer>
+        <feDropShadow in="lit" dx="0" dy="0" stdDeviation="8" flood-color="rgb(130, 170, 255)" flood-opacity="0.95"/>
+      </filter>
+    </svg>
+    <script type="application/json" id="manifest"><!--MANIFEST--></script>
+    <script src="page.js"></script>
+  </body>
+</html>

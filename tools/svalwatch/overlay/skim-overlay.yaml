@@ -1,0 +1,20 @@
+# The overlay's look, merged over the keymap's own skim config
+# (keyboards/svalboard/keymaps/townk/skim-config.yaml) by build_assets.py:
+# mappings merge key by key, anything else replaces. Keys, layers and
+# colours stay whatever the keymap's config says; only the document
+# chrome changes, so the drawing sits on the overlay's dark panel (the
+# which-key/picker tokens in page.css) instead of a white page.
+output:
+  keymap_title: null
+  copyright: null
+  style:
+    border: null
+    # Every layer image in one geometry, so switching layers swaps legends
+    # without the halves jumping (a layer only makes room for its own
+    # layer badges otherwise).
+    layer_indicator:
+      reserve_space: true
+    palette:
+      background_color: transparent
+      text_color: '#E0E0E0'
+      border_color: '#5A5A66'
