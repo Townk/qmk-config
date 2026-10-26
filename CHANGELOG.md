@@ -150,6 +150,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Typing streak for the space key (`townk_streak.c`): a space pressed
+  within `TOWNK_SPACE_STREAK_TERM_MS` (150) of a letter, digit or
+  punctuation key is always a Space, never the `_NUM` hold. The false hold
+  it fixes was sm_td's nested press -- the next word's first letter goes
+  down and up while the thumb is still on space -- which sm_td resolves as
+  a hold instantly, with no timer, so no `SMTD_*` term could reach it. A
+  space after a space, a modifier, or a pause holds `_NUM` as before
 - `SV_SOUT`'s first line ends with `scroll div: N`, the divisor the scroll
   axes are running with right now
 - `SV_SOUT` now prefixes the keyboard's status dump with two lines: the

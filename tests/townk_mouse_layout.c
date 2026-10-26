@@ -194,6 +194,7 @@ void post_process_record(keyrecord_t *record) { (void)record; }
 #include "../users/townk/townk_mouse.c"
 #include "../users/townk/townk_switcher.c"
 #include "../users/townk/townk_idle.c"
+#include "../users/townk/townk_streak.c"
 
 /* The host-profile detector's one output, recorded: the keymap's real
  * hostos_profile_changed() sets Svalboard's scroll divisors and is_mac. */
@@ -210,8 +211,11 @@ void hostos_profile_changed(hostos_profile_t profile) {
  * Minimal keymap + SM_TD action handler
  * ------------------------------------------------------------------------ */
 
-uint16_t const keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
-    [0] = {{MB_GUI, CKC_SPC, MS_BTN1, KC_NO}},
+/* Sized for every layer, not just the one defined: sm_td resolves keys by
+ * position on whatever layer is active, so a CKC_SPC hold that raises _NUM
+ * makes the next lookup read layer _NUM. Undefined layers are all KC_NO. */
+uint16_t const keymaps[16][MATRIX_ROWS][MATRIX_COLS] = {
+    [0] = {{MB_GUI, CKC_SPC, MS_BTN1, KC_A}},
 };
 
 /* The REAL SM_TD action handler -- the shift-inverted Backspace/Delete, the
@@ -222,6 +226,28 @@ uint16_t const keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 /* ------------------------------------------------------------------------ *
  * Test driver, called over ctypes
  * ------------------------------------------------------------------------ */
+
+/* Drive one matrix event through the typing streak and the REAL sm_td
+ * engine, in process_record_user()'s order, with the keycode resolved from
+ * the active layer as QMK would. Columns: 0 MB_GUI, 1 CKC_SPC, 2 MS_BTN1,
+ * 3 KC_A. What sm_td emits lands in the recorded history: its own taps as
+ * register/unregister, replayed key events as records carrying the layer. */
+void T_press(uint8_t col, bool pressed) {
+    keyrecord_t record  = {.event = MAKE_KEYEVENT(0, col, pressed)};
+    uint16_t    keycode = keymap_key_to_keycode(get_highest_layer(layer_state), record.event.key);
+    streak_note(keycode, pressed);
+    process_smtd(keycode, &record);
+}
+
+/* Feed the typing streak a press that never reaches sm_td's keymap, e.g. a
+ * modifier on another layer. */
+void T_streak_note(uint16_t keycode) { streak_note(keycode, true); }
+
+uint8_t T_layer_num(void) { return _NUM; }
+uint32_t T_streak_term_ms(void) { return TOWNK_SPACE_STREAK_TERM_MS; }
+uint16_t T_kc_a(void) { return KC_A; }
+uint16_t T_kc_lctl(void) { return KC_LCTL; }
+uint16_t T_kc_exlm(void) { return LSFT(KC_1); }
 
 /* Drive one key event through the engine, as process_record_user() would. */
 void T_key(uint16_t keycode, bool pressed) {
@@ -287,6 +313,7 @@ void T_reset(void) {
     smtd_return_layer     = RETURN_LAYER_NOT_SET;
     smtd_return_layer_cnt = 0;
     switcher_reset();
+    streak_reset();
     led_idle_reset();
     hostos_forget(false);
     hostos_profile_calls = 0;

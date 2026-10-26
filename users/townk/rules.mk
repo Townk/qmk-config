@@ -32,6 +32,7 @@ SRC += townk_mods.c
 SRC += townk_mouse.c
 SRC += townk_overrides.c
 SRC += townk_smtd.c
+SRC += townk_streak.c
 SRC += townk_switcher.c
 
 CFLAGS += -fcommon

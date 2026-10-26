@@ -30,6 +30,8 @@ enum qmk_keycodes {
 
     KC_GRV = 0x0035,
 
+    KC_SLSH = 0x0038, /* the last punctuation key: ends the typing-key range */
+
     KC_DEL = 0x004C,
 
     /* Mouse buttons. macOS sees MS_BTN3 as the middle button. */

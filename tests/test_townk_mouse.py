@@ -147,7 +147,14 @@ def _build() -> ctypes.CDLL:
                  "T_hostos_v_linux"):
         getattr(lib, name).restype = ctypes.c_uint8
 
-    for name in ("T_kc_mb_sft", "T_kc_mb_alt", "T_kc_mb_gui", "T_kc_mb_ctl",
+    # The typing streak (townk_streak.c) in front of the real sm_td engine.
+    lib.T_press.argtypes = [ctypes.c_uint8, ctypes.c_bool]
+    lib.T_streak_note.argtypes = [ctypes.c_uint16]
+    lib.T_layer_num.restype = ctypes.c_uint8
+    lib.T_streak_term_ms.restype = ctypes.c_uint32
+
+    for name in ("T_kc_a", "T_kc_lctl", "T_kc_exlm",
+                 "T_kc_mb_sft", "T_kc_mb_alt", "T_kc_mb_gui", "T_kc_mb_ctl",
                  "T_kc_ckc_spc", "T_kc_ckc_bspc", "T_kc_btn1", "T_kc_btn2",
                  "T_kc_btn3", "T_kc_del", "T_kc_bspc", "T_kc_plain",
                  "T_kc_ckc_tab", "T_kc_ckc_bktab", "T_kc_tab", "T_kc_bktab",
@@ -185,6 +192,10 @@ LAYER_NAV: int = int(LIB.T_layer_nav())
 LAYER_MBO: int = int(LIB.T_layer_mbo())
 LAYER_GAM1: int = int(LIB.T_layer_gam1())
 LAYER_BASE: int = int(LIB.T_layer_base())
+LAYER_NUM: int = int(LIB.T_layer_num())
+KC_A: int = int(LIB.T_kc_a())
+KC_LCTL: int = int(LIB.T_kc_lctl())
+KC_EXLM: int = int(LIB.T_kc_exlm())  # S(KC_1), a shifted typing key
 
 
 class TownkMouseTest(unittest.TestCase):
@@ -1334,6 +1345,160 @@ class LedIdleTest(unittest.TestCase):
 
         self.assertEqual(int(LIB.T_rgb_disable_calls()), 0)
         self.assertEqual(int(LIB.T_rgb_enable_calls()), 0)
+
+
+class SpaceTypingStreakTest(unittest.TestCase):
+    """A space pressed mid-word is a space, never the _NUM hold.
+
+    The false hold this guards against is sm_td's nested press: the thumb is
+    still on space when the next word's first letter goes down AND up
+    (down SPC, down A, up A, up SPC). sm_td resolves that as a hold the
+    moment A is released -- no timeout is involved, so no SMTD_* term can
+    widen or narrow it. What tells typing apart from a deliberate number is
+    what came BEFORE the space: a typing key a moment ago is a word in
+    progress. These tests drive real matrix events through the real sm_td
+    engine and read which layer the letter landed on.
+    """
+
+    SPC_COL = 1
+    A_COL = 3
+
+    def setUp(self) -> None:
+        LIB.TEST_reset()
+        LIB.T_reset()
+        self.term = int(LIB.T_streak_term_ms())
+        self.mark = 0
+        # Start from silence: whatever the streak saw before is long gone.
+        LIB.TEST_advance_time(10 * self.term)
+
+    def tearDown(self) -> None:
+        self.assertTrue(bool(LIB.T_layer_is(LAYER_BASE)), "a layer was left on")
+        self.assertFalse(bool(LIB.T_layer_is(LAYER_NUM)), "_NUM was left on")
+        self.assertEqual(int(LIB.get_mods()), 0, "modifiers leaked past key release")
+
+    def records(self) -> list:
+        """What sm_td emitted since nested_space() began (or since reset).
+
+        sm_td consumes and replays EVERY key event, so the letter typed
+        before the space shows up too; only what happened from the space
+        press on is the behaviour under test.
+        """
+        raw = (CHistory * MAX_HISTORY)()
+        count = ctypes.c_uint8()
+        LIB.TEST_get_record_history(raw, ctypes.byref(count))
+        return [raw[i] for i in range(self.mark, count.value)]
+
+    def letter_layers(self) -> list[int]:
+        """The layer each replayed press of the letter key landed on."""
+        return [
+            int(r.layer_state) for r in self.records()
+            if r.keycode == 65535 and r.col == self.A_COL and r.pressed
+        ]
+
+    def space_taps(self) -> int:
+        return sum(1 for r in self.records() if r.keycode == KC_SPC and r.pressed)
+
+    def tap_letter(self) -> None:
+        LIB.T_press(self.A_COL, True)
+        LIB.TEST_advance_time(20)
+        LIB.T_press(self.A_COL, False)
+
+    def nested_space(self) -> None:
+        """down SPC, down A, up A, up SPC -- the shape of the false hold."""
+        count = ctypes.c_uint8()
+        LIB.TEST_get_record_history((CHistory * MAX_HISTORY)(), ctypes.byref(count))
+        self.mark = count.value
+        LIB.T_press(self.SPC_COL, True)
+        LIB.TEST_advance_time(30)
+        LIB.T_press(self.A_COL, True)
+        LIB.TEST_advance_time(30)
+        LIB.T_press(self.A_COL, False)
+        LIB.TEST_advance_time(20)
+        LIB.T_press(self.SPC_COL, False)
+
+    def test_space_after_a_pause_still_holds_numbers(self) -> None:
+        """Nothing typed lately: the nested letter is a number, as before."""
+        self.nested_space()
+
+        self.assertEqual(self.letter_layers(), [LAYER_NUM])
+        self.assertEqual(self.space_taps(), 0, "a deliberate hold must not type a space")
+
+    def test_space_mid_word_is_a_space(self) -> None:
+        """A letter just before the space: the nested letter stays a letter."""
+        self.tap_letter()
+        LIB.TEST_advance_time(self.term // 2)
+        self.nested_space()
+
+        self.assertEqual(self.space_taps(), 1)
+        self.assertEqual(self.letter_layers(), [LAYER_BASE])
+
+    def test_space_comes_out_before_the_letter_it_overlapped(self) -> None:
+        """"a b", not "ab ": the space is emitted ahead of the replayed letter."""
+        self.tap_letter()
+        LIB.TEST_advance_time(self.term // 2)
+        self.nested_space()
+
+        order = [
+            "space" if r.keycode == KC_SPC else "letter"
+            for r in self.records()
+            if r.pressed and (r.keycode == KC_SPC or (r.keycode == 65535 and r.col == self.A_COL))
+        ]
+        self.assertEqual(order, ["space", "letter"])
+
+    def test_streak_ends_after_the_term(self) -> None:
+        """A pause longer than the term before the space: numbers again."""
+        self.tap_letter()
+        LIB.TEST_advance_time(self.term + 1)
+        self.nested_space()
+
+        self.assertEqual(self.letter_layers(), [LAYER_NUM])
+
+    def test_a_shifted_symbol_counts_as_typing(self) -> None:
+        """"!" (S(KC_1)) ends sentences: a space right after it is a space."""
+        LIB.T_streak_note(KC_EXLM)
+        LIB.TEST_advance_time(self.term // 2)
+        self.nested_space()
+
+        self.assertEqual(self.letter_layers(), [LAYER_BASE])
+
+    def test_a_modifier_is_not_typing(self) -> None:
+        """Ctrl then a quick space-hold is a chord in the making: keep the hold."""
+        LIB.T_streak_note(KC_LCTL)
+        LIB.TEST_advance_time(self.term // 2)
+        self.nested_space()
+
+        self.assertEqual(self.letter_layers(), [LAYER_NUM])
+
+    def test_a_space_does_not_extend_the_streak(self) -> None:
+        """"page 3": letter, space tap, then a quick space-hold for the digit.
+
+        Only the press right before a space decides; a space is not a typing
+        key, so the second space press is a deliberate hold even though the
+        letter was less than a term ago. The gap between the two space
+        presses is past sm_td's sequence term so it is not a double tap.
+        """
+        self.tap_letter()
+        LIB.TEST_advance_time(10)
+        LIB.T_press(self.SPC_COL, True)
+        LIB.TEST_advance_time(20)
+        LIB.T_press(self.SPC_COL, False)
+        LIB.TEST_advance_time(110)
+        self.assertLess(30 + 110, self.term, "scenario must sit inside the term")
+        self.nested_space()
+
+        self.assertEqual(self.letter_layers(), [LAYER_NUM])
+        self.assertEqual(self.space_taps(), 0, "the held space must not type")
+
+    def test_space_held_alone_mid_word_is_one_space(self) -> None:
+        """Held past the tap term mid-word: one space, no layer, clean release."""
+        self.tap_letter()
+        LIB.TEST_advance_time(self.term // 2)
+        LIB.T_press(self.SPC_COL, True)
+        LIB.TEST_advance_time(400)  # well past sm_td's tap term: a timed hold
+        self.assertFalse(bool(LIB.T_layer_is(LAYER_NUM)), "mid-word hold raised _NUM")
+        LIB.T_press(self.SPC_COL, False)
+
+        self.assertEqual(self.space_taps(), 1)
 
 
 if __name__ == "__main__":

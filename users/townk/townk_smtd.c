@@ -24,6 +24,7 @@
 #include "townk_layers.h"
 #include "townk_keycodes.h"
 #include "townk_mouse.h"
+#include "townk_streak.h"
 #include "townk_switcher.h"
 
 #include "sm_td.h"
@@ -160,38 +161,64 @@ static uint8_t smtd_return_layer_cnt = 0;
     )
 
 /**
- * @brief A CUSTOM_LT whose tap reverses direction during a switcher chord.
+ * @brief REVERSED_LT's tap: tap_key, or reverse_key while ready_fn() says
+ *        the switcher chord is armed. See REVERSED_LT.
+ */
+#define REVERSED_TAP(tap_key, ready_fn, reverse_key) \
+    if (ready_fn()) {                                \
+        SMTD_TAP_16(false, reverse_key);             \
+        mouse_mode(false);                           \
+    } else {                                         \
+        CUSTOM_TAP(tap_key);                         \
+    }
+
+/**
+ * @brief A CUSTOM_LT whose tap reverses direction during a switcher chord,
+ *        and whose hold is a tap while typing.
  *
- * Identical to CUSTOM_LT except for the tap: while ready_fn() says this
- * pad's chord is armed (see townk_switcher.h), the tap emits reverse_key
- * instead of tap_key, so the hand that entered a MOD+Tab switcher can cycle
- * the other way without leaving its pad. The reversed emission deliberately
- * bypasses CUSTOM_TAP: reporting it to the chord tracker would re-classify
- * the direction and disarm the very pad that produced it. Hold and release
- * are untouched -- the layer-tap is still the layer-tap.
+ * Identical to CUSTOM_LT except for two things.
+ *
+ * The tap: while ready_fn() says this pad's chord is armed (see
+ * townk_switcher.h), the tap emits reverse_key instead of tap_key, so the
+ * hand that entered a MOD+Tab switcher can cycle the other way without
+ * leaving its pad. The reversed emission deliberately bypasses CUSTOM_TAP:
+ * reporting it to the chord tracker would re-classify the direction and
+ * disarm the very pad that produced it.
+ *
+ * The hold: when flow_fn() says the key went down mid-word (see
+ * townk_streak.h), the hold is not a hold at all -- it emits the tap and
+ * raises no layer. sm_td replays the keys pressed during the hold right
+ * after this action, so the tap comes out ahead of them, in typing order.
+ * flow_tapped remembers which way the hold went so the release undoes the
+ * right thing; the hold writes it on both branches, so a stale value can
+ * never skip a LAYER_RESTORE and leave the layer stuck on.
  *
  * @param macro_key The custom keycode that triggers this dance behavior.
  * @param tap_key The keycode to send on a normal tap or register on hold.
  * @param layer The layer to activate when the key is held.
  * @param ready_fn Zero-argument predicate: is this pad's chord armed?
  * @param reverse_key The keycode to tap while the chord is armed.
+ * @param flow_fn Zero-argument predicate: did this press come mid-word?
+ * @param flow_tapped A bool lvalue in scope that outlives the call.
  */
-#define REVERSED_LT(macro_key, tap_key, layer, ready_fn, reverse_key) \
-    SMTD_DANCE(macro_key,                                    \
-               NOTHING,                                      \
-               if (ready_fn()) {                             \
-                   SMTD_TAP_16(false, reverse_key);          \
-                   mouse_mode(false);                        \
-               } else {                                      \
-                   CUSTOM_TAP(tap_key);                      \
-               },                                            \
-               SMTD_LIMIT(1,                                 \
-                          mouse_mode(false);                 \
-                          LAYER_PUSH(layer),                 \
-                          SMTD_REGISTER_16(false, tap_key)), \
-               SMTD_LIMIT(1,                                 \
-                          LAYER_RESTORE(),                   \
-                          CUSTOM_UNTAP(tap_key));            \
+#define REVERSED_LT(macro_key, tap_key, layer, ready_fn, reverse_key, flow_fn, flow_tapped) \
+    SMTD_DANCE(macro_key,                                         \
+               NOTHING,                                           \
+               REVERSED_TAP(tap_key, ready_fn, reverse_key),      \
+               SMTD_LIMIT(1,                                      \
+                          flow_tapped = flow_fn();                \
+                          if (flow_tapped) {                      \
+                              REVERSED_TAP(tap_key, ready_fn, reverse_key) \
+                          } else {                                \
+                              mouse_mode(false);                  \
+                              LAYER_PUSH(layer);                  \
+                          },                                      \
+                          SMTD_REGISTER_16(false, tap_key)),      \
+               SMTD_LIMIT(1,                                      \
+                          if (!flow_tapped) {                     \
+                              LAYER_RESTORE();                    \
+                          },                                      \
+                          CUSTOM_UNTAP(tap_key));                 \
     )
 
 /**
@@ -421,7 +448,8 @@ static uint8_t smtd_return_layer_cnt = 0;
  * - Tap: Sends Space
  * - Tap during a backward MOD+Tab chord: Sends Tab (cycles the switcher
  *   forward again; see townk_switcher.h)
- * - Hold: Activates Number layer (_NUM)
+ * - Hold: Activates Number layer (_NUM), unless the press came mid-word
+ *   (townk_streak.h): then the hold is a Space and no layer goes up
  *
  * **CKC_BSPC** - Shift-aware Layer-tap with Backspace/Delete:
  * - Tap (no shift): Sends Backspace
@@ -462,6 +490,9 @@ static uint8_t smtd_return_layer_cnt = 0;
  *       - `shift_mod`: Stores which shift modifier (left or right) was active
  *         when a shift-inverted key was pressed. Used to restore the correct
  *         shift state after the key is released.
+ *       - `space_flow_tapped`: Whether CKC_SPC's latest hold was typed as a
+ *         Space (mid-word) instead of raising _NUM, so its release knows
+ *         whether there is a layer to restore.
  *
  * @note **Modifier Detection:**
  *       If NO_ACTION_ONESHOT is not defined, the function detects both regular
@@ -485,6 +516,7 @@ static uint8_t smtd_return_layer_cnt = 0;
 smtd_resolution on_smtd_action(uint16_t keycode, smtd_action action, uint8_t tap_count) {
     static bool    delkey_registered = false;
     static uint8_t shift_mod         = 0;
+    static bool    space_flow_tapped = false;
 
     // An SM_TD key being touched is a key press like any other, and must
     // commit a held MB_* key to its modifier role. process_record_user() --
@@ -504,7 +536,8 @@ smtd_resolution on_smtd_action(uint16_t keycode, smtd_action action, uint8_t tap
     switch (keycode) {
         CUSTOM_LT(CKC_TAB, KC_TAB, _SYM);
         CUSTOM_LT(CKC_BKTAB, MKC_BKTAB, _FUN);
-        REVERSED_LT(CKC_SPC, KC_SPC, _NUM, switcher_tab_ready, KC_TAB);
+        REVERSED_LT(CKC_SPC, KC_SPC, _NUM, switcher_tab_ready, KC_TAB,
+                    streak_space_in_flow, space_flow_tapped);
         SHIFTED_LT(CKC_BSPC, KC_DEL, KC_BSPC, _NAV);
         SMART_SHIFT(CKC_SMSFT);
     }

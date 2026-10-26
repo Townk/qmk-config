@@ -30,6 +30,12 @@
 #define SMTD_GLOBAL_SEQUENCE_TERM 100
 #define SMTD_GLOBAL_RELEASE_TERM 15
 
+// A space pressed within this many ms of a letter (or digit, or
+// punctuation) is a space, never the numbers layer -- see townk_streak.h.
+// Raise it if spaces still turn into numbers while typing; lower it if a
+// number typed right after a word comes out as a space and a letter.
+#define TOWNK_SPACE_STREAK_TERM_MS 150
+
 // Turn the LEDs off after this much input silence (keys, trackballs,
 // scroll -- either half) and back on at the first touch; see townk_idle.h.
 // Tune freely: 60000 = 1 minute, 120000 = 2 minutes.

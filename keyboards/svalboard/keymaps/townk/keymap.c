@@ -30,6 +30,7 @@
 #include "townk_keycodes.h"
 #include "townk_mouse.h"
 #include "townk_overrides.h"
+#include "townk_streak.h"
 #include "townk_switcher.h"
 
 #include "sm_td.h"
@@ -926,7 +927,12 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
      *
      * Order matters: sm_td must run before the handlers below so that real
      * presses are consumed here (as the module used to) and the ESC hook and
-     * mouse-keys engine keep seeing only sm_td's emulated replays. */
+     * mouse-keys engine keep seeing only sm_td's emulated replays.
+     *
+     * The typing streak notes every press first -- raw ones included, which
+     * sm_td is about to consume -- so CKC_SPC knows, the moment it goes
+     * down, whether a word is in progress (townk_streak.h). */
+    streak_note(keycode, record->event.pressed);
     if (get_repeat_key_count() == 0 && !process_smtd(keycode, record)) {
         return false;
     }
