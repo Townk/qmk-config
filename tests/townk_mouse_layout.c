@@ -81,10 +81,21 @@ static int  mouse_mode_calls = 0;
 static bool mouse_mode_state = false;
 static bool mouse_mode_saw_auto_mouse = false;
 
+/* Beyond recording, the stub does what keymap_support.c's mouse_mode()
+ * does: when auto_mouse is set, it raises or drops the _MBO layer, through
+ * the shim's layer_on()/layer_off() -- and so through the REAL
+ * layer_state_set_user(). A record-only stub hid that the game-layer
+ * teardown re-enters layer_state_set_user() from inside itself. Defined
+ * below, once townk_layers.h has named _MBO. */
+static void mouse_mode_layer(bool on);
+
 void mouse_mode(bool on) {
     mouse_mode_calls++;
     mouse_mode_state = on;
     mouse_mode_saw_auto_mouse = global_saved_values.auto_mouse;
+    if (global_saved_values.auto_mouse) {
+        mouse_mode_layer(on);
+    }
 }
 
 /* Pointing-device plumbing. townk_mouse.c defines pointing_device_task_kb()
@@ -194,6 +205,14 @@ void post_process_record(keyrecord_t *record) { (void)record; }
 #include "../users/townk/townk_mouse.c"
 #include "../users/townk/townk_switcher.c"
 #include "../users/townk/townk_idle.c"
+
+static void mouse_mode_layer(bool on) {
+    if (on) {
+        layer_on(_MBO);
+    } else {
+        layer_off(_MBO);
+    }
+}
 #include "../users/townk/townk_streak.c"
 
 /* The host-profile detector's one output, recorded: the keymap's real

@@ -66,6 +66,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Auto-mouse comes back after a game layer. Entering `_GAM1` tore mouse
+  mode down with `mouse_mode(false)`, whose `layer_off(_MBO)` re-entered
+  `layer_state_set_user()` with the pre-game layer state; that nested call
+  took itself for the game exit and cleared the "in a game" mark, so
+  leaving with `TO(_BASE)` restored nothing and auto-mouse stayed off until
+  the next boot. The nested call is now skipped
 - The scroll trackball no longer turns 120x too sensitive on the Mac.
   Root cause, captured on-device: this Mac (macOS 26) enumerates the
   keyboard with three paired 0x02 length probes and then a single 0x04

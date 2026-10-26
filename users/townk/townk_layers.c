@@ -150,6 +150,15 @@ layer_state_t default_layer_state_set_user(layer_state_t state) {
 static bool game_layers_active = false;
 static bool saved_auto_mouse   = false;
 
+/* True while the game-entry teardown runs. mouse_mode(false) drops _MBO with
+ * layer_off(), which calls this hook again from INSIDE the outer call, with
+ * the pre-game layer state -- not a game layer. Left alone, that nested call
+ * took itself for the exit: it cleared game_layers_active and restored the
+ * flag, the outer call then cleared the flag, and leaving the game later
+ * found nothing to restore, so auto-mouse stayed off until the next boot.
+ * The nested call is not a transition; the outer call owns it. */
+static bool game_teardown_running = false;
+
 layer_state_t layer_state_set_user(layer_state_t state) {
   for (int i = 0; i < RGBLIGHT_LAYERS; ++i) {
       rgblight_set_layer_state(i, layer_state_cmp(state, i));
@@ -161,10 +170,14 @@ layer_state_t layer_state_set_user(layer_state_t state) {
   // no-op -- keymap_support.c orders the same pair this way, with the
   // warning "needs to go first to avoid the lockout".
   bool in_game = layer_state_cmp(state, _GAM1) || layer_state_cmp(state, _GAM2);
-  if (in_game && !game_layers_active) {
+  if (game_teardown_running) {
+      // Re-entered from mouse_mode(false) below; see game_teardown_running.
+  } else if (in_game && !game_layers_active) {
       game_layers_active = true;
       saved_auto_mouse   = global_saved_values.auto_mouse;
+      game_teardown_running = true;
       mouse_mode(false);
+      game_teardown_running = false;
       global_saved_values.auto_mouse = false;
   } else if (!in_game && game_layers_active) {
       game_layers_active = false;

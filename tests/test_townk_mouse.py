@@ -908,6 +908,34 @@ class TownkLayersTest(unittest.TestCase):
             "leaving the game layer must restore the preference, not force it on",
         )
 
+    def test_auto_mouse_comes_back_after_a_game(self) -> None:
+        """On, into a game, out with TO(_BASE): auto-mouse is on again.
+
+        The bug: the entry teardown's mouse_mode(false) drops _MBO through
+        layer_off(), which runs layer_state_set_user() AGAIN from inside the
+        outer call -- with the pre-game layer state, which is not a game
+        layer. That nested call took itself for the exit, cleared the
+        "in a game" mark and restored the flag; the outer call then cleared
+        the flag. Leaving the game found no mark, restored nothing, and
+        auto-mouse stayed off until the next boot.
+        """
+        LIB.layer_move(LAYER_GAM1)
+        self.assertFalse(bool(LIB.T_auto_mouse()), "games keep the pointer dead")
+
+        LIB.layer_move(LAYER_BASE)
+
+        self.assertTrue(bool(LIB.T_auto_mouse()), "auto-mouse must come back")
+
+    def test_entering_with_the_mouse_layer_up_still_restores(self) -> None:
+        """Same round trip with _MBO active at entry, as after a ball flick."""
+        LIB.T_mouse_layer(True)
+
+        LIB.layer_move(LAYER_GAM1)
+        self.assertFalse(bool(LIB.T_layer_is(LAYER_MBO)), "no mouse layer in a game")
+        LIB.layer_move(LAYER_BASE)
+
+        self.assertTrue(bool(LIB.T_auto_mouse()), "auto-mouse must come back")
+
     def test_ordinary_layer_changes_leave_the_preference_alone(self) -> None:
         """A thumb-key hold is not permission to rewrite a saved setting.
 
@@ -1360,13 +1388,17 @@ class SpaceTypingStreakTest(unittest.TestCase):
     engine and read which layer the letter landed on.
     """
 
-    SPC_COL = 1
-    A_COL = 3
+    SPC_COL: int = 1
+    A_COL: int = 3
+
+    # TOWNK_SPACE_STREAK_TERM_MS, read from the fixture so it cannot drift.
+    term: int = int(LIB.T_streak_term_ms())
+    # History length when nested_space() began; records() reads from here.
+    mark: int = 0
 
     def setUp(self) -> None:
         LIB.TEST_reset()
         LIB.T_reset()
-        self.term = int(LIB.T_streak_term_ms())
         self.mark = 0
         # Start from silence: whatever the streak saw before is long gone.
         LIB.TEST_advance_time(10 * self.term)
@@ -1376,7 +1408,7 @@ class SpaceTypingStreakTest(unittest.TestCase):
         self.assertFalse(bool(LIB.T_layer_is(LAYER_NUM)), "_NUM was left on")
         self.assertEqual(int(LIB.get_mods()), 0, "modifiers leaked past key release")
 
-    def records(self) -> list:
+    def records(self) -> list[CHistory]:
         """What sm_td emitted since nested_space() began (or since reset).
 
         sm_td consumes and replays EVERY key event, so the letter typed
