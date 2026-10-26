@@ -55,6 +55,13 @@ jobs:
 
             - name: Install QMK CLI and Svalboard QMK dependencies
               run: |
+                  # The ARM toolchain, explicitly: vial-qmk's `qmk setup -y`
+                  # apt-installed it, but the newer QMK in Svalboard's fork
+                  # only reports it missing and carries on.
+                  sudo apt-get update --quiet
+                  sudo apt-get install --quiet --yes \
+                      gcc-arm-none-eabi binutils-arm-none-eabi libnewlib-arm-none-eabi
+
                   python3 -m pip install --upgrade pip
                   python3 -m pip install qmk
                   python3 -m pip install -r svalboard-qmk/requirements.txt
