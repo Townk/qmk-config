@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The left (scroll) trackball now defaults to 1200 DPI, up from 400
 - The right (cursor) trackball now boots at 1600 DPI, up from 1200
 - Base firmware moved from `svalboard/vial-qmk` (branch `vial`) to
   `svalboard/qmk` (branch `svalboard`), Svalboard's Keybard firmware. Vial
@@ -94,6 +95,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- After a flash the right trackball ran at Svalboard's factory 800 DPI
+  while every readout (Keybard, `SV_SOUT`, the overlay) said 1600, until a
+  DPI key applied the real value. The keymap wrote its trackball defaults
+  on every boot, after Svalboard had already loaded the saved settings and
+  pushed their DPI to the sensors, and never pushed its own. The defaults
+  now apply only when QMK has just reset the stored settings
+  (`eeconfig_init_user()`: a new build, Keybard's reset, a cleared
+  EEPROM), are pushed to the sensors and saved; on every other boot the
+  saved values stand, so DPI and scroll changes survive a reboot
 - Auto-mouse comes back after a game layer. Entering `_GAM1` tore mouse
   mode down with `mouse_mode(false)`, whose `layer_off(_MBO)` re-entered
   `layer_state_set_user()` with the pre-game layer state; that nested call

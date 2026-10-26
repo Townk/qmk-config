@@ -759,27 +759,35 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
 };
 
 /**
- * @brief User-level keyboard initialization hook
+ * @brief Set by eeconfig_init_user(): QMK found the stored settings invalid
+ *        and reset them on this boot.
  *
- * This function is called after QMK's keyboard initialization is complete. It
- * configures the default values for the Svalboard's persistent settings, and
- * initializes RGB lighting and dynamic keymap support.
+ * That happens on the first boot of every new build (Svalboard's
+ * build_reset), after Keybard's "reset settings", and on a cleared EEPROM.
+ * Svalboard then loads its own factory defaults (800 DPI on both
+ * trackballs) and applies them to the sensors before keyboard_post_init_user()
+ * runs; this keymap's defaults replace them there.
+ */
+static bool settings_were_reset = false;
+
+void eeconfig_init_user(void) {
+    settings_were_reset = true;
+}
+
+/**
+ * @brief This keymap's defaults for the Svalboard's persistent settings.
+ *
+ * Applied only when the stored settings were just reset (see
+ * settings_were_reset); on every other boot the saved values stand, so
+ * changes from the DPI and scroll keys or from Keybard survive a reboot.
  *
  * **Configuration:**
- * - Left trackball: Scroll mode enabled, 400 DPI.
+ * - Left trackball: Scroll mode enabled, 1200 DPI.
  * - Right trackball: Scroll mode disabled, 1600 DPI.
  * - Auto mouse layer: Enabled (automatically activates mouse layer).
  * - Mouse hold timer: Disabled (mouse layer stays active indefinitely).
- *
- * @note These are initialization values only. The actual values used at
- *       runtime are loaded from EEPROM by the keyboard-level initialization in
- *       svalboard.c
- *
- * @see keyboard_post_init_kb() in svalboard.c for EEPROM loading.
- * @see setup_rgb_light_layer() in townk_layers.c for initialization of the RGB
- *      layer system.
  */
-void keyboard_post_init_user(void) {
+static void apply_default_settings(void) {
     /**
      * @var struct saved_values::left_scroll
      * @brief Enables/disables scroll mode for the left trackball/pointing
@@ -830,7 +838,7 @@ void keyboard_post_init_user(void) {
      * - MOUSE_DPI_6400 (9)
      * - MOUSE_DPI_12000 (10)
      */
-    global_saved_values.left_dpi_index = MOUSE_DPI_400;
+    global_saved_values.left_dpi_index = MOUSE_DPI_1200;
 
     /**
      * @var struct saved_values::right_dpi_index
@@ -873,6 +881,34 @@ void keyboard_post_init_user(void) {
      * - MOUSE_LAYER_TIMEOUT_NONE (5)
      */
     global_saved_values.mh_timer_index = MOUSE_LAYER_TIMEOUT_NONE;
+
+    // Svalboard already pushed its own defaults to the sensors; push these
+    // instead, and save them so the next boot loads them.
+    set_dpi_from_eeprom();
+    write_eeprom_kb();
+}
+
+/**
+ * @brief User-level keyboard initialization hook
+ *
+ * Runs after QMK's and Svalboard's initialization, including the load of the
+ * saved settings and their DPI reaching the sensors. Installs this keymap's
+ * defaults when the settings were just reset, then seeds the pointing
+ * profile and sets up RGB lighting and the dynamic keymap.
+ *
+ * Writing the defaults here on every boot, as this function used to, left the
+ * sensors at whatever was saved while the settings (and Keybard, SV_SOUT and
+ * the overlay) reported the keymap's value: after a flash the right trackball
+ * ran at Svalboard's 800 DPI while showing 1600, until a DPI key applied it.
+ *
+ * @see keyboard_post_init_kb() in svalboard.c for the order.
+ * @see setup_rgb_light_layer() in townk_layers.c for initialization of the RGB
+ *      layer system.
+ */
+void keyboard_post_init_user(void) {
+    if (settings_were_reset) {
+        apply_default_settings();
+    }
 
     /* Seed the pointing profile: the remembered one after the keyboard's
      * own resets, the cold default otherwise. The host's enumeration then

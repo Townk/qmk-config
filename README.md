@@ -168,10 +168,10 @@ qmk userspace-compile
 
 Default settings:
 
-- **Left Trackball**: Scroll mode enabled, 400 DPI
+- **Left Trackball**: Scroll mode enabled, 1200 DPI
 - **Right Trackball**: Cursor mode, 1600 DPI
 - **Auto Mouse Layer**: Enabled
-- **DPI Options**: 200, 400, 800, 1200, 1600, 2400
+- **DPI Options**: 200, 400, 600, 800, 1200, 1600, 2400, 3200, 4800, 6400, 12000
 
 For detailed configuration instructions and Sniper mode documentation, see
 [Advanced Features - Trackball

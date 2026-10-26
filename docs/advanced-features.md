@@ -269,10 +269,10 @@ Both trackballs support the following DPI options:
 
 #### Via Code (Permanent)
 
-Edit `keyboard_post_init_user()` in `keyboards/svalboard/keymaps/townk/keymap.c`:
+Edit `apply_default_settings()` in `keyboards/svalboard/keymaps/townk/keymap.c`:
 
 ```c
-void keyboard_post_init_user(void) {
+static void apply_default_settings(void) {
     // Left trackball scroll mode (true = scroll, false = cursor)
     global_saved_values.left_scroll = true;
 
@@ -282,15 +282,21 @@ void keyboard_post_init_user(void) {
     // Auto mouse layer activation
     global_saved_values.auto_mouse = true;
 
-    // DPI index (0=200, 1=400, 2=800, 3=1200, 4=1600, 5=2400)
-    global_saved_values.left_dpi_index = 1;   // 400 DPI
-    global_saved_values.right_dpi_index = 3;  // 1200 DPI
+    // DPI: MOUSE_DPI_200, _400, _600, _800, _1200, _1600, _2400, _3200,
+    // _4800, _6400, _12000 (Svalboard's dpi_choices, in order)
+    global_saved_values.left_dpi_index = MOUSE_DPI_1200;
+    global_saved_values.right_dpi_index = MOUSE_DPI_1600;
 
-    // ... rest of initialization
+    // ... then pushed to the sensors and saved
 }
 ```
 
-After editing, rebuild and re-flash the firmware.
+These are defaults: they apply on the first boot after a flash (every new
+build resets the stored settings), or after Keybard's "reset settings". On
+any other boot the saved values stand, so changes made with the DPI and
+scroll keys or in Keybard survive a reboot.
+
+After editing, rebuild and flash the firmware; the first boot applies them.
 
 #### Via SYS Layer Keys (Runtime)
 
