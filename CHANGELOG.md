@@ -25,6 +25,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   bottom-left corner, with held keys highlighted. Below every window by
   default, above every window on toggle. Started and toggled by the
   Hammerspoon `svalboard` module (dotfiles)
+- Trackball speed and mode in the overlay. The announcements (protocol
+  version 2) add a `svw P` line: each trackball's DPI and whether it
+  scrolls right now (its own setting, flipped by scroll hold/toggle, read
+  through `sval_pointing_modes()` as Keybard's live pointer view does),
+  plus whether a scroll key is active. svalwatch reports it as a
+  `pointer` event; svaloverlay shows it in a footer, per trackball a mode
+  glyph, a DPI meter and the DPI, with a "scroll lock" marker while a
+  scroll key holds the mode. Older firmware never sends the line, and the
+  footer stays hidden
 
 ### Changed
 

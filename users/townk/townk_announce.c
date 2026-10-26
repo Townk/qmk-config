@@ -75,6 +75,7 @@ size_t announce_poll(const announce_state_t *state, uint32_t now, char *buf, siz
 
     bool layer_changed = full_needed || state->active != last.active || state->default_layers != last.default_layers || state->mods != last.mods || state->status != last.status;
     bool rows_changed  = full_needed || memcmp(state->rows, last.rows, sizeof(last.rows)) != 0;
+    bool pointer_changed = full_needed || state->left_dpi != last.left_dpi || state->right_dpi != last.right_dpi || state->pointer != last.pointer;
     full_needed        = false;
     last               = *state;
 
@@ -92,6 +93,9 @@ size_t announce_poll(const announce_state_t *state, uint32_t now, char *buf, siz
             buf[n]   = '\0';
         }
     }
+    if (pointer_changed && n < size) {
+        n += snprintf(buf + n, size - n, "svw P %04X %04X %02X\n", state->left_dpi, state->right_dpi, state->pointer);
+    }
     return n < size ? n : size - 1;
 }
 
@@ -99,6 +103,7 @@ size_t announce_poll(const announce_state_t *state, uint32_t now, char *buf, siz
 
 #    include QMK_KEYBOARD_H
 #    include "print.h"
+#    include "pointing_motion.h"  // SVAL_MOTION_SCROLL_KEY
 
 // From modules/svalboard/core/client_wrapper.h, declared here rather than
 // included so this file does not depend on the module's include path.
@@ -145,8 +150,17 @@ void announce_task(void) {
         state.rows[r] = (uint8_t)matrix_get_row(r);
     }
 
-    // Two lines at most: "svw L" is 29 bytes, "svw K" 7 + 2 per row.
-    char buf[40 + 8 + 2 * ANNOUNCE_ROWS];
+    // The effective scroll mode, as Keybard's live pointer view reads it:
+    // the saved per-side setting, flipped by scroll hold and scroll toggle.
+    sval_pointing_modes_t modes;
+    sval_pointing_modes(&modes);
+    state.left_dpi  = (uint16_t)get_left_dpi();
+    state.right_dpi = (uint16_t)get_right_dpi();
+    state.pointer   = (modes.left_scroll ? ANNOUNCE_POINTER_LEFT_SCROLL : 0) | (modes.right_scroll ? ANNOUNCE_POINTER_RIGHT_SCROLL : 0) | (modes.global_bits & SVAL_MOTION_SCROLL_KEY ? ANNOUNCE_POINTER_SCROLL_KEY : 0);
+
+    // Three lines at most: "svw L" is 29 bytes, "svw K" 7 + 2 per row,
+    // "svw P" 19.
+    char buf[40 + 8 + 2 * ANNOUNCE_ROWS + 20];
     if (announce_poll(&state, timer_read32(), buf, sizeof(buf)) > 0) {
         uprintf("%s", buf);
     }

@@ -22,9 +22,13 @@ test:
 overlay-assets:
 	$(SKIM_PYTHON) overlay/build_assets.py --repo $(REPO) --qmk-home $(QMK_HOME) --out $(ASSETS)
 
+# A running svaloverlay keeps the code and page it started with, so stop
+# it: Hammerspoon's svalboard module restarts it within seconds, on the new
+# install, in the mode it was in.
 install: build overlay-assets
 	install -d $(PREFIX)/bin
 	install .build/release/svalwatch .build/release/svaloverlay $(PREFIX)/bin/
+	-pkill -x svaloverlay
 
 clean:
 	swift package clean

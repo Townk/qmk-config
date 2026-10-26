@@ -138,6 +138,7 @@ public struct Session: Sendable {
         switch line {
         case let .layer(state): event = tracker.update(layer: flags.map { state.masked(by: $0) } ?? state)
         case let .keys(pressed): event = tracker.update(keys: pressed)
+        case let .pointer(state): event = tracker.update(pointer: state)
         }
         return event.map { [.emit($0)] } ?? []
     }

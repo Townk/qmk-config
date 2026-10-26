@@ -287,6 +287,9 @@ let rowOne: [UInt8] = [0, 0b100, 0, 0, 0, 0, 0, 0, 0, 0]
             == #"{"type":"keys","pressed":[[0,3],[6,1]]}"#)
         #expect(WatchEvent.keys([]).jsonLine == #"{"type":"keys","pressed":[]}"#)
         #expect(WatchEvent.disconnected.jsonLine == #"{"type":"disconnected"}"#)
+        #expect(WatchEvent.pointer(PointerState(leftDPI: 400, rightDPI: 1600, leftScroll: true,
+                                                rightScroll: false, scrollKey: false)).jsonLine
+            == #"{"type":"pointer","left":{"dpi":400,"scroll":true},"right":{"dpi":1600,"scroll":false},"scroll_key":false}"#)
     }
 
     @Test func trackerReportsFirstReadingAndChangesOnly() {

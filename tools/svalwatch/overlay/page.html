@@ -17,6 +17,25 @@
       <div class="keyboard">
 <!--LAYERS-->
       </div>
+      <!-- The trackballs: each one's speed and mode under its own half.
+           Hidden until the board reports them (firmware without the
+           announcement's pointer line never does). -->
+      <div class="pointers" hidden>
+        <hr class="separator">
+        <div class="footer">
+          <div class="trackball" data-side="left">
+            <span class="icon mode"></span>
+            <span class="meter"></span>
+            <span class="dpi"><b></b> dpi</span>
+          </div>
+          <span class="scroll-lock"><span class="icon">&#xF033E;</span> scroll lock</span>
+          <div class="trackball" data-side="right">
+            <span class="dpi"><b></b> dpi</span>
+            <span class="meter"></span>
+            <span class="icon mode"></span>
+          </div>
+        </div>
+      </div>
     </div>
     <!-- The held-key look, as an SVG filter: WebKit ignores CSS filter
          functions (brightness(), drop-shadow()) on elements inside an SVG,

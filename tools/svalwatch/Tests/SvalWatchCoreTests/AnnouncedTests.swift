@@ -94,6 +94,17 @@ let baseLayer = ConsoleParser.Line.layer(LayerState(active: 1, default: 1))
         #expect(s.stats.polls == 1)  // only the connecting one
     }
 
+    @Test func pointerLinesBecomeEvents() {
+        var s = announcedSession()
+        subscribe(&s)
+        let idle = PointerState(leftDPI: 400, rightDPI: 1600, leftScroll: true, rightScroll: false, scrollKey: false)
+        #expect(emitted(s.console(.pointer(idle), at: 0.01)) == [.pointer(idle)])
+        #expect(s.console(.pointer(idle), at: 2.01).isEmpty)  // a renewal's re-announcement
+        var faster = idle
+        faster.rightDPI = 2400
+        #expect(emitted(s.console(.pointer(faster), at: 3)) == [.pointer(faster)])
+    }
+
     @Test func linesBeforeSubscribingAreIgnored() {
         var s = announcedSession()
         _ = s.poll(at: 0)
@@ -145,6 +156,19 @@ let baseLayer = ConsoleParser.Line.layer(LayerState(active: 1, default: 1))
         #expect(p.feed(report("svw K 00040000000000000002\n")) == [
             .keys([KeyPosition(row: 1, col: 2), KeyPosition(row: 9, col: 1)]),
         ])
+    }
+
+    @Test func parsesThePointerLine() {
+        var p = ConsoleParser()
+        #expect(p.feed(report("svw P 0190 0640 01\n")) == [
+            .pointer(PointerState(leftDPI: 400, rightDPI: 1600, leftScroll: true, rightScroll: false, scrollKey: false)),
+        ])
+        #expect(p.feed(report("svw P 2EE0 00C8 06\n")) == [
+            .pointer(PointerState(leftDPI: 12000, rightDPI: 200, leftScroll: false, rightScroll: true, scrollKey: true)),
+        ])
+        for bad in ["svw P 190 0640 01\n", "svw P 0190 0640\n", "svw P 0190 0640 0G\n"] {
+            #expect(p.feed(report(bad)).isEmpty, "\(bad)")
+        }
     }
 
     @Test func joinsLinesSplitAcrossReports() {

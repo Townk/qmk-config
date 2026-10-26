@@ -6,15 +6,19 @@
 ///     {"type":"connected","serial":"sval:E464B4B2934E2C2A","protocol":3}
 ///     {"type":"layer","top":15,"active":32769,"default":1,"mods":0,"caps_word":false,"caps_lock":false}
 ///     {"type":"keys","pressed":[[0,3],[6,1]]}
+///     {"type":"pointer","left":{"dpi":400,"scroll":true},"right":{"dpi":1600,"scroll":false},"scroll_key":false}
 ///     {"type":"disconnected"}
 ///
 /// `pressed` holds matrix [row, col] pairs; rows 0-4 are the left half,
 /// 5-9 the right. After `connected`, a `layer` and a `keys` line always
-/// follow, so a reader never has to guess the starting state.
+/// follow, so a reader never has to guess the starting state. `pointer`
+/// (each trackball's DPI and whether it scrolls right now) comes only from
+/// firmware that announces it; a polled board never sends one.
 public enum WatchEvent: Equatable, Sendable {
     case connected(serial: String, protocolVersion: Int)
     case layer(LayerState)
     case keys([KeyPosition])
+    case pointer(PointerState)
     case disconnected
 
     public var jsonLine: String {
@@ -27,6 +31,9 @@ public enum WatchEvent: Equatable, Sendable {
         case let .keys(pressed):
             let pairs = pressed.map { "[\($0.row),\($0.col)]" }.joined(separator: ",")
             return #"{"type":"keys","pressed":[\#(pairs)]}"#
+        case let .pointer(p):
+            return #"{"type":"pointer","left":{"dpi":\#(p.leftDPI),"scroll":\#(p.leftScroll)},"#
+                + #""right":{"dpi":\#(p.rightDPI),"scroll":\#(p.rightScroll)},"scroll_key":\#(p.scrollKey)}"#
         case .disconnected:
             return #"{"type":"disconnected"}"#
         }
@@ -53,12 +60,20 @@ public enum WatchEvent: Equatable, Sendable {
 public struct ChangeTracker: Sendable {
     private var layer: LayerState?
     private var keys: [KeyPosition]?
+    private var pointer: PointerState?
 
     public init() {}
 
     public mutating func reset() {
         layer = nil
         keys = nil
+        pointer = nil
+    }
+
+    public mutating func update(pointer new: PointerState) -> WatchEvent? {
+        guard new != pointer else { return nil }
+        pointer = new
+        return .pointer(new)
     }
 
     public mutating func update(layer new: LayerState) -> WatchEvent? {
@@ -72,5 +87,25 @@ public struct ChangeTracker: Sendable {
         guard sorted != keys else { return nil }
         keys = sorted
         return .keys(sorted)
+    }
+}
+
+/// Each trackball's speed and mode, as the board reports them.
+public struct PointerState: Equatable, Sendable {
+    public var leftDPI: Int
+    public var rightDPI: Int
+    /// Whether each trackball scrolls right now: its own setting, flipped
+    /// by a held scroll key or a latched scroll toggle.
+    public var leftScroll: Bool
+    public var rightScroll: Bool
+    /// A scroll hold or toggle key is active (it is what flipped them).
+    public var scrollKey: Bool
+
+    public init(leftDPI: Int, rightDPI: Int, leftScroll: Bool, rightScroll: Bool, scrollKey: Bool) {
+        self.leftDPI = leftDPI
+        self.rightDPI = rightDPI
+        self.leftScroll = leftScroll
+        self.rightScroll = rightScroll
+        self.scrollKey = scrollKey
     }
 }

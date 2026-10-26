@@ -31,9 +31,12 @@
  *
  *     svw L <active:%08X> <default:%08X> <mods:%02X> <status:%02X>
  *     svw K <row 0:%02X> ... <row N-1:%02X>
+ *     svw P <left DPI:%04X> <right DPI:%04X> <pointer:%02X>
  *
  * (no spaces between the K rows; status bit 0 = Caps Word, bit 1 = the
- * host's Caps Lock). The console is a separate HID interface from the Raw
+ * host's Caps Lock; pointer is ANNOUNCE_POINTER_*: which trackball scrolls
+ * right now, after scroll hold/toggle, and whether one of those keys is
+ * what put it there). Version 1 hosts skip the P line. The console is a separate HID interface from the Raw
  * HID one Keybard uses, so Keybard never sees these lines.
  *
  * The subscription is a lease: the host renews it every few seconds, and
@@ -65,11 +68,15 @@
 
 #define ANNOUNCE_CHANNEL 0x57          // 'W'; Svalboard uses 0x49, 0x53-0x55
 #define ANNOUNCE_VALUE_SUBSCRIBE 0xF7  // no Svalboard value id that high
-#define ANNOUNCE_VERSION 1
+#define ANNOUNCE_VERSION 2  // 2: the P line
 #define ANNOUNCE_LEASE_MIN_MS 500
 #define ANNOUNCE_LEASE_MAX_MS 30000
 
 // Both halves' rows: the master's matrix holds the other half's too.
+#define ANNOUNCE_POINTER_LEFT_SCROLL 0x01
+#define ANNOUNCE_POINTER_RIGHT_SCROLL 0x02
+#define ANNOUNCE_POINTER_SCROLL_KEY 0x04  // scroll hold or scroll toggle active
+
 #ifndef ANNOUNCE_ROWS
 #    define ANNOUNCE_ROWS MATRIX_ROWS
 #endif
@@ -80,6 +87,9 @@ typedef struct {
     uint8_t  mods;
     uint8_t  status;
     uint8_t  rows[ANNOUNCE_ROWS];
+    uint16_t left_dpi;
+    uint16_t right_dpi;
+    uint8_t  pointer;  // ANNOUNCE_POINTER_*
 } announce_state_t;
 
 /**

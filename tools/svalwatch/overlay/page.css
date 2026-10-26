@@ -59,3 +59,54 @@ g[data-key].pressed { filter: url(#pressed); }
 svg.defs { position: absolute; }
 
 .panel.disconnected .keyboard { opacity: 0.35; }
+
+/* The trackball footer, in which-key's footer type. Each side: its mode
+ * glyph (cursor while pointing, which-key's group green while scrolling),
+ * a meter with one pip per DPI step the board offers, rising like signal
+ * bars, and the DPI itself. The centre "scroll lock" is the pin's sticky
+ * yellow and shows only while a scroll hold/toggle key holds the mode. */
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 12px;
+  color: rgba(128, 128, 128, 1);
+  padding: 2px 2px 0 2px;
+}
+
+.trackball { display: flex; align-items: center; gap: 8px; }
+
+.trackball .mode {
+  font-size: 15px;
+  width: 18px;
+  text-align: center;
+  color: rgba(191, 191, 191, 1);
+  transition: color 0.2s;
+}
+.trackball.scrolling .mode { color: rgba(173, 217, 140, 1); }
+
+.meter { display: flex; align-items: flex-end; gap: 2px; height: 12px; }
+.meter i {
+  width: 4px;
+  border-radius: 1.5px;
+  background: rgba(255, 255, 255, 0.10);
+  transition: background-color 0.2s;
+}
+.meter i.on { background: rgba(130, 170, 255, 0.95); }
+.trackball.scrolling .meter i.on { background: rgba(173, 217, 140, 0.95); }
+
+.dpi b {
+  font-weight: 500;
+  color: rgba(224, 224, 224, 1);
+  font-variant-numeric: tabular-nums;
+}
+
+.scroll-lock {
+  color: rgba(255, 199, 89, 1);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  visibility: hidden;
+}
+.footer.locked .scroll-lock { visibility: visible; }

@@ -18,7 +18,31 @@ const svgs = new Map(
 );
 const indexAt = new Map(manifest.matrix.map(([row, col], index) => [`${row},${col}`, index]));
 
-const state = { active: 1, defaultLayers: 1, pressed: [], connected: false };
+const state = { active: 1, defaultLayers: 1, pressed: [], connected: false, pointer: null };
+
+// Svalboard's DPI steps (dpi_choices in keyboards/svalboard/svalboard.c):
+// one meter pip each.
+const DPI_CHOICES = [200, 400, 600, 800, 1200, 1600, 2400, 3200, 4800, 6400, 12000];
+const GLYPH_POINTER = "\u{F01C0}"; // nf-md-cursor_default
+const GLYPH_SCROLL = "\u{F1552}"; // nf-md-mouse_move_vertical
+
+const pointersEl = document.querySelector(".pointers");
+const footerEl = document.querySelector(".footer");
+const trackballs = {};
+for (const el of document.querySelectorAll(".trackball")) {
+  const meter = el.querySelector(".meter");
+  DPI_CHOICES.forEach((_, i) => {
+    const pip = document.createElement("i");
+    pip.style.height = `${4 + i * 0.8}px`; // rising, like signal bars
+    meter.appendChild(pip);
+  });
+  trackballs[el.dataset.side] = {
+    el,
+    mode: el.querySelector(".mode"),
+    pips: [...meter.children],
+    dpi: el.querySelector(".dpi b"),
+  };
+}
 let shown = null;
 
 function post(message) {
@@ -114,6 +138,36 @@ function panelChrome() {
     .reduce((a, b) => a + b, 0);
 }
 
+// The highest DPI step at or below `dpi` (a value off the list still
+// lands on a sensible pip).
+function dpiStep(dpi) {
+  let step = 0;
+  DPI_CHOICES.forEach((choice, i) => {
+    if (dpi >= choice) step = i;
+  });
+  return step;
+}
+
+function renderPointer() {
+  const p = state.pointer;
+  const shown = Boolean(p && state.connected);
+  if (pointersEl.hidden === shown) {
+    pointersEl.hidden = !shown;
+    reportSize(); // the footer changes the panel's height
+  }
+  if (!shown) return;
+  for (const side of ["left", "right"]) {
+    const t = trackballs[side];
+    const { dpi, scroll } = p[side];
+    const step = dpiStep(dpi);
+    t.el.classList.toggle("scrolling", scroll);
+    t.mode.textContent = scroll ? GLYPH_SCROLL : GLYPH_POINTER;
+    t.pips.forEach((pip, i) => pip.classList.toggle("on", i <= step));
+    t.dpi.textContent = String(dpi);
+  }
+  footerEl.classList.toggle("locked", p.scroll_key);
+}
+
 function reportSize() {
   const rect = panel.getBoundingClientRect();
   post({ type: "size", w: Math.ceil(rect.width), h: Math.ceil(rect.height) });
@@ -127,12 +181,19 @@ window.overlay = {
   },
   connected(on) {
     state.connected = on;
+    if (!on) state.pointer = null; // the next board reports its own
     render();
+    renderPointer();
   },
   layer(active, defaultLayers) {
     state.active = active;
     state.defaultLayers = defaultLayers;
     render();
+  },
+  // svalwatch's "pointer" event, as svalwatch prints it.
+  pointer(event) {
+    state.pointer = event;
+    renderPointer();
   },
   keys(pressed) {
     state.pressed = pressed;

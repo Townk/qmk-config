@@ -16,18 +16,25 @@ make test                           # the SvalWatchCore tests
 {"type":"keys","pressed":[]}
 {"type":"layer","top":0,"active":1,"default":1,"mods":0,"caps_word":false,"caps_lock":false}
 {"type":"keys","pressed":[[1,2]]}
+{"type":"pointer","left":{"dpi":400,"scroll":true},"right":{"dpi":1600,"scroll":false},"scroll_key":false}
 {"type":"disconnected"}
 ```
 
 `pressed` holds switch-matrix `[row, col]` pairs, as in the `matrix`
 fields of Svalboard's `info.json` layout. `top` is the layer whose legends
-are showing. `svalwatch --help` lists the options.
+are showing. `pointer` is each trackball's DPI and whether it scrolls right
+now (after scroll hold/toggle; `scroll_key` says one of those keys is
+active); only firmware that announces it sends one. `svalwatch --help`
+lists the options.
 
 ## svaloverlay
 
 The second executable: an overlay of the current layer in the bottom-left
 corner of the main display, a quarter of its width (`--width`), highlighting
-the keys being held, styled like the Hammerspoon which-key overlay. It sits
+the keys being held, styled like the Hammerspoon which-key overlay. Its
+footer shows each trackball under its half: a cursor or (in green) a
+scroll glyph, a meter with one pip per DPI step, and the DPI, plus a
+yellow "scroll lock" while a scroll hold/toggle key holds the mode. It sits
 below every window (like a desktop widget) or above every window, never in
 between, and never takes clicks or focus. It takes `top`, `bottom`,
 `toggle` and `quit` on stdin, and exits when stdin closes.
@@ -38,13 +45,15 @@ steps to the next one, off → background → on top → off; the binding is
 sticky, so keep pressing `k` until Esc.
 
 Its page is built from the keymap with skim, in the overlay palette of
-`overlay/skim-overlay.yaml`, and needs a skim with key tags and
-`layer_indicator.reserve_space` (skim's `feat/key-tags`):
+`overlay/skim-overlay.yaml`, and needs skim 0.7.5 or later (key tags and `layer_indicator.reserve_space`):
 
 ```sh
-make install SKIM_PYTHON=~/Projects/langs/python/skim-key-tags/.venv/bin/python
-make overlay-assets SKIM_PYTHON=...   # after changing the keymap or its skim config
+make install                          # binaries + page into ~/.local
+make overlay-assets                   # after changing the keymap or its skim config
 ```
+
+Other Macs get both from the firmware release instead: CI attaches
+`svaloverlay-macos.tar.gz`, and the dotfiles install it.
 
 Memory, measured 2026-10-25: about 70 MB for svaloverlay plus about 130 MB
 across WebKit's helper processes (content, GPU, networking); 0% CPU idle.

@@ -99,6 +99,9 @@ final class OverlayWindow: NSObject, WKScriptMessageHandler {
         case let .keys(pressed):
             let pairs = pressed.map { "[\($0.row),\($0.col)]" }.joined(separator: ",")
             call("overlay.keys([\(pairs)])")
+        case .pointer:
+            // The page reads the event as svalwatch prints it.
+            call("overlay.pointer(\(event.jsonLine))")
         }
     }
 

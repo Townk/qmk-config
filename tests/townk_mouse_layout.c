@@ -430,8 +430,8 @@ uint8_t T_hostos_v_linux(void) { return HOSTOS_VERDICT_LINUX; }
 bool   T_announce_command(uint8_t *data, uint8_t length, uint32_t now) { return announce_handle_command(data, length, now); }
 bool   T_announce_subscribed(void) { return announce_subscribed(); }
 void   T_announce_reset(void) { announce_reset(); }
-size_t T_announce_poll(uint32_t active, uint32_t default_layers, uint8_t mods, uint8_t status, const uint8_t *rows, uint32_t now, char *buf, size_t size) {
-    announce_state_t state = {.active = active, .default_layers = default_layers, .mods = mods, .status = status};
+size_t T_announce_poll(uint32_t active, uint32_t default_layers, uint8_t mods, uint8_t status, const uint8_t *rows, uint16_t left_dpi, uint16_t right_dpi, uint8_t pointer, uint32_t now, char *buf, size_t size) {
+    announce_state_t state = {.active = active, .default_layers = default_layers, .mods = mods, .status = status, .left_dpi = left_dpi, .right_dpi = right_dpi, .pointer = pointer};
     memcpy(state.rows, rows, sizeof(state.rows));
     return announce_poll(&state, now, buf, size);
 }
