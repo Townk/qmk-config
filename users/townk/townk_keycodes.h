@@ -60,6 +60,8 @@ enum custom_keycodes {
     MB_ALT,    ///< Mouse button 2 (lift-click) on tap, Alt on hold.
     MB_GUI,    ///< Mouse button 3 (middle-click) on tap, Gui on hold.
     MB_CTL,    ///< Mouse button 4 on tap, Ctrl on hold.
+    MB_ENT,    ///< Mouse layer right Down: Enter on release; the sniper off switch while one is on.
+    MB_LSFT,   ///< Mouse layer left Down: Shift; the sniper off switch while one is on.
 };
 
 #endif // QMK_USERSPACE_TOWNK_KEYMAPS_H

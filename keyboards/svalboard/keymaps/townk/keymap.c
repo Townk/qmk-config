@@ -749,12 +749,19 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
          * state. Symptoms: the first press is swallowed, and the layer-tap
          * hold needs a deliberate pause before it engages.
          *
+         * The Double-Downs are sniper TOGGLES, not holds: while a Double-Down
+         * is held, the hardware cannot read that half's Double-Souths (the
+         * mouse buttons). MB_ENT / MB_LSFT (the Downs) are Enter / Shift, and
+         * the off switch for every sniper toggle while one is on; they defer
+         * to release because the same switch closes on the way to the
+         * Double-Down (townk_mouse.c).
+         *
          * Consequence, accepted: while the left thumb pad holds _NAV open with
          * mouse mode on, _MBO outranks _NAV and this Pad is Space rather than
          * _NAV's Tab. Transparency is the only thing that would defer to _NAV,
          * and it is unusable here. */
-        /*RT*/ _______,  CKC_SPC,  KC_ESC,   CKC_BKTAB,  _______,  SV_SNIPER_5,
-        /*LT*/ KC_LSFT,  CKC_BSPC, ML_CMD,   CKC_TAB,    _______,  SV_SNIPER_3
+        /*RT*/ MB_ENT,   CKC_SPC,  KC_ESC,   CKC_BKTAB,  _______,  SV_SNIPER_5_TG,
+        /*LT*/ MB_LSFT,  CKC_BSPC, ML_CMD,   CKC_TAB,    _______,  SV_SNIPER_3_TG
         )
 };
 

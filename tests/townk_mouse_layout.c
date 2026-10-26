@@ -202,6 +202,29 @@ void post_process_record(keyrecord_t *record) { (void)record; }
 
 #include "../users/townk/townk_layers.c"
 #include "../users/townk/townk_mods.c"
+/* Svalboard's sniper/boost keycodes come from keymap_support.h on the board,
+ * which this fixture does not include (see SVALBOARD above); MB_ENT's
+ * handler names them, so stand-ins past the userspace range take their
+ * place. Only their identity matters here. */
+#define SV_SNIPER_2 (SAFE_RANGE + 0x40)
+#define SV_SNIPER_3 (SAFE_RANGE + 0x41)
+#define SV_SNIPER_5 (SAFE_RANGE + 0x42)
+#define SV_SNIPER_2_TG (SAFE_RANGE + 0x43)
+#define SV_SNIPER_3_TG (SAFE_RANGE + 0x44)
+#define SV_SNIPER_5_TG (SAFE_RANGE + 0x45)
+#define SV_BOOST_2 (SAFE_RANGE + 0x46)
+#define SV_BOOST_3 (SAFE_RANGE + 0x47)
+#define SV_BOOST_5 (SAFE_RANGE + 0x48)
+#define SV_BOOST_2_TG (SAFE_RANGE + 0x49)
+#define SV_BOOST_3_TG (SAFE_RANGE + 0x4A)
+#define SV_BOOST_5_TG (SAFE_RANGE + 0x4B)
+
+/* keymap_support.c's sniper toggles and the function that applies them;
+ * MB_ENT / MB_LSFT turn the toggles off. Recorded, not applied. */
+bool sniper_toggle_2 = false, sniper_toggle_3 = false, sniper_toggle_5 = false;
+static int update_sniper_calls = 0;
+void update_sniper_divisor(void) { update_sniper_calls++; }
+
 #include "../users/townk/townk_mouse.c"
 #include "../users/townk/townk_switcher.c"
 #include "../users/townk/townk_idle.c"
@@ -323,6 +346,8 @@ void T_reset(void) {
     mb_motion_last_time = 0;
     mods_reset();
     mouse_mode_calls          = 0;
+    sniper_toggle_2 = sniper_toggle_3 = sniper_toggle_5 = false;
+    update_sniper_calls       = 0;
     mouse_mode_state          = false;
     mouse_mode_saw_auto_mouse = false;
     global_saved_values.auto_mouse = true; /* the Svalboard EEPROM default */
@@ -377,6 +402,16 @@ uint16_t T_kc_mb_sft(void) { return MB_SFT; }
 uint16_t T_kc_mb_alt(void) { return MB_ALT; }
 uint16_t T_kc_mb_gui(void) { return MB_GUI; }
 uint16_t T_kc_mb_ctl(void) { return MB_CTL; }
+uint16_t T_kc_mb_ent(void) { return MB_ENT; }
+uint16_t T_kc_mb_lsft(void) { return MB_LSFT; }
+uint16_t T_kc_sniper_3_tg(void) { return SV_SNIPER_3_TG; }
+uint16_t T_kc_sniper_5_tg(void) { return SV_SNIPER_5_TG; }
+void T_set_sniper_toggles(bool t2, bool t3, bool t5) { sniper_toggle_2 = t2; sniper_toggle_3 = t3; sniper_toggle_5 = t5; }
+bool T_any_sniper_toggle(void) { return sniper_toggle_2 || sniper_toggle_3 || sniper_toggle_5; }
+int  T_update_sniper_calls(void) { return update_sniper_calls; }
+uint16_t T_kc_ent(void) { return KC_ENTER; }
+uint16_t T_kc_sniper_5(void) { return SV_SNIPER_5; }
+uint16_t T_kc_boost_2_tg(void) { return SV_BOOST_2_TG; }
 uint16_t T_kc_ckc_spc(void) { return CKC_SPC; }
 uint16_t T_kc_ckc_bspc(void) { return CKC_BSPC; }
 uint8_t  T_layer_nav(void) { return _NAV; }

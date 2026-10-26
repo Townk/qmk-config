@@ -88,6 +88,18 @@
 bool process_special_mouse_keys(uint16_t keycode, keyrecord_t *record);
 
 /**
+ * @brief The mouse layer just went away: turn the sniper toggles off.
+ *
+ * A sniper toggled on in the mouse layer is meant for that pointing
+ * session. Left on, it would slow the next one, which can start long after
+ * (the mouse layer comes back on its own at the next trackball move), with
+ * the off switch -- the thumb Downs -- not even on the layer in between.
+ * Called from layer_state_set_user() on the _MBO on -> off edge, whatever
+ * ended it: a typing key, Esc, a game layer.
+ */
+void mouse_layer_left(void);
+
+/**
  * @brief Commit any still-undecided held special key to its modifier role
  *
  * Called when some OTHER key is pressed while one of the special keys

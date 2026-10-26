@@ -307,7 +307,8 @@ Auto-activated mouse layer with special mouse button keys and modifiers.
 - **Special mouse button keys** on left Double-South positions (`MB_SFT`,
   `MB_ALT`, `MB_GUI`, `MB_CTL`)
 - **Regular modifiers** on right Double-South for Cmd+Click, etc.
-- **Sniper mode** on thumb Double-Down keys for precision pointing
+- **Sniper mode** toggled by the thumb Double-Down keys (left ÷3, right ÷5);
+  either thumb's Down, or leaving the layer, turns it off
 - **Return to BASE** when pressing any key that is not a mouse button
 
 ### Activation

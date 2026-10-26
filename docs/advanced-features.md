@@ -323,14 +323,27 @@ Hold the **Right Knuckle** thumb key to activate the `SYS` layer.
 3. Release Right Knuckle to return to normal operation
 4. DPI changes are saved to EEPROM automatically
 
-**Available DPI levels cycle through**: 200 → 400 → 800 → 1200 → 1600 → 2400 → (back to 200)
+**Available DPI levels**: 200, 400, 600, 800, 1200, 1600, 2400, 3200, 4800, 6400, 12000. The keys step through them one at a time and stop at either end.
 
 ### Sniper Mode
 
-Both thumb **Double-Down (DD) keys** on the `MBO` layer activate **Sniper Mode**:
+Both thumb **Double-Down (DD) keys** on the `MBO` layer toggle **Sniper Mode**,
+which slows both trackballs (pointer and scroll):
 
-- Left DD: Sniper mode with 3x sensitivity reduction
-- Right DD: Sniper mode with 5x sensitivity reduction
+- Left DD: toggles ÷3
+- Right DD: toggles ÷5
+- Both on: ÷15 (the factors multiply)
+- **Either thumb's Down** (pressed and released on its own) turns every sniper
+  off while one is on; with none on it is its usual Shift (left) or Enter
+  (right)
+- **Leaving the mouse layer** (typing, Esc, a game layer) turns every sniper
+  off too, so the next pointing session starts at full speed
+
+They are toggles rather than hold keys because of the hardware: while a
+Double-Down is held, the board cannot read that half's Double-South keys, and
+the left Double-Souths are the mouse buttons. With a toggle, nothing stays
+held, so clicking works while sniping. The overlay shows the active factor
+(⌖ ×1/3) in its footer.
 
 Use Sniper Mode for:
 

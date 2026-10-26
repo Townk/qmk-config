@@ -102,6 +102,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The ×1/5 sniper on the right thumb's Double-Down never engaged from the
+  mouse layer, and typed an Enter. The Down switch closes first; it was
+  transparent there (Enter), which Svalboard counts as typing, so it ended
+  auto-mouse on press and the Double-Down landed on the base layer. It is
+  now `MB_ENT`: Enter, but on release, and only if no sniper or boost key
+  went down while it was held; then it also ends auto-mouse, as Enter did
+- Clicking while sniping with the left thumb never worked: while a thumb's
+  Double-Down is held, the board cannot read that half's Double-Souths
+  (all on matrix column 5; confirmed with a raw matrix capture), and the
+  left Double-Souths are the mouse buttons. Both Double-Downs on the mouse
+  layer are now sniper toggles (`SV_SNIPER_3_TG` left, `SV_SNIPER_5_TG`
+  right), so nothing stays held. Either thumb's Down (`MB_LSFT` left,
+  `MB_ENT` right) pressed and released on its own turns every sniper toggle
+  off while one is on; otherwise it is Shift / Enter as before. Leaving the
+  mouse layer, for whatever reason, turns them off as well
 - After a flash the right trackball ran at Svalboard's factory 800 DPI
   while every readout (Keybard, `SV_SOUT`, the overlay) said 1600, until a
   DPI key applied the real value. The keymap wrote its trackball defaults

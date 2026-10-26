@@ -95,6 +95,14 @@ keycodes:
     target: '@@MS_BTN3;'
   - keycode: MB_CTL
     target: '@@MS_BTN4;'
+  - keycode: MB_ENT
+    target: '@@KC_ENTER;'
+  - keycode: MB_LSFT
+    target: '@@KC_LSFT;'
+  - keycode: SV_SNIPER_3_TG
+    target: '%%nf-md-crosshairs_gps; ³'
+  - keycode: SV_SNIPER_5_TG
+    target: '%%nf-md-crosshairs_gps; ⁵'
   - keycode: USER24
     target: '@@CKC_SMSFT;'
   - keycode: USER25
@@ -105,6 +113,10 @@ keycodes:
     target: '@@MB_GUI;'
   - keycode: USER28
     target: '@@MB_CTL;'
+  - keycode: USER29
+    target: '@@MB_ENT;'
+  - keycode: USER30
+    target: '@@MB_LSFT;'
   - keycode: KC_ESC
     target: "\u238B\_ESC"
   symbol_legend_aliases:

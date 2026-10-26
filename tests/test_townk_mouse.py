@@ -21,7 +21,7 @@ import os
 import subprocess
 import sys
 import unittest
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 
 REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 SUBMODULE = os.path.join(REPO, "modules", "stasmarkin")
@@ -188,6 +188,16 @@ KC_GRV: int = int(LIB.T_kc_grv())
 KC_BKGRV: int = int(LIB.T_kc_bkgrv())  # S(KC_GRV), the 16-bit shifted keycode
 KC_B: int = int(LIB.T_kc_b())
 MOUSE_BUTTONS = (MS_BTN1, MS_BTN2, MS_BTN3)
+MB_ENT: int = int(LIB.T_kc_mb_ent())
+KC_ENT: int = int(LIB.T_kc_ent())
+SV_SNIPER_5: int = int(LIB.T_kc_sniper_5())
+SV_BOOST_2_TG: int = int(LIB.T_kc_boost_2_tg())
+MB_LSFT: int = int(LIB.T_kc_mb_lsft())
+SV_SNIPER_3_TG: int = int(LIB.T_kc_sniper_3_tg())
+SV_SNIPER_5_TG: int = int(LIB.T_kc_sniper_5_tg())
+LIB.T_set_sniper_toggles.argtypes = [ctypes.c_bool, ctypes.c_bool, ctypes.c_bool]
+LIB.T_any_sniper_toggle.restype = ctypes.c_bool
+MOD_LSFT = 0x02
 LAYER_NAV: int = int(LIB.T_layer_nav())
 LAYER_MBO: int = int(LIB.T_layer_mbo())
 LAYER_GAM1: int = int(LIB.T_layer_gam1())
@@ -852,6 +862,168 @@ class TownkMouseTest(unittest.TestCase):
             MS_BTN3, [e.keycode for e in self.history()],
             "MB_GUI acted as a modifier and must not also click",
         )
+
+
+class MouseEnterTest(unittest.TestCase):
+    """MB_ENT, the mouse layer's right thumb Down.
+
+    Enter on its own, but the same switch closes on the way to the Double-Down
+    (SV_SNIPER_5), so it cannot commit at press: a plain Enter would be typed
+    by every sniper press, and as a non-mouse key it would end auto-mouse
+    before the Double-Down landed on the mouse layer.
+    """
+
+    def setUp(self) -> None:
+        LIB.TEST_reset()
+        LIB.T_reset()
+
+    def history(self) -> list[tuple[int, bool]]:
+        records = (CHistory * MAX_HISTORY)()
+        count = ctypes.c_uint8()
+        LIB.TEST_get_record_history(records, ctypes.byref(count))
+        return [(int(records[i].keycode), bool(records[i].pressed)) for i in range(count.value)]
+
+    def test_press_commits_to_nothing(self) -> None:
+        LIB.T_key(MB_ENT, True)
+        self.assertEqual(self.history(), [])
+        self.assertEqual(int(LIB.T_mouse_mode_calls()), 0)
+        LIB.T_key(MB_ENT, False)
+
+    def test_tap_types_enter_and_ends_auto_mouse(self) -> None:
+        LIB.T_key(MB_ENT, True)
+        LIB.T_key(MB_ENT, False)
+        self.assertEqual(self.history(), [(KC_ENT, True), (KC_ENT, False)])
+        self.assertEqual(int(LIB.T_mouse_mode_calls()), 1)
+        self.assertFalse(LIB.T_mouse_mode_state())
+
+    def test_double_down_snipes_without_enter_and_keeps_auto_mouse(self) -> None:
+        LIB.T_key(MB_ENT, True)
+        LIB.T_key(SV_SNIPER_5, True)   # the Double-Down closes
+        LIB.T_key(SV_SNIPER_5, False)
+        LIB.T_key(MB_ENT, False)
+        self.assertNotIn(KC_ENT, [kc for kc, _ in self.history()])
+        self.assertEqual(int(LIB.T_mouse_mode_calls()), 0)
+
+    def test_a_speed_toggle_under_it_also_counts(self) -> None:
+        LIB.T_key(MB_ENT, True)
+        LIB.T_key(SV_BOOST_2_TG, True)
+        LIB.T_key(SV_BOOST_2_TG, False)
+        LIB.T_key(MB_ENT, False)
+        self.assertNotIn(KC_ENT, [kc for kc, _ in self.history()])
+
+    def test_the_next_tap_is_enter_again(self) -> None:
+        LIB.T_key(MB_ENT, True)
+        LIB.T_key(SV_SNIPER_5, True)
+        LIB.T_key(SV_SNIPER_5, False)
+        LIB.T_key(MB_ENT, False)
+        LIB.TEST_reset()
+        LIB.T_key(MB_ENT, True)
+        LIB.T_key(MB_ENT, False)
+        self.assertEqual(self.history(), [(KC_ENT, True), (KC_ENT, False)])
+
+
+class SniperOffSwitchTest(unittest.TestCase):
+    """The mouse layer's thumb Downs switch the sniper toggles off.
+
+    Both Double-Downs are sniper toggles (holding one hid that half's
+    Double-Souths -- the mouse buttons -- from the matrix). While any toggle
+    is on, a Down pressed and released on its own turns them all off instead
+    of its usual Enter (right) or Shift (left). A Double-Down closing under
+    it is that key's own toggle, so the Down then does nothing at all.
+    """
+
+    def setUp(self) -> None:
+        LIB.TEST_reset()
+        LIB.T_reset()
+
+    def keycodes(self) -> list[int]:
+        records = (CHistory * MAX_HISTORY)()
+        count = ctypes.c_uint8()
+        LIB.TEST_get_record_history(records, ctypes.byref(count))
+        return [int(records[i].keycode) for i in range(count.value)]
+
+    def tap(self, key: int, under: Optional[int] = None) -> None:
+        LIB.T_key(key, True)
+        if under is not None:
+            LIB.T_key(under, True)
+            LIB.T_key(under, False)
+        LIB.T_key(key, False)
+
+    # -- right Down (MB_ENT) -------------------------------------------
+
+    def test_right_down_turns_the_snipers_off_instead_of_enter(self) -> None:
+        LIB.T_set_sniper_toggles(False, True, True)
+        self.tap(MB_ENT)
+        self.assertFalse(LIB.T_any_sniper_toggle())
+        self.assertEqual(int(LIB.T_update_sniper_calls()), 1)
+        self.assertNotIn(KC_ENT, self.keycodes())
+        self.assertEqual(int(LIB.T_mouse_mode_calls()), 0)  # stays on the mouse layer
+
+    def test_right_double_down_is_its_own_toggle(self) -> None:
+        LIB.T_set_sniper_toggles(False, False, True)
+        self.tap(MB_ENT, under=SV_SNIPER_5_TG)
+        # Svalboard flips the toggle; the Down leaves it, and types nothing.
+        self.assertTrue(LIB.T_any_sniper_toggle())
+        self.assertEqual(int(LIB.T_update_sniper_calls()), 0)
+        self.assertNotIn(KC_ENT, self.keycodes())
+
+    def test_right_down_is_enter_when_no_sniper_is_on(self) -> None:
+        self.tap(MB_ENT)
+        self.assertIn(KC_ENT, self.keycodes())
+        self.assertEqual(int(LIB.T_update_sniper_calls()), 0)
+
+    # -- left Down (MB_LSFT) -------------------------------------------
+
+    def test_left_down_is_shift_when_no_sniper_is_on(self) -> None:
+        LIB.T_key(MB_LSFT, True)
+        self.assertEqual(int(LIB.get_mods()) & MOD_LSFT, MOD_LSFT)
+        LIB.T_key(MB_LSFT, False)
+        self.assertEqual(int(LIB.get_mods()), 0)
+        self.assertEqual(int(LIB.T_update_sniper_calls()), 0)
+
+    def test_left_down_turns_the_snipers_off_and_holds_no_shift(self) -> None:
+        LIB.T_set_sniper_toggles(False, True, False)
+        LIB.T_key(MB_LSFT, True)
+        self.assertEqual(int(LIB.get_mods()), 0)
+        LIB.T_key(MB_LSFT, False)
+        self.assertFalse(LIB.T_any_sniper_toggle())
+        self.assertEqual(int(LIB.T_update_sniper_calls()), 1)
+        self.assertEqual(int(LIB.get_mods()), 0)
+
+    def test_left_double_down_is_its_own_toggle(self) -> None:
+        LIB.T_set_sniper_toggles(False, True, False)
+        self.tap(MB_LSFT, under=SV_SNIPER_3_TG)
+        self.assertTrue(LIB.T_any_sniper_toggle())
+        self.assertEqual(int(LIB.T_update_sniper_calls()), 0)
+        self.assertEqual(int(LIB.get_mods()), 0)
+
+    # -- leaving the mouse layer ----------------------------------------
+
+    def test_leaving_the_mouse_layer_turns_the_snipers_off(self) -> None:
+        LIB.T_mouse_layer(True)
+        LIB.T_set_sniper_toggles(False, True, True)
+        LIB.T_mouse_layer(False)
+        self.assertFalse(LIB.T_any_sniper_toggle())
+        self.assertEqual(int(LIB.T_update_sniper_calls()), 1)
+
+    def test_other_layer_changes_keep_the_snipers(self) -> None:
+        LIB.T_mouse_layer(True)
+        LIB.T_set_sniper_toggles(False, True, False)
+        LIB.T_hold_backspace(True)   # _NAV under the mouse layer, which stays on
+        LIB.T_hold_backspace(False)
+        self.assertTrue(LIB.T_any_sniper_toggle())
+        self.assertEqual(int(LIB.T_update_sniper_calls()), 0)
+        LIB.T_mouse_layer(False)
+
+    def test_leaving_with_no_sniper_on_touches_nothing(self) -> None:
+        LIB.T_mouse_layer(True)
+        LIB.T_mouse_layer(False)
+        self.assertEqual(int(LIB.T_update_sniper_calls()), 0)
+
+    def test_left_double_down_turning_one_on_taps_shift_harmlessly(self) -> None:
+        self.tap(MB_LSFT, under=SV_SNIPER_3_TG)
+        self.assertEqual(int(LIB.get_mods()), 0)
+        self.assertEqual(int(LIB.T_update_sniper_calls()), 0)
 
 
 class TownkLayersTest(unittest.TestCase):

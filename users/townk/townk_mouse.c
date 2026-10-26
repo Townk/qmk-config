@@ -356,7 +356,118 @@ void confirm_pending_modifiers(uint16_t keycode) {
     }
 }
 
+/**
+ * @brief MB_ENT and MB_LSFT: the mouse layer's thumb Downs.
+ *
+ * Each Down switch is also the first half of its thumb's Double-Down, a
+ * sniper toggle on this layer (SV_SNIPER_5_TG right, SV_SNIPER_3_TG left).
+ * They are toggles rather than holds because the hardware cannot read a
+ * half's Double-Souths -- the mouse buttons -- while that half's
+ * Double-Down is held.
+ *
+ * So a Down cannot commit when it closes:
+ *
+ * - A sniper or boost key going down while it is held (the Double-Down
+ *   closing, or any speed key chorded on it) uses the press up: that key's
+ *   own toggle is the action, and the Down's release does nothing.
+ * - Released unused while any sniper toggle is on, the Down is the off
+ *   switch: every sniper toggle goes off, and nothing is typed.
+ * - Released unused with no sniper on, it is its own key: the right one
+ *   taps Enter and ends auto-mouse (as Enter would have, but at release;
+ *   a plain Enter here would also have ended auto-mouse at press, before a
+ *   Double-Down could land); the left one is Shift, held from press to
+ *   release so shift-clicks work, and simply let go.
+ *
+ * Both events are consumed here, so Svalboard's auto-mouse bookkeeping
+ * never counts a Down as a typing key.
+ */
+typedef struct {
+    bool held;        ///< the Down is down
+    bool used;        ///< ...and a speed key went down under it
+    bool off_switch;  ///< a sniper toggle was on at press: release turns them off
+} thumb_down_t;
+
+static thumb_down_t down_right; ///< MB_ENT
+static thumb_down_t down_left;  ///< MB_LSFT
+
+// keymap_support.c's sniper toggles, and what applies them to the motion.
+extern bool sniper_toggle_2, sniper_toggle_3, sniper_toggle_5;
+void        update_sniper_divisor(void);
+
+static bool is_speed_key(uint16_t keycode) {
+    switch (keycode) {
+        case SV_SNIPER_2:
+        case SV_SNIPER_3:
+        case SV_SNIPER_5:
+        case SV_SNIPER_2_TG:
+        case SV_SNIPER_3_TG:
+        case SV_SNIPER_5_TG:
+        case SV_BOOST_2:
+        case SV_BOOST_3:
+        case SV_BOOST_5:
+        case SV_BOOST_2_TG:
+        case SV_BOOST_3_TG:
+        case SV_BOOST_5_TG:
+            return true;
+        default:
+            return false;
+    }
+}
+
+static bool sniper_toggled(void) {
+    return sniper_toggle_2 || sniper_toggle_3 || sniper_toggle_5;
+}
+
+static void snipers_off(void) {
+    sniper_toggle_2 = sniper_toggle_3 = sniper_toggle_5 = false;
+    update_sniper_divisor();
+}
+
+void mouse_layer_left(void) {
+    if (sniper_toggled()) {
+        snipers_off();
+    }
+}
+
+static bool process_thumb_downs(uint16_t keycode, keyrecord_t *record) {
+    thumb_down_t *down = keycode == MB_ENT ? &down_right : keycode == MB_LSFT ? &down_left : NULL;
+
+    if (down == NULL) {
+        if (record->event.pressed && is_speed_key(keycode)) {
+            if (down_right.held) down_right.used = true;
+            if (down_left.held) down_left.used = true;
+        }
+        return true;
+    }
+
+    bool shift = (keycode == MB_LSFT);
+    if (record->event.pressed) {
+        down->held       = true;
+        down->used       = false;
+        down->off_switch = sniper_toggled();
+        if (shift && !down->off_switch) {
+            mods_acquire(MOD_BIT(KC_LSFT));
+        }
+    } else {
+        if (shift && !down->off_switch) {
+            mods_release(MOD_BIT(KC_LSFT));
+        } else if (!down->used && down->off_switch) {
+            snipers_off();
+        }
+        if (!shift && !down->used && !down->off_switch) {
+            tap_code(KC_ENTER);
+            mouse_mode(false);
+        }
+        *down = (thumb_down_t){0};
+    }
+    return false;
+}
+
 bool process_special_mouse_keys(uint16_t keycode, keyrecord_t *record) {
+    if (!process_thumb_downs(keycode, record)) {
+        return false;
+    }
+
     int mb_index = get_mb_index(keycode);
     bool is_special_key = (mb_index >= 0);
 

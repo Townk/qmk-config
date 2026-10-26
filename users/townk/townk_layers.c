@@ -45,6 +45,7 @@
  */
 
 #include "townk_layers.h"
+#include "townk_mouse.h"
 #include "rgblight.h"
 #include "color.h"
 
@@ -162,6 +163,12 @@ static bool game_teardown_running = false;
 layer_state_t layer_state_set_user(layer_state_t state) {
   for (int i = 0; i < RGBLIGHT_LAYERS; ++i) {
       rgblight_set_layer_state(i, layer_state_cmp(state, i));
+  }
+
+  // `layer_state` still holds the state being left: the _MBO on -> off
+  // edge is the mouse layer going away, for any reason.
+  if (layer_state_cmp(layer_state, _MBO) && !layer_state_cmp(state, _MBO)) {
+      mouse_layer_left();
   }
 
   // Game layers want the pointer dead: no auto-mouse layer popping up
