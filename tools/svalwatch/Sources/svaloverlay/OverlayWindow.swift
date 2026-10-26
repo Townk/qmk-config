@@ -6,6 +6,10 @@ import WebKit
 /// display, showing the page built by `make overlay-assets` (skim's layer
 /// images plus the which-key panel styling) in a transparent web view.
 ///
+/// It shows only while a board is connected: hidden until the first one
+/// connects, hidden again when it is unplugged, so a Mac without a
+/// Svalboard never sees it.
+///
 /// It lives at one of two window levels, never in between: the desktop
 /// icons' level (every window covers it, like a widget) or the highest
 /// level below the cursor (it covers everything). It never takes clicks,
@@ -34,6 +38,9 @@ final class OverlayWindow: NSObject, WKScriptMessageHandler {
     private let panel: NSPanel
     private let web: WKWebView
     private var ready = false
+    /// The page has reported its size, so the panel has its real frame.
+    private var sized = false
+    private var boardConnected = false
     private var pending: [String] = []
     private(set) var onTop = false
 
@@ -80,9 +87,13 @@ final class OverlayWindow: NSObject, WKScriptMessageHandler {
     func show(_ event: WatchEvent) {
         switch event {
         case .connected:
+            boardConnected = true
             call("overlay.connected(true)")
+            showIfReady()
         case .disconnected:
+            boardConnected = false
             call("overlay.connected(false)")
+            panel.orderOut(nil)
         case let .layer(state):
             call("overlay.layer(\(state.active), \(state.default))")
         case let .keys(pressed):
@@ -96,7 +107,7 @@ final class OverlayWindow: NSObject, WKScriptMessageHandler {
     func setOnTop(_ on: Bool) {
         onTop = on
         panel.level = on ? Self.topLevel : Self.bottomLevel
-        panel.orderFrontRegardless()
+        if panel.isVisible { panel.orderFrontRegardless() }
         call("overlay.onTop(\(on))")
     }
 
@@ -146,7 +157,12 @@ final class OverlayWindow: NSObject, WKScriptMessageHandler {
     private func resize(width: Double, height: Double) {
         panel.setContentSize(NSSize(width: width, height: height))
         place()
-        if !panel.isVisible { panel.orderFrontRegardless() }
+        sized = true
+        showIfReady()
+    }
+
+    private func showIfReady() {
+        if boardConnected && sized && !panel.isVisible { panel.orderFrontRegardless() }
     }
 
     /// Bottom-left of the primary display (the one with the menu bar).
