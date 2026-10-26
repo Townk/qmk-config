@@ -127,8 +127,12 @@ jobs:
     overlay:
         name: "Svalboard Overlay (macOS)"
         # Pinned for the same reason as the firmware runner; Xcode 16+ for
-        # Swift 6 tools.
-        runs-on: macos-15
+        # Swift 6 tools. The Intel image: twice in a row the Apple silicon
+        # one (macos-15) sat queued and was cancelled -- "The job was not
+        # acquired by Runner of type hosted even after multiple attempts",
+        # GitHub citing arm64 capacity -- which skipped the release. Its
+        # Xcode builds the same universal (arm64 + x86_64) binaries.
+        runs-on: macos-15-intel
         needs: build
 
         steps:
