@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Base firmware moved from `svalboard/vial-qmk` (branch `vial`) to
+  `svalboard/qmk` (branch `svalboard`), Svalboard's Keybard firmware. Vial
+  is gone: the keymap now enables the `svalboard/core` community module and
+  ships its `sval.json` (a verbatim copy of the stock `sval` keymap's) in
+  place of `vial.json`. Keybard is the configurator; the Vial GUI no longer
+  connects
+- Key overrides go through the module's table (`sval_set_key_override`,
+  `sval_ko_*` options) instead of Vial's `dynamic_keymap_set_key_override`,
+  followed by `sval_reload_key_override()`: the module loads its live table
+  in its own post-init, before `keyboard_post_init_user()` runs
+- `VIAL_KEYBOARD_UID` is now `SVAL_KEYBOARD_UID`, and the USB serial comes
+  from the chip's unique ID (as in the stock keymap), so Keybard's WebHID
+  grant survives reflashes. `VIAL_UNLOCK_COUNTER_MAX` is dropped (no unlock
+  step anymore)
+- Legacy mouse keycodes renamed to the names the newer QMK requires:
+  `KC_BTNn` → `MS_BTNn`, `KC_WH_U`/`KC_WH_D` → `MS_WHLU`/`MS_WHLD`. Values
+  and keymap images are unchanged
+- The mac scroll divisor stays at 120 even though the new firmware's own
+  default dropped to 12; `TOWNK_MAC_SCROLL_DIVISOR` in `keymap.c` is the
+  knob
+
 - CI actions bumped off the deprecated Node 20 runtime (`checkout` v4→v7,
   `setup-python` v5→v7, `upload-artifact` v4→v7, `download-artifact`
   v4→v8, `action-gh-release` v1→v3). No workflow inputs changed; the

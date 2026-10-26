@@ -20,8 +20,8 @@
 /**
  * @brief Register all key overrides with the dynamic keymap system
  *
- * This function registers all defined key overrides with Vial's dynamic keymap
- * system. It must be called during keyboard initialization (typically from
+ * This function registers all defined key overrides in the svalboard/core
+ * module's key override table. It must be called during keyboard initialization (typically from
  * keyboard_post_init_user()) to activate the key override functionality.
  *
  * **Registered Overrides:**

@@ -1,4 +1,4 @@
-name: Build Vial-QMK firmware
+name: Build Svalboard QMK firmware
 
 on: [push, workflow_dispatch]
 
@@ -7,7 +7,7 @@ permissions:
 
 jobs:
     build:
-        name: "Vial-QMK Userspace Build"
+        name: "Svalboard QMK Userspace Build"
         runs-on: ubuntu-latest
         outputs:
             version: ${{ steps.version.outputs.version }}
@@ -41,21 +41,21 @@ jobs:
                   echo "version=${BUILD_VERSION}" >> $GITHUB_OUTPUT
                   echo "Building version: ${BUILD_VERSION} (found ${RELEASE_COUNT} existing releases)"
 
-            - name: Checkout vial-qmk
+            - name: Checkout Svalboard QMK
               uses: actions/checkout@v7
               with:
-                  repository: svalboard/vial-qmk
-                  ref: vial
-                  path: vial-qmk
+                  repository: svalboard/qmk
+                  ref: svalboard
+                  path: svalboard-qmk
                   submodules: recursive
 
-            - name: Install QMK CLI and vial-qmk dependencies
+            - name: Install QMK CLI and Svalboard QMK dependencies
               run: |
                   python3 -m pip install --upgrade pip
                   python3 -m pip install qmk
-                  python3 -m pip install -r vial-qmk/requirements.txt
+                  python3 -m pip install -r svalboard-qmk/requirements.txt
 
-                  qmk config user.qmk_home="$GITHUB_WORKSPACE/vial-qmk"
+                  qmk config user.qmk_home="$GITHUB_WORKSPACE/svalboard-qmk"
                   qmk config user.overlay_dir="$GITHUB_WORKSPACE"
 
                   qmk setup -y

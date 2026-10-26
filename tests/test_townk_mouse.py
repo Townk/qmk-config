@@ -167,9 +167,9 @@ CKC_BSPC: int = int(LIB.T_kc_ckc_bspc())
 KC_DEL: int = int(LIB.T_kc_del())
 KC_BSPC: int = int(LIB.T_kc_bspc())
 MOD_RSFT = 1 << 5  # MOD_BIT(KC_RSFT); R1 double-south is a plain KC_RIGHT_SHIFT
-KC_BTN1: int = int(LIB.T_kc_btn1())
-KC_BTN2: int = int(LIB.T_kc_btn2())
-KC_BTN3: int = int(LIB.T_kc_btn3())
+MS_BTN1: int = int(LIB.T_kc_btn1())
+MS_BTN2: int = int(LIB.T_kc_btn2())
+MS_BTN3: int = int(LIB.T_kc_btn3())
 KC_PLAIN: int = int(LIB.T_kc_plain())
 
 CKC_TAB: int = int(LIB.T_kc_ckc_tab())
@@ -180,7 +180,7 @@ KC_SPC: int = int(LIB.T_kc_spc())
 KC_GRV: int = int(LIB.T_kc_grv())
 KC_BKGRV: int = int(LIB.T_kc_bkgrv())  # S(KC_GRV), the 16-bit shifted keycode
 KC_B: int = int(LIB.T_kc_b())
-MOUSE_BUTTONS = (KC_BTN1, KC_BTN2, KC_BTN3)
+MOUSE_BUTTONS = (MS_BTN1, MS_BTN2, MS_BTN3)
 LAYER_NAV: int = int(LIB.T_layer_nav())
 LAYER_MBO: int = int(LIB.T_layer_mbo())
 LAYER_GAM1: int = int(LIB.T_layer_gam1())
@@ -233,8 +233,8 @@ class TownkMouseTest(unittest.TestCase):
         self.assertEqual(
             self.history(),
             [
-                Event(KC_BTN3, pressed=True, mods=0),
-                Event(KC_BTN3, pressed=False, mods=0),
+                Event(MS_BTN3, pressed=True, mods=0),
+                Event(MS_BTN3, pressed=False, mods=0),
             ],
         )
 
@@ -297,10 +297,10 @@ class TownkMouseTest(unittest.TestCase):
         LIB.T_pointing(5, 5, 0, 0)
 
         self.assertEqual(self.mods(), 0, "the modifier must be given up")
-        self.assertEqual(self.history(), [Event(KC_BTN3, pressed=True, mods=0)])
+        self.assertEqual(self.history(), [Event(MS_BTN3, pressed=True, mods=0)])
 
         LIB.T_key(MB_GUI, False)
-        self.assertEqual(self.history()[-1], Event(KC_BTN3, pressed=False, mods=0))
+        self.assertEqual(self.history()[-1], Event(MS_BTN3, pressed=False, mods=0))
 
     def test_fast_flick_in_one_extended_report_converts(self) -> None:
         """A single 256-count report is a deliberate drag, not silence.
@@ -316,7 +316,7 @@ class TownkMouseTest(unittest.TestCase):
         LIB.T_pointing(256, 0, 0, 0)
 
         self.assertEqual(
-            self.history(), [Event(KC_BTN3, pressed=True, mods=0)],
+            self.history(), [Event(MS_BTN3, pressed=True, mods=0)],
             "a 256-count report is far past the threshold and must convert",
         )
 
@@ -340,8 +340,8 @@ class TownkMouseTest(unittest.TestCase):
         self.assertEqual(
             self.history(),
             [
-                Event(KC_BTN3, pressed=True, mods=0),
-                Event(KC_BTN3, pressed=False, mods=0),
+                Event(MS_BTN3, pressed=True, mods=0),
+                Event(MS_BTN3, pressed=False, mods=0),
             ],
             "released with nothing earned, the key is still a click",
         )
@@ -376,10 +376,10 @@ class TownkMouseTest(unittest.TestCase):
         self.assertNoMouseButton("6 counts is still below the threshold")
 
         LIB.T_pointing(3, 0, 0, 0)  # 9 counts: deliberate
-        self.assertEqual(self.history(), [Event(KC_BTN3, pressed=True, mods=0)])
+        self.assertEqual(self.history(), [Event(MS_BTN3, pressed=True, mods=0)])
 
         LIB.T_key(MB_GUI, False)
-        self.assertEqual(self.history()[-1], Event(KC_BTN3, pressed=False, mods=0))
+        self.assertEqual(self.history()[-1], Event(MS_BTN3, pressed=False, mods=0))
 
     def test_scroll_with_motion_noise_is_a_scroll(self) -> None:
         """Sub-threshold x/y riding on a scroll report resolves as scroll.
@@ -403,7 +403,7 @@ class TownkMouseTest(unittest.TestCase):
 
         LIB.T_key(MB_GUI, True)
         self.assertEqual(
-            self.history(), [Event(KC_BTN3, pressed=True, mods=MOD_LSFT)]
+            self.history(), [Event(MS_BTN3, pressed=True, mods=MOD_LSFT)]
         )
 
         LIB.T_key(MB_GUI, False)
@@ -423,8 +423,8 @@ class TownkMouseTest(unittest.TestCase):
         self.assertEqual(
             self.history(),
             [
-                Event(KC_BTN3, pressed=True, mods=0),
-                Event(KC_BTN3, pressed=False, mods=0),
+                Event(MS_BTN3, pressed=True, mods=0),
+                Event(MS_BTN3, pressed=False, mods=0),
             ],
         )
 
@@ -458,8 +458,8 @@ class TownkMouseTest(unittest.TestCase):
         self.assertEqual(
             self.history(),
             [
-                Event(KC_BTN1, pressed=True, mods=MOD_LGUI | MOD_LALT),
-                Event(KC_BTN1, pressed=False, mods=MOD_LGUI | MOD_LALT),
+                Event(MS_BTN1, pressed=True, mods=MOD_LGUI | MOD_LALT),
+                Event(MS_BTN1, pressed=False, mods=MOD_LGUI | MOD_LALT),
             ],
             "the click must carry both modifiers",
         )
@@ -480,7 +480,7 @@ class TownkMouseTest(unittest.TestCase):
         )
         self.assertEqual(
             self.history(),
-            [Event(KC_BTN1, pressed=True, mods=MOD_LGUI | MOD_LALT)],
+            [Event(MS_BTN1, pressed=True, mods=MOD_LGUI | MOD_LALT)],
         )
 
         LIB.T_key(MB_SFT, False)
@@ -655,8 +655,8 @@ class TownkMouseTest(unittest.TestCase):
         self.assertEqual(
             self.history(),
             [
-                Event(KC_BTN1, pressed=True, mods=MOD_LALT),
-                Event(KC_BTN1, pressed=False, mods=MOD_LALT),
+                Event(MS_BTN1, pressed=True, mods=MOD_LALT),
+                Event(MS_BTN1, pressed=False, mods=MOD_LALT),
             ],
             "the click must carry Option contributed by the held key",
         )
@@ -713,12 +713,12 @@ class TownkMouseTest(unittest.TestCase):
         LIB.T_key(MB_SFT, True)
         LIB.T_pointing(5, 5, 0, 0)
         self.assertEqual(
-            self.history(), [Event(KC_BTN1, pressed=True, mods=MOD_LALT)]
+            self.history(), [Event(MS_BTN1, pressed=True, mods=MOD_LALT)]
         )
 
         LIB.T_key(MB_SFT, False)
         self.assertEqual(
-            self.history()[-1], Event(KC_BTN1, pressed=False, mods=MOD_LALT),
+            self.history()[-1], Event(MS_BTN1, pressed=False, mods=MOD_LALT),
             "the drop must still carry Option",
         )
         self.assertEqual(self.mods(), 0, "and Option is released after it")
@@ -788,21 +788,21 @@ class TownkMouseTest(unittest.TestCase):
         """
         LIB.T_key(MB_SFT, True)
         LIB.T_pointing(5, 5, 0, 0)  # motion -> BTN1 held: the drag
-        self.assertEqual(self.history(), [Event(KC_BTN1, pressed=True, mods=0)])
+        self.assertEqual(self.history(), [Event(MS_BTN1, pressed=True, mods=0)])
 
         LIB.T_key(MB_ALT, True)
         self.assertEqual(
             self.mods(), MOD_LALT, "Option must be live while the button is down"
         )
         self.assertNotIn(
-            KC_BTN2, [e.keycode for e in self.history()],
+            MS_BTN2, [e.keycode for e in self.history()],
             "Option must not also press its own mouse button mid-drag",
         )
 
         # Drop while Option is still held -- that is what makes it a copy.
         LIB.T_key(MB_SFT, False)
         self.assertEqual(
-            self.history()[-1], Event(KC_BTN1, pressed=False, mods=MOD_LALT),
+            self.history()[-1], Event(MS_BTN1, pressed=False, mods=MOD_LALT),
             "the drop must carry Option, or Finder moves instead of copying",
         )
 
@@ -828,7 +828,7 @@ class TownkMouseTest(unittest.TestCase):
         LIB.T_key(MB_SFT, True)
         LIB.T_key(MB_SFT, False)
 
-        clicks = [e for e in self.history() if e.keycode == KC_BTN1]
+        clicks = [e for e in self.history() if e.keycode == MS_BTN1]
         self.assertTrue(clicks, "the second key should still produce its click")
         self.assertTrue(
             all(e.mods == MOD_LGUI for e in clicks),
@@ -838,7 +838,7 @@ class TownkMouseTest(unittest.TestCase):
         # MB_GUI resolved to a modifier, so its own release must stay silent.
         LIB.T_key(MB_GUI, False)
         self.assertNotIn(
-            KC_BTN3, [e.keycode for e in self.history()],
+            MS_BTN3, [e.keycode for e in self.history()],
             "MB_GUI acted as a modifier and must not also click",
         )
 

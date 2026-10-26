@@ -18,8 +18,8 @@
  * @file townk_overrides.c
  * @brief Key override definitions for custom key behavior with modifiers
  *
- * This file implements key overrides using the Vial firmware's key override
- * system. Key overrides allow keys to produce different outputs when pressed
+ * This file implements key overrides through the svalboard/core module's
+ * key override table (the one Keybard edits). Key overrides allow keys to produce different outputs when pressed
  * with specific modifier keys, without affecting the base keymap.
  *
  * **Current Overrides:**
@@ -38,10 +38,9 @@
 
 #include <stdint.h>
 
-#include "dynamic_keymap.h"
 #include "quantum_keycodes.h"
+#include "sval.h"
 #include "townk_layers.h"
-#include "vial.h"
 
 /**
  * @brief Default options for all key overrides
@@ -49,13 +48,13 @@
  * This constant defines the common behavior options for key overrides in this
  * configuration:
  *
- * - `vial_ko_option_activation_trigger_down`: Activate on key press (down).
- * - `vial_ko_enabled`: Key override is enabled.
+ * - `sval_ko_option_activation_trigger_down`: Activate on key press (down).
+ * - `sval_ko_enabled`: Key override is enabled.
  *
  * These options are applied to all key override entries to ensure consistent
  * behavior across all overrides.
  */
-const uint8_t custom_ko_options = vial_ko_option_activation_trigger_down | vial_ko_enabled;
+const uint8_t custom_ko_options = sval_ko_option_activation_trigger_down | sval_ko_enabled;
 
 /**
  * @brief Key override: Shift + Left Parenthesis → At Sign
@@ -69,7 +68,7 @@ const uint8_t custom_ko_options = vial_ko_option_activation_trigger_down | vial_
  * - Suppressed mods: Shift (prevents `Shift + @`)
  * - Result: Pressing `Shift + (` produces `@` without shift
  */
-const vial_key_override_entry_t lparen_key_override = {
+const sval_key_override_entry_t lparen_key_override = {
     .trigger_mods=MOD_MASK_SHIFT,
     .trigger=KC_LPRN,
     .replacement=KC_AT,
@@ -91,7 +90,7 @@ const vial_key_override_entry_t lparen_key_override = {
  * - Suppressed mods: Shift (prevents `Shift + %`)
  * - Result: Pressing `Shift + )` produces `%` without shift
  */
-const vial_key_override_entry_t rparen_key_override = {
+const sval_key_override_entry_t rparen_key_override = {
     .trigger_mods=MOD_MASK_SHIFT,
     .trigger=KC_RPRN,
     .replacement=KC_PERC,
@@ -113,7 +112,7 @@ const vial_key_override_entry_t rparen_key_override = {
  * - Suppressed mods: Shift (prevents `Shift + ^`)
  * - Result: Pressing `Shift + !` produces `^` without shift
  */
-const vial_key_override_entry_t exclam_key_override = {
+const sval_key_override_entry_t exclam_key_override = {
     .trigger_mods=MOD_MASK_SHIFT,
     .trigger=KC_EXLM,
     .replacement=KC_CIRC,
@@ -124,8 +123,12 @@ const vial_key_override_entry_t exclam_key_override = {
 };
 
 void setup_dynamic_keymap(void) {
-    dynamic_keymap_set_key_override(0, &lparen_key_override);
-    dynamic_keymap_set_key_override(1, &rparen_key_override);
-    dynamic_keymap_set_key_override(2, &exclam_key_override);
+    sval_set_key_override(0, &lparen_key_override);
+    sval_set_key_override(1, &rparen_key_override);
+    sval_set_key_override(2, &exclam_key_override);
+    /* The module loaded its live table from storage in its own post-init,
+     * which runs before keyboard_post_init_user(); without a reload these
+     * entries would only take effect on the next boot. */
+    sval_reload_key_override();
 }
 

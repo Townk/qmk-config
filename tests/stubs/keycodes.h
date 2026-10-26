@@ -32,9 +32,9 @@ enum qmk_keycodes {
 
     KC_DEL = 0x004C,
 
-    /* Mouse buttons. macOS sees KC_BTN3 as the middle button. */
-    KC_BTN1 = 0x00D1, KC_BTN2, KC_BTN3, KC_BTN4,
-    KC_BTN5, KC_BTN6, KC_BTN7, KC_BTN8,
+    /* Mouse buttons. macOS sees MS_BTN3 as the middle button. */
+    MS_BTN1 = 0x00D1, MS_BTN2, MS_BTN3, MS_BTN4,
+    MS_BTN5, MS_BTN6, MS_BTN7, MS_BTN8,
 
     /* MOD_BIT() masks these with 0x07, yielding 1/2/4/8 as on-device. */
     KC_LCTL = 0x00E0, KC_LSFT, KC_LALT, KC_LGUI,

@@ -17,11 +17,14 @@
 #ifndef QMK_USERSPACE_TOWNK_SVALBOARD_CONFIG_H
 #define QMK_USERSPACE_TOWNK_SVALBOARD_CONFIG_H
 
-#define VIAL_KEYBOARD_UID {0x1B, 0x18, 0x7D, 0xF2, 0x21, 0xF6, 0x29, 0x48}
+#define SVAL_KEYBOARD_UID {0x1B, 0x18, 0x7D, 0xF2, 0x21, 0xF6, 0x29, 0x48}
 
-// Shorten the unlock timeout (needs mod in `quantum/vial.c`; without
-// it the override doesn't work)
-#define VIAL_UNLOCK_COUNTER_MAX 12
+// Derive the USB serial from the chip's unique ID (the svalboard/core
+// module keeps the "sval:" prefix Keybard detects), as the stock `sval`
+// keymap does, instead of a literal shared by every board. It is unique
+// per board and stable across reflashes, which keeps Keybard's WebHID
+// grant: a serial that moves shows up to the host as a new device.
+#undef SERIAL_NUMBER
 
 // sm_td
 #define SMTD_GLOBAL_SEQUENCE_TERM 100

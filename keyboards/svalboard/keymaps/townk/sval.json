@@ -1,0 +1,657 @@
+{
+    "name": "Svalboard",
+    "vendorId": "0x303A",
+    "productId": "0x4044",
+    "matrix": {
+        "rows": 10,
+        "cols": 6
+    },
+    "sval": {
+        "tap_dance": 256,
+        "combo": 256,
+        "key_override": 256,
+        "alt_repeat_key": 256,
+        "leader": 256
+    },
+    "fragment_schema_version": 1,
+    "fragments": {
+        "finger_5": {
+            "id": 0,
+            "description": "5-key finger cluster (no 2S)",
+            "kle": [
+                [{"x": 1}, "N"],
+                ["W", "C", "E"],
+                [{"x": 1}, "S"]
+            ]
+        },
+        "finger_6": {
+            "id": 1,
+            "description": "6-key finger cluster (with 2S)",
+            "kle": [
+                [{"x": 1}, "N"],
+                ["W", "C", "E"],
+                [{"x": 1}, "S"],
+                [{"x": 1}, "2S"]
+            ]
+        },
+        "thumb_left": {
+            "id": 2,
+            "description": "Left thumb cluster (6 keys)",
+            "kle": [
+                [{"w": 1.5}, "T1", "T2", {"w": 1.5}, "T3"],
+                [{"x": -0.5, "w": 2}, "T4", "T5", {"w": 1.5}, "T6"]
+            ]
+        },
+        "thumb_right": {
+            "id": 3,
+            "description": "Right thumb cluster (6 keys)",
+            "kle": [
+                [{"w": 1.5}, "T1", "T2", {"w": 1.5}, "T3"],
+                [{"w": 1.5}, "T4", "T5", {"w": 2}, "T6"]
+            ]
+        },
+        "pointing_none": {
+            "id": 4,
+            "description": "No pointing module",
+            "kle": [],
+            "widget": {"kind": "pointing", "module": "none", "w": 2.5, "h": 2.5}
+        },
+        "pointing_trackball_pmw3360": {
+            "id": 5,
+            "description": "PMW3360 trackball",
+            "kle": [],
+            "widget": {"kind": "pointing", "module": "trackball", "sensor": "pmw3360", "w": 2.5, "h": 2.5}
+        },
+        "pointing_trackball_pmw3389": {
+            "id": 6,
+            "description": "PMW3389 trackball",
+            "kle": [],
+            "widget": {"kind": "pointing", "module": "trackball", "sensor": "pmw3389", "w": 2.5, "h": 2.5}
+        },
+        "pointing_touchpad_azoteq": {
+            "id": 7,
+            "description": "Azoteq touchpad",
+            "kle": [],
+            "widget": {"kind": "pointing", "module": "touchpad", "sensor": "azoteq", "w": 2.5, "h": 2.5}
+        },
+        "pointing_trackpoint": {
+            "id": 8,
+            "description": "TrackPoint",
+            "kle": [],
+            "widget": {"kind": "pointing", "module": "trackpoint", "sensor": "trackpoint", "w": 2.5, "h": 2.5}
+        },
+        "pointing_unknown": {
+            "id": 9,
+            "description": "Unrecognised pointing module",
+            "kle": [],
+            "widget": {"kind": "pointing", "module": "unknown", "w": 2.5, "h": 2.5}
+        }
+    },
+    "composition": {
+        "instances": [
+            {
+                "id": "left_pinky",
+                "fragment_options": [
+                    {
+                        "fragment": "finger_5",
+                        "placement": {"x": 0, "y": 1.5},
+                        "matrix_map": [[4,3], [4,4], [4,2], [4,1], [4,0]],
+                        "default": true
+                    },
+                    {
+                        "fragment": "finger_6",
+                        "placement": {"x": 0, "y": 1.5},
+                        "matrix_map": [[4,3], [4,4], [4,2], [4,1], [4,0], [4,5]]
+                    }
+                ],
+                "hardware_detect": false
+            },
+            {
+                "id": "left_ring",
+                "fragment_options": [
+                    {
+                        "fragment": "finger_5",
+                        "placement": {"x": 2.5, "y": 0},
+                        "matrix_map": [[3,3], [3,4], [3,2], [3,1], [3,0]],
+                        "default": true
+                    },
+                    {
+                        "fragment": "finger_6",
+                        "placement": {"x": 2.5, "y": 0},
+                        "matrix_map": [[3,3], [3,4], [3,2], [3,1], [3,0], [3,5]]
+                    }
+                ],
+                "hardware_detect": false
+            },
+            {
+                "id": "left_middle",
+                "fragment_options": [
+                    {
+                        "fragment": "finger_5",
+                        "placement": {"x": 6, "y": 0},
+                        "matrix_map": [[2,3], [2,4], [2,2], [2,1], [2,0]],
+                        "default": true
+                    },
+                    {
+                        "fragment": "finger_6",
+                        "placement": {"x": 6, "y": 0},
+                        "matrix_map": [[2,3], [2,4], [2,2], [2,1], [2,0], [2,5]]
+                    }
+                ],
+                "hardware_detect": false
+            },
+            {
+                "id": "left_index",
+                "fragment_options": [
+                    {
+                        "fragment": "finger_5",
+                        "placement": {"x": 8.5, "y": 1.5},
+                        "matrix_map": [[1,3], [1,4], [1,2], [1,1], [1,0]],
+                        "default": true
+                    },
+                    {
+                        "fragment": "finger_6",
+                        "placement": {"x": 8.5, "y": 1.5},
+                        "matrix_map": [[1,3], [1,4], [1,2], [1,1], [1,0], [1,5]]
+                    }
+                ],
+                "hardware_detect": false
+            },
+            {
+                "id": "right_index",
+                "fragment_options": [
+                    {
+                        "fragment": "finger_5",
+                        "placement": {"x": 13.5, "y": 1.5},
+                        "matrix_map": [[6,3], [6,4], [6,2], [6,1], [6,0]],
+                        "default": true
+                    },
+                    {
+                        "fragment": "finger_6",
+                        "placement": {"x": 13.5, "y": 1.5},
+                        "matrix_map": [[6,3], [6,4], [6,2], [6,1], [6,0], [6,5]]
+                    }
+                ],
+                "hardware_detect": false
+            },
+            {
+                "id": "right_middle",
+                "fragment_options": [
+                    {
+                        "fragment": "finger_5",
+                        "placement": {"x": 16, "y": 0},
+                        "matrix_map": [[7,3], [7,4], [7,2], [7,1], [7,0]],
+                        "default": true
+                    },
+                    {
+                        "fragment": "finger_6",
+                        "placement": {"x": 16, "y": 0},
+                        "matrix_map": [[7,3], [7,4], [7,2], [7,1], [7,0], [7,5]]
+                    }
+                ],
+                "hardware_detect": false
+            },
+            {
+                "id": "right_ring",
+                "fragment_options": [
+                    {
+                        "fragment": "finger_5",
+                        "placement": {"x": 19.5, "y": 0},
+                        "matrix_map": [[8,3], [8,4], [8,2], [8,1], [8,0]],
+                        "default": true
+                    },
+                    {
+                        "fragment": "finger_6",
+                        "placement": {"x": 19.5, "y": 0},
+                        "matrix_map": [[8,3], [8,4], [8,2], [8,1], [8,0], [8,5]]
+                    }
+                ],
+                "hardware_detect": false
+            },
+            {
+                "id": "right_pinky",
+                "fragment_options": [
+                    {
+                        "fragment": "finger_5",
+                        "placement": {"x": 22, "y": 1.5},
+                        "matrix_map": [[9,3], [9,4], [9,2], [9,1], [9,0]],
+                        "default": true
+                    },
+                    {
+                        "fragment": "finger_6",
+                        "placement": {"x": 22, "y": 1.5},
+                        "matrix_map": [[9,3], [9,4], [9,2], [9,1], [9,0], [9,5]]
+                    }
+                ],
+                "hardware_detect": false
+            },
+            {
+                "id": "left_thumb",
+                "fragment_options": [
+                    {
+                        "fragment": "thumb_left",
+                        "placement": {"x": 8, "y": 7},
+                        "matrix_map": [[0,3], [0,5], [0,1], [0,4], [0,2], [0,0]]
+                    },
+                    {
+                        "fragment": "finger_5",
+                        "placement": {"x": 8.5, "y": 7},
+                        "matrix_map": [[0,3], [0,4], [0,2], [0,1], [0,0]]
+                    },
+                    {
+                        "fragment": "finger_6",
+                        "placement": {"x": 8.5, "y": 7},
+                        "matrix_map": [[0,3], [0,4], [0,2], [0,1], [0,0], [0,5]]
+                    }
+                ],
+                "hardware_detect": false
+            },
+            {
+                "id": "right_thumb",
+                "fragment_options": [
+                    {
+                        "fragment": "thumb_right",
+                        "placement": {"x": 13, "y": 7},
+                        "matrix_map": [[5,1], [5,5], [5,3], [5,0], [5,2], [5,4]]
+                    },
+                    {
+                        "fragment": "finger_5",
+                        "placement": {"x": 13.5, "y": 7},
+                        "matrix_map": [[5,3], [5,4], [5,2], [5,1], [5,0]]
+                    },
+                    {
+                        "fragment": "finger_6",
+                        "placement": {"x": 13.5, "y": 7},
+                        "matrix_map": [[5,3], [5,4], [5,2], [5,1], [5,0], [5,5]]
+                    }
+                ],
+                "hardware_detect": false
+            },
+            {
+                "id": "left_pointing",
+                "hardware_detect": true,
+                "allow_override": false,
+                "fragment_options": [
+                    {"fragment": "pointing_none",              "placement": {"x": 4.2, "y": 5.25}, "matrix_map": [], "default": true},
+                    {"fragment": "pointing_trackball_pmw3360", "placement": {"x": 4.2, "y": 5.25}, "matrix_map": []},
+                    {"fragment": "pointing_trackball_pmw3389", "placement": {"x": 4.2, "y": 5.25}, "matrix_map": []},
+                    {"fragment": "pointing_touchpad_azoteq",   "placement": {"x": 4.2, "y": 5.25}, "matrix_map": []},
+                    {"fragment": "pointing_trackpoint",        "placement": {"x": 4.2, "y": 5.25}, "matrix_map": []},
+                    {"fragment": "pointing_unknown",           "placement": {"x": 4.2, "y": 5.25}, "matrix_map": []}
+                ]
+            },
+            {
+                "id": "right_pointing",
+                "hardware_detect": true,
+                "allow_override": false,
+                "fragment_options": [
+                    {"fragment": "pointing_none",              "placement": {"x": 18.3, "y": 5.25}, "matrix_map": [], "default": true},
+                    {"fragment": "pointing_trackball_pmw3360", "placement": {"x": 18.3, "y": 5.25}, "matrix_map": []},
+                    {"fragment": "pointing_trackball_pmw3389", "placement": {"x": 18.3, "y": 5.25}, "matrix_map": []},
+                    {"fragment": "pointing_touchpad_azoteq",   "placement": {"x": 18.3, "y": 5.25}, "matrix_map": []},
+                    {"fragment": "pointing_trackpoint",        "placement": {"x": 18.3, "y": 5.25}, "matrix_map": []},
+                    {"fragment": "pointing_unknown",           "placement": {"x": 18.3, "y": 5.25}, "matrix_map": []}
+                ]
+            }
+        ]
+    },
+    "customKeycodes": [
+        {
+            "name": "SV_LEFT_DPI_INC",
+            "title": "Increase the DPI of the left pointing device.",
+            "shortName": "Left\nDPI +"
+        },
+        {
+            "name": "SV_LEFT_DPI_DEC",
+            "title": "Decrease the DPI of the left pointing device.",
+            "shortName": "Left\nDPI -"
+        },
+        {
+            "name": "SV_RIGHT_DPI_INC",
+            "title": "Increase the DPI of the right pointing device.",
+            "shortName": "Right\nDPI +"
+        },
+        {
+            "name": "SV_RIGHT_DPI_DEC",
+            "title": "Decrease the DPI of the right pointing device.",
+            "shortName": "Right\nDPI -"
+        },
+        {
+            "name": "SV_LEFT_SCROLL_TOGGLE",
+            "title": "Toggle if the left pointer is scroll or pointer.",
+            "shortName": "Scroll\nLeft\nToggle"
+        },
+        {
+            "name": "SV_RIGHT_SCROLL_TOGGLE",
+            "title": "Toggle if the right pointer is scroll or pointer.",
+            "shortName": "Scroll\nRight\nToggle"
+        },
+        {
+            "name": "SV_RECALIBRATE_POINTER",
+            "title": "Reset the calibration of the pointing device.",
+            "shortName": "Fix\nDrift"
+        },
+        {
+            "name": "SV_MH_CHANGE_TIMEOUTS",
+            "title": "Cycle between various settings of the mouse keys timer.",
+            "shortName": "Mouse\nKey\nTimer"
+        },
+        {
+            "name": "SV_CAPS_WORD",
+            "title": "Toggle Caps Word.",
+            "shortName": "Caps\nWord"
+        },
+        {
+            "name": "SV_AXIS_SCROLL_LOCK",
+            "title": "Toggle Axis Scroll Lock.",
+            "shortName": "Axis\nScroll\nLock"
+        },
+        {
+            "name": "SV_TOGGLE_23_67",
+            "title": "Toggle layer 2 and 3, if 4 and 5 also active toggle 6 and 7.",
+            "shortName": "MO 23\n(45=67)"
+        },
+        {
+            "name": "SV_TOGGLE_45_67",
+            "title": "Toggle layer 4 and 5, if 2 and 3 also active toggle 6 and 7.",
+            "shortName": "MO 45\n(23=67)"
+        },
+        {
+            "name": "SV_SNIPER_2",
+            "title": "Slow the cursor 2x more.",
+            "shortName": "Sniper\n2x"
+        },
+        {
+            "name": "SV_SNIPER_3",
+            "title": "Slow the cursor 3x more.",
+            "shortName": "Sniper\n3x"
+        },
+        {
+            "name": "SV_SNIPER_5",
+            "title": "Slow the cursor 5x more.",
+            "shortName": "Sniper\n5x"
+        },
+        {
+            "name": "SV_SCROLL_HOLD",
+            "title": "Hold to toggle the scrolling mode of both pointers.",
+            "shortName": "Scroll\nToggle\nHold"
+        },
+        {
+            "name": "SV_SCROLL_TOGGLE",
+            "title": "Press to toggle the scrolling mode of both pointers.",
+            "shortName": "Scroll\nToggle"
+        },
+        {
+            "name": "SV_OUTPUT_STATUS",
+            "title": "Output the current internal state of the keyboard.",
+            "shortName": "Output\nStatus"
+        },
+        {
+            "name": "SV_TOGGLE_AUTOMOUSE",
+            "title": "Toggle Auto Mouse layer activation.",
+            "shortName": "AutoMouse\nToggle"
+        },
+        {
+            "name": "SV_TURBO_SCAN",
+            "title": "Change the scan mode of the keyboard.",
+            "shortName": "Turbo\nScan"
+        },
+        {
+            "name": "SV_NATURAL_SCROLL_TOGGLE",
+            "title": "Toggle natural scroll (inverts vertical scroll direction).",
+            "shortName": "Natural\nScroll"
+        },
+        {
+            "name": "SV_SNIPER_2_TG",
+            "title": "Toggle slowing the cursor 2x.",
+            "shortName": "Sniper\n2xTG"
+        },
+        {
+            "name": "SV_SNIPER_3_TG",
+            "title": "Toggle slowing the cursor 3x.",
+            "shortName": "Sniper\n3xTG"
+        },
+        {
+            "name": "SV_SNIPER_5_TG",
+            "title": "Toggle slowing the cursor 5x.",
+            "shortName": "Sniper\n5xTG"
+        },
+        {
+            "name": "SV_BOOST_2",
+            "title": "Hold to accelerate pointer and scroll 2x. Stacks with other pointer accel keys.",
+            "shortName": "Boost\n2x"
+        },
+        {
+            "name": "SV_BOOST_3",
+            "title": "Hold to accelerate pointer and scroll 3x. Stacks with other pointer accel keys.",
+            "shortName": "Boost\n3x"
+        },
+        {
+            "name": "SV_BOOST_5",
+            "title": "Hold to accelerate pointer and scroll 5x. Stacks with other pointer accel keys.",
+            "shortName": "Boost\n5x"
+        },
+        {
+            "name": "SV_BOOST_2_TG",
+            "title": "Toggle pointer/scroll 2x multiplier.",
+            "shortName": "Boost\n2xTG"
+        },
+        {
+            "name": "SV_BOOST_3_TG",
+            "title": "Toggle pointer/scroll 3x multiplier.",
+            "shortName": "Boost\n3xTG"
+        },
+        {
+            "name": "SV_BOOST_5_TG",
+            "title": "Toggle pointer/scroll 5x multiplier.",
+            "shortName": "Boost\n5xTG"
+        },
+        {
+            "name": "SV_VELOCITY_SCROLL",
+            "title": "Hold, then move the pointer: the farther from where it started, the faster it scrolls.",
+            "shortName": "Vel\nScroll"
+        }
+    ],
+    "menus": [
+        {
+            "label": "Pointing Device",
+            "content": [
+                {
+                    "label": "Left Pointer",
+                    "content": [
+                        {
+                            "label": "DPI",
+                            "type": "dropdown",
+                            "options": ["200", "400", "600", "800", "1200", "1600", "2400", "3200", "4800", "6400", "12000"],
+                            "content": ["id_left_dpi", 0, 0]
+                        },
+                        {
+                            "label": "Scroll Mode",
+                            "type": "toggle",
+                            "content": ["id_left_scroll", 0, 1]
+                        }
+                    ]
+                },
+                {
+                    "label": "Right Pointer",
+                    "content": [
+                        {
+                            "label": "DPI",
+                            "type": "dropdown",
+                            "options": ["200", "400", "600", "800", "1200", "1600", "2400", "3200", "4800", "6400", "12000"],
+                            "content": ["id_right_dpi", 0, 2]
+                        },
+                        {
+                            "label": "Scroll Mode",
+                            "type": "toggle",
+                            "content": ["id_right_scroll", 0, 3]
+                        }
+                    ]
+                },
+                {
+                    "label": "Auto Mouse",
+                    "content": [
+                        {
+                            "label": "Enable Auto Mouse",
+                            "type": "toggle",
+                            "content": ["id_automouse_enable", 0, 4]
+                        },
+                        {
+                            "showIf": "{id_automouse_enable} == 1",
+                            "content": [
+                                {
+                                    "label": "Layer Timeout",
+                                    "type": "dropdown",
+                                    "options": ["200 ms", "300 ms", "400 ms", "500 ms", "800 ms", "Infinite"],
+                                    "content": ["id_automouse_timeout", 0, 5]
+                                },
+                                {
+                                    "label": "Activation Threshold",
+                                    "type": "range",
+                                    "options": [0, 1000],
+                                    "content": ["id_automouse_threshold", 0, 6]
+                                },
+                                {
+                                    "label": "Activation Decay (x10ms)",
+                                    "type": "range",
+                                    "options": [0, 255],
+                                    "content": ["id_automouse_decay", 0, 10]
+                                },
+                                {
+                                    "label": "Left Pointer Activates",
+                                    "type": "toggle",
+                                    "content": ["id_left_automouse", 0, 11]
+                                },
+                                {
+                                    "label": "Right Pointer Activates",
+                                    "type": "toggle",
+                                    "content": ["id_right_automouse", 0, 12]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Scroll Settings",
+                    "content": [
+                        {
+                            "label": "Natural Scroll",
+                            "type": "toggle",
+                            "content": ["id_natural_scroll", 0, 7]
+                        },
+                        {
+                            "label": "Axis Lock",
+                            "type": "toggle",
+                            "content": ["id_axis_lock", 0, 8]
+                        }
+                    ]
+                },
+                {
+                    "label": "Advanced",
+                    "content": [
+                        {
+                            "label": "Scan Speed",
+                            "type": "dropdown",
+                            "options": ["0", "1", "2", "3", "4", "5", "6"],
+                            "content": ["id_turbo_scan", 0, 9]
+                        },
+                        {
+                            "label": "Scan Pre-wait (us, 0 = auto)",
+                            "type": "range",
+                            "options": [0, 1000],
+                            "content": ["id_scan_prewait_us", 0, 13]
+                        },
+                        {
+                            "label": "Scan Post-wait (us, 0 = auto)",
+                            "type": "range",
+                            "options": [0, 1000],
+                            "content": ["id_scan_postwait_us", 0, 14]
+                        },
+                        {
+                            "label": "Scan Period (us, 0 = unpaced)",
+                            "type": "range",
+                            "options": [0, 20000],
+                            "content": ["id_scan_period_us", 0, 20]
+                        },
+                        {
+                            "label": "Light Idle Period (ms)",
+                            "type": "range",
+                            "options": [0, 60000],
+                            "content": ["id_scan_idle_period_ms", 0, 21]
+                        },
+                        {
+                            "label": "Light Idle After (ms, 0 = never)",
+                            "type": "range",
+                            "options": [0, 60000],
+                            "content": ["id_scan_idle_after_ms", 0, 22]
+                        },
+                        {
+                            "label": "Deep Idle After (s, 0 = never)",
+                            "type": "range",
+                            "options": [0, 7200],
+                            "content": ["id_scan_deep_after_s", 0, 23]
+                        },
+                        {
+                            "label": "Deep Idle Period (ms)",
+                            "type": "range",
+                            "options": [0, 60000],
+                            "content": ["id_scan_deep_period_ms", 0, 24]
+                        },
+                        {
+                            "label": "Trackball Rest Mode",
+                            "type": "toggle",
+                            "content": ["id_idle_pointer_rest", 0, 25]
+                        },
+                        {
+                            "label": "Dim RGB When Idle",
+                            "type": "toggle",
+                            "content": ["id_idle_rgb_dim", 0, 26]
+                        },
+                        {
+                            "label": "Sleep Between Scans",
+                            "type": "toggle",
+                            "content": ["id_idle_cpu_sleep", 0, 27]
+                        },
+                        {
+                            "label": "Low Clock In Deep Idle",
+                            "type": "toggle",
+                            "content": ["id_idle_low_clock", 0, 28]
+                        },
+                        {
+                            "label": "Long Naps In Deep Idle",
+                            "type": "toggle",
+                            "content": ["id_idle_long_nap", 0, 29]
+                        },
+                        {
+                            "label": "Deep Idle Clock",
+                            "type": "dropdown",
+                            "options": ["48 MHz", "24 MHz", "12 MHz"],
+                            "content": ["id_scan_deep_clock_idx", 0, 30]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "label": "Layer Colors",
+            "content": [
+                {"label": "0", "type": "color", "content": ["id_layer0_color", 0, 32]},
+                {"label": "1", "type": "color", "content": ["id_layer1_color", 0, 33]},
+                {"label": "2", "type": "color", "content": ["id_layer2_color", 0, 34]},
+                {"label": "3", "type": "color", "content": ["id_layer3_color", 0, 35]},
+                {"label": "4", "type": "color", "content": ["id_layer4_color", 0, 36]},
+                {"label": "5", "type": "color", "content": ["id_layer5_color", 0, 37]},
+                {"label": "6", "type": "color", "content": ["id_layer6_color", 0, 38]},
+                {"label": "7", "type": "color", "content": ["id_layer7_color", 0, 39]},
+                {"label": "8", "type": "color", "content": ["id_layer8_color", 0, 40]},
+                {"label": "9", "type": "color", "content": ["id_layer9_color", 0, 41]},
+                {"label": "10", "type": "color", "content": ["id_layer10_color", 0, 42]},
+                {"label": "11", "type": "color", "content": ["id_layer11_color", 0, 43]},
+                {"label": "12", "type": "color", "content": ["id_layer12_color", 0, 44]},
+                {"label": "13", "type": "color", "content": ["id_layer13_color", 0, 45]},
+                {"label": "14", "type": "color", "content": ["id_layer14_color", 0, 46]},
+                {"label": "15", "type": "color", "content": ["id_layer15_color", 0, 47]}
+            ]
+        }
+    ]
+}

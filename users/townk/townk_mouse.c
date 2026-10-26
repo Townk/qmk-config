@@ -217,15 +217,15 @@ static uint8_t get_modifier(int index) {
  * @brief Gets the mouse button keycode corresponding to a state array index
  *
  * @param index Index into mb_states array (0-3)
- * @return uint16_t Mouse button keycode (KC_BTN1-KC_BTN4), or KC_NO if index
+ * @return uint16_t Mouse button keycode (MS_BTN1-MS_BTN4), or KC_NO if index
  *         is invalid
  */
 static uint16_t get_mouse_button(int index) {
     switch (index) {
-        case 0: return KC_BTN1;
-        case 1: return KC_BTN2;
-        case 2: return KC_BTN3;
-        case 3: return KC_BTN4;
+        case 0: return MS_BTN1;
+        case 1: return MS_BTN2;
+        case 2: return MS_BTN3;
+        case 3: return MS_BTN4;
         default: return KC_NO;
     }
 }
@@ -234,11 +234,11 @@ static uint16_t get_mouse_button(int index) {
  * @brief Checks if a keycode represents a standard mouse button
  *
  * @param keycode The keycode to check
- * @return true If keycode is a mouse button (KC_BTN1 through KC_BTN8)
+ * @return true If keycode is a mouse button (MS_BTN1 through MS_BTN8)
  * @return false Otherwise
  */
 static bool is_mouse_button(uint16_t keycode) {
-    return keycode >= KC_BTN1 && keycode <= KC_BTN8;
+    return keycode >= MS_BTN1 && keycode <= MS_BTN8;
 }
 
 /**

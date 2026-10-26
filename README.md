@@ -1,6 +1,6 @@
 # Miryoku-inspired Svalboard Layout
 
-[![Build Vial-QMK firmware](https://github.com/Townk/qmk-config/actions/workflows/build_binaries.yaml/badge.svg)](https://github.com/Townk/qmk-config/actions/workflows/build_binaries.yaml)
+[![Build Svalboard QMK firmware](https://github.com/Townk/qmk-config/actions/workflows/build_binaries.yaml/badge.svg)](https://github.com/Townk/qmk-config/actions/workflows/build_binaries.yaml)
 
 A highly optimized [QMK](https://qmk.fm) firmware configuration for the
 [Svalboard](https://svalboard.com) split ergonomic keyboard featuring dual
@@ -23,7 +23,7 @@ trackballs, COLEMAK-DH layout, and Miryoku-inspired layer design.
 - **Special Mouse Keys**: Dual-function modifier/mouse button keys with
   intelligent context switching
 - **RGB Layer Indicators**: Visual feedback for active layers
-- **Vial/Keybard Support**: Runtime customization without reflashing
+- **Keybard Support**: Runtime customization without reflashing
 - **11 Thoughtfully Designed Layers**: `BASE` (COLEMAK-DH) and `QWT`
   (QWERTY) typing layouts, `GAM1`/`GAM2` for gaming, `NAV`, `NUM`, `SYM`,
   `FUN`, `MED`, `SYS`, and an auto-activated mouse layer
@@ -60,8 +60,8 @@ For detailed layer diagrams with all key positions, see the [Layer Reference](do
 
 ### Prerequisites
 
-- Python 3.9 (later versions of Python won't work until Svalboard/Vial merge
-  latest changes from QMK)
+- Python 3.9 (pinned by `mise.toml` and used by CI; the only version this
+  build is tested with)
 - [QMK CLI](https://docs.qmk.fm/#/newbs_getting_started)
 - Git with submodules support
 
@@ -74,10 +74,13 @@ For detailed layer diagrams with all key positions, see the [Layer Reference](do
    cd qmk-config
    ```
 
-2. **Set up QMK** (first time only):
+2. **Set up Svalboard's QMK fork** (first time only). The keymap needs
+   [svalboard/qmk](https://github.com/svalboard/qmk) (branch `svalboard`),
+   which carries the Svalboard keyboard and the `svalboard/core` module
+   Keybard talks to; upstream `qmk_firmware` won't build it:
 
    ```bash
-   qmk setup
+   qmk setup -H ~/qmk_svalboard -b svalboard svalboard/qmk
    ```
 
 3. **Configure QMK userspace** to point to this directory:
@@ -133,10 +136,15 @@ This repository is configured to automatically build firmware on every push:
 
 ### Runtime Customization (No Reflashing Required)
 
-This firmware supports [Vial](https://vial.rocks/) and
-[Keybard](https://captdeaf.github.io/keybard/) (recommended) for runtime
-configuration. Just access one of these web applications using a Chrome-based
-browser to connect your keyboard and modify its layers and keys.
+This firmware supports [Keybard](https://keybard.svalboard.com), Svalboard's
+configurator, for runtime configuration. Open it in a Chrome-based browser to
+connect the keyboard and modify its layers, keys, and pointing settings. The
+Vial GUI no longer works with this firmware: Svalboard replaced Vial with the
+`svalboard/core` module, which speaks Keybard's protocol.
+
+> [!NOTE]
+> Keybard shows this keymap's own keys (`CKC_*`, `MB_*`) as raw codes rather
+> than names: its custom-keycode slots are all taken by Svalboard's keys.
 
 ### Code Customization
 
@@ -180,7 +188,7 @@ Configuration](docs/advanced-features.md#trackball-configuration).
 ├── keyboards/svalboard/keymaps/townk/  # Keyboard-specific keymap
 │   ├── keymap.c                        # Main layer definitions
 │   ├── config.h                        # Hardware configuration
-│   ├── vial.json                       # Vial definitions
+│   ├── sval.json                       # Keybard definition (copy of upstream's)
 │   └── rules.mk                        # Build flags
 │
 ├── users/townk/                        # Shared user code
@@ -291,17 +299,18 @@ Then, for anything it cannot cover:
 ## Technical Details
 
 - **QMK Userspace Version**: 1.0
-- **Base Firmware**: [vial-qmk](https://github.com/svalboard/vial-qmk)
-  (Svalboard fork)
+- **Base Firmware**: [svalboard/qmk](https://github.com/svalboard/qmk)
+  (Svalboard fork, branch `svalboard`)
 - **Keyboard**: Svalboard with PMW3389 dual-trackballs
 - **Layout**: COLEMAK-DH (split, dual-trackball)
-- **Features**: Vial, RGB Lighting, Pointing Device, Mouse Keys
+- **Features**: Keybard (`svalboard/core`), RGB Lighting, Pointing Device,
+  Mouse Keys
 
 ## Resources
 
 - [Svalboard Official Site](https://svalboard.com)
 - [QMK Documentation](https://docs.qmk.fm)
-- [Vial Documentation](https://get.vial.today)
+- [Keybard Guide](https://github.com/svalboard/keybard/blob/main/docs/guide.md)
 - [COLEMAK Layout](https://colemakmods.github.io/mod-dh/)
 - [Miryoku Layout Philosophy](https://github.com/manna-harbour/miryoku)
 - [SM_TD Library](https://github.com/stasmarkin/sm_td)

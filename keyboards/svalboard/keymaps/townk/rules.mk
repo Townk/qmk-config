@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-VIA_ENABLE = yes
-VIAL_ENABLE = yes
-VIAL_INSECURE ?= yes
+# Nothing to enable here: the keyboard turns on VIA (and VIA_INSECURE, for
+# Keybard's matrix tester), and the svalboard/core module (keymap.json)
+# derives TAP_DANCE/COMBO/KEY_OVERRIDE/LEADER_ENABLE from the counts in
+# sval.json's "sval" object.

@@ -41,10 +41,14 @@ extern void mouse_mode(bool on);
 extern axis_scale_t l_x, l_y, r_x, r_y;
 extern bool         is_mac;
 
-/** keymap_support.c's MAC_DIVISOR / SCROLL_DIVISOR, which it does not
- * export: with hi-res scroll announcing 120 units per wheel click and macOS
- * ignoring the announcement, mac hosts need the firmware to do the
- * division; everything else scrolls smoothly at 1. */
+/** The mac / PC scroll divisors. With hi-res scroll announcing 120 units
+ * per wheel click and macOS ignoring the announcement, mac hosts need the
+ * firmware to do the division; everything else scrolls smoothly at 1.
+ * keymap_support.c's own MAC_DIVISOR was this same 120 under Vial; the
+ * Keybard firmware ships 12 (10x faster mac scrolling). 12 was tried
+ * on-device and was too fast even with the left (scroll) trackball at its
+ * lowest DPI, 200, so this keymap keeps 120 -- also the value the
+ * scroll-runaway fix was tuned against. */
 #define TOWNK_MAC_SCROLL_DIVISOR 120
 #define TOWNK_PC_SCROLL_DIVISOR 1
 
@@ -289,7 +293,7 @@ static void send_build_info(void) {
  * - Auto mouse layer activation on trackball movement
  * - Caps Word support (type in CAPS without holding shift)
  * - Repeat key (QK_REP) for efficient character repetition
- * - Dynamic keymap support for runtime customization via Vial/Keybard
+ * - Dynamic keymap support for runtime customization via Keybard
  *
  * REFERENCES
  * ----------
@@ -414,7 +418,7 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
         /*L4*/ KC_LSFT,    KC_LOPT,  KC_GRV,   KC_LCTL,  KC_H,     KC_N,
 
         /*     Down        Pad       Up        Nail      Knuckle   Double Down  */
-        /*RT*/ KC_BTN2,    KC_BTN1,  KC_ESC,   KC_WH_U,  KC_WH_D,  TO(_BASE),
+        /*RT*/ MS_BTN2,    MS_BTN1,  KC_ESC,   MS_WHLU,  MS_WHLD,  TO(_BASE),
         /*LT*/ MO(_GAM2),  KC_SPC,   KC_ESC,   KC_TAB,   KC_LCMD,  TO(_BASE)
         ),
 

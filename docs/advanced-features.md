@@ -500,7 +500,7 @@ It does **not** repeat:
 
 - [QMK Firmware Documentation](https://docs.qmk.fm)
 - [SM_TD Library Documentation](../modules/stasmarkin/sm_td/README.md)
-- [Vial Documentation](https://get.vial.today)
+- [Keybard Guide](https://github.com/svalboard/keybard/blob/main/docs/guide.md)
 - [Keybard GitHub Repository](https://github.com/svalboard/keybard)
 - [Svalboard Official Site](https://svalboard.com)
 

@@ -88,13 +88,13 @@ keycodes:
   - keycode: ML_CMD
     target: '@@KC_LEFT_GUI; CMD'
   - keycode: MB_SFT
-    target: '@@KC_BTN1;'
+    target: '@@MS_BTN1;'
   - keycode: MB_ALT
-    target: '@@KC_BTN2;'
+    target: '@@MS_BTN2;'
   - keycode: MB_GUI
-    target: '@@KC_BTN3;'
+    target: '@@MS_BTN3;'
   - keycode: MB_CTL
-    target: '@@KC_BTN4;'
+    target: '@@MS_BTN4;'
   - keycode: USER24
     target: '@@CKC_SMSFT;'
   - keycode: USER25
@@ -110,10 +110,10 @@ keycodes:
   symbol_legend_aliases:
     CKC_BSPC: KC_BSPC
     CKC_TAB: KC_TAB
-    MB_SFT: KC_BTN1
-    MB_ALT: KC_BTN2
-    MB_GUI: KC_BTN3
-    MB_CTL: KC_BTN4
+    MB_SFT: MS_BTN1
+    MB_ALT: MS_BTN2
+    MB_GUI: MS_BTN3
+    MB_CTL: MS_BTN4
   symbol_descriptions:
     Modifiers:
       CKC_SMSFT: Smart shift

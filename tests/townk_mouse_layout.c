@@ -211,7 +211,7 @@ void hostos_profile_changed(hostos_profile_t profile) {
  * ------------------------------------------------------------------------ */
 
 uint16_t const keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
-    [0] = {{MB_GUI, CKC_SPC, KC_BTN1, KC_NO}},
+    [0] = {{MB_GUI, CKC_SPC, MS_BTN1, KC_NO}},
 };
 
 /* The REAL SM_TD action handler -- the shift-inverted Backspace/Delete, the
@@ -350,9 +350,9 @@ void T_set_input_idle_ms(uint32_t ms) { input_idle_ms = ms; }
 bool T_rgb_enabled(void) { return rgb_enabled; }
 int  T_rgb_enable_calls(void) { return rgb_enable_calls; }
 int  T_rgb_disable_calls(void) { return rgb_disable_calls; }
-uint16_t T_kc_btn1(void) { return KC_BTN1; }
-uint16_t T_kc_btn2(void) { return KC_BTN2; }
-uint16_t T_kc_btn3(void) { return KC_BTN3; }
+uint16_t T_kc_btn1(void) { return MS_BTN1; }
+uint16_t T_kc_btn2(void) { return MS_BTN2; }
+uint16_t T_kc_btn3(void) { return MS_BTN3; }
 uint16_t T_kc_plain(void) { return 0x0004; } /* KC_A -- an ordinary, non-SM_TD key */
 
 /* The host-profile detector: its boot, USB and read events, driven

@@ -20,11 +20,11 @@
 #ifdef SVALBOARD
 #    include "keymap_support.h"
 
-// Can't use the proper safe range number here (which should be
-// `SV_SAFE_RANGE`) if I want my custom keys to show up on Vial or Keybard.
-// This overrides two custom key codes defined by Svalboard (`KC_NORMAL_HOLD`
-// and `KC_FUNC_HOLD`), but since I'm not using them I believe it's safe to
-// do so.
+// Svalboard's own keycodes live in QK_USER (Keybard maps sval.json's
+// customKeycodes there, and they fill slots 0-30 of its 32), which leaves
+// the QK_KB block unused by the firmware. `SV_SAFE_RANGE` is no escape:
+// it is SAFE_RANGE + 2, and SAFE_RANGE == QK_USER, so it lands on
+// SV_RIGHT_DPI_INC. Keybard shows these keys as raw codes, not names.
 #    define RANGE_START QK_KB_20
 
 #else
