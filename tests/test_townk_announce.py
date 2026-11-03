@@ -28,6 +28,9 @@ LIB.T_announce_poll.restype = ctypes.c_size_t
 
 CHANNEL = 0x57
 SUBSCRIBE = 0xF7
+KEYDEFS = 0xF8
+# The fixture's TOWNK_KEYDEFS_FP (tests/townk_mouse_layout.c).
+FIXTURE_FP = 0xC0FFEE42
 ROWS = 10
 IDLE_ROWS = bytes(ROWS)
 
@@ -160,6 +163,36 @@ class AnnounceTest(unittest.TestCase):
         self.assertTrue(ours)
         self.assertEqual(reply[0], 0xFF)
         self.assertFalse(LIB.T_announce_subscribed())
+
+    def test_keydefs_reply_carries_signature_and_fingerprint(self) -> None:
+        ours, reply = command(bytes([0x08, CHANNEL, KEYDEFS]), 0)
+        self.assertTrue(ours)
+        self.assertEqual(reply[:10], bytes([0x08, CHANNEL, KEYDEFS]) + b"kdf"
+                         + FIXTURE_FP.to_bytes(4, "little"))
+
+    def test_keydefs_read_changes_no_state(self) -> None:
+        ours, _ = command(bytes([0x08, CHANNEL, KEYDEFS]), 0)
+        self.assertTrue(ours)
+        self.assertFalse(LIB.T_announce_subscribed())
+        self.assertEqual(poll(10), "")
+        # Nor does it renew (or restart) a running subscription.
+        subscribe(0, lease_ms=1000)
+        poll(10)
+        command(bytes([0x08, CHANNEL, KEYDEFS]), 500)
+        self.assertEqual(poll(20), "")  # no full re-announce
+        self.assertEqual(poll(1000, active=8), "")  # the lease ran out as granted
+        self.assertFalse(LIB.T_announce_subscribed())
+
+    def test_keydefs_is_get_only(self) -> None:
+        ours, reply = command(bytes([0x07, CHANNEL, KEYDEFS, 1, 2, 3, 4]), 0)
+        self.assertTrue(ours)
+        self.assertEqual(reply[:7], bytes([0xFF, CHANNEL, KEYDEFS, 1, 2, 3, 4]))
+
+    def test_keydefs_needs_room_for_its_reply(self) -> None:
+        ours, reply = command(bytes([0x08, CHANNEL, KEYDEFS]), 0, length=9)
+        self.assertTrue(ours)
+        self.assertEqual(reply[:3], bytes([0xFF, CHANNEL, KEYDEFS]))
+        self.assertEqual(reply[3:9], bytes(6))
 
     def test_short_commands_are_ignored(self) -> None:
         ours, _ = command(bytes([0x08, CHANNEL, SUBSCRIBE, 0x88, 0x13]), 0, length=8)

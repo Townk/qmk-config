@@ -37,6 +37,10 @@ import tempfile
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple
 
+# tools/keydefs.py, shared with the firmware build.
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+import keydefs  # noqa: E402
+
 PROBE_SYMBOL = "spelling_probe"
 
 
@@ -148,21 +152,13 @@ def enum_names(header: str, enum: str) -> List[str]:
 
     Only the names: their values come from the compiler (see
     `compiled_values`), never from re-implementing C's enum rules here.
+    Read by tools/keydefs.py, the same parser the key-definitions
+    fingerprint uses, so the two never disagree on the member list.
     """
-    text = re.sub(r"/\*.*?\*/", " ", header, flags=re.S)
-    text = re.sub(r"//[^\n]*", " ", text)
-    found = re.search(r"\benum\s+" + re.escape(enum) + r"\s*\{(.*?)\}", text, flags=re.S)
-    if not found:
-        sys.exit(f"spelling: no `enum {enum}` found")
-    names = []
-    for member in found.group(1).split(","):
-        name = member.split("=", 1)[0].strip()
-        if not name:
-            continue
-        if not re.fullmatch(r"[A-Za-z_]\w*", name):
-            sys.exit(f"spelling: cannot read `enum {enum}` member {member.strip()!r}")
-        names.append(name)
-    return names
+    try:
+        return keydefs.enum_names(header, enum)
+    except keydefs.KeydefsError as e:
+        sys.exit(f"spelling: {e}")
 
 
 def toolchain_path() -> str:

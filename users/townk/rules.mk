@@ -38,6 +38,19 @@ SRC += townk_switcher.c
 
 CFLAGS += -fcommon
 
+# The key-definitions fingerprint (tools/keydefs.py): a hash over the ordered
+# custom keycode, layer and sval.json customKeycodes names, which changes
+# exactly when one of their values can. townk_announce.c answers it to the
+# overlay, which then knows whether its spelling tables fit this firmware.
+# The qmk CLI runs make in qmk_home with QMK_USERSPACE set to this repo's
+# absolute path, locally and in CI alike. A changed fingerprint changes the
+# flags, so cflags.txt changes and everything rebuilds with the new value.
+TOWNK_KEYDEFS_FP := $(shell python3 -I $(QMK_USERSPACE)/tools/keydefs.py --repo $(QMK_USERSPACE) fingerprint)
+ifeq ($(TOWNK_KEYDEFS_FP),)
+    $(error users/townk/rules.mk: cannot compute the key-definitions fingerprint; run `python3 -I tools/keydefs.py fingerprint` for the reason)
+endif
+OPT_DEFS += -DTOWNK_KEYDEFS_FP=$(TOWNK_KEYDEFS_FP)
+
 # Route every string-descriptor read the USB stack reports to QMK's OS
 # detection through townk_hostos.c first (__wrap_process_wlength), which
 # tags it with the configuration state it arrived in. No fork change: the

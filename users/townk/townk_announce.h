@@ -57,6 +57,18 @@
  *     request: DD <client> FE 08 57 F7 <lease_ms:u16 LE>
  *     reply:   DD <client> FE 08 57 F7 's' 'v' 'w' <ANNOUNCE_VERSION> <granted_ms:u16 LE>
  *
+ * The same channel answers one more read-only value, the key-definitions
+ * fingerprint the firmware was built with (tools/keydefs.py, compiled in as
+ * TOWNK_KEYDEFS_FP by users/townk/rules.mk). The overlay compares it with
+ * its render bundle's before drawing keys from the keymap: a different one
+ * means the custom keycodes or layers were renumbered since the bundle was
+ * built, and its spelling tables would name keys wrongly. It changes no
+ * state. Firmware from before it answers "unhandled" (0xFF in place of the
+ * command), stock firmware echoes the request without the signature:
+ *
+ *     request: DD <client> FE 08 57 F8
+ *     reply:   DD <client> FE 08 57 F8 'k' 'd' 'f' <fingerprint:u32 LE>
+ *
  * It reaches this module through the linker: the userspace rules.mk wraps
  * client_wrapper_receive (the module's wrapper entry point), so the call
  * from the module's dispatcher lands here first and everything else goes
@@ -71,6 +83,7 @@
 
 #define ANNOUNCE_CHANNEL 0x57          // 'W'; Svalboard uses 0x49, 0x53-0x55
 #define ANNOUNCE_VALUE_SUBSCRIBE 0xF7  // no Svalboard value id that high
+#define ANNOUNCE_VALUE_KEYDEFS 0xF8    // the key-definitions fingerprint
 #define ANNOUNCE_VERSION 3  // 2: the P line; 3: its sniper and boost fields
 #define ANNOUNCE_LEASE_MIN_MS 500
 #define ANNOUNCE_LEASE_MAX_MS 30000
@@ -98,7 +111,8 @@ typedef struct {
 } announce_state_t;
 
 /**
- * @brief Handle a VIA custom-value command if it is a subscribe.
+ * @brief Handle a VIA custom-value command on ANNOUNCE_CHANNEL: a subscribe,
+ *        the key-definitions fingerprint read, or "unhandled" for the rest.
  *
  * @param data   VIA command buffer: [command][channel][value id][data...];
  *               rewritten in place with the reply.

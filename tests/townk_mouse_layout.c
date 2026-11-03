@@ -244,6 +244,9 @@ static void mouse_mode_layer(bool on) {
  * is under !SMTD_UNIT_TEST), at the real board's ten rows rather than
  * this fixture's one. */
 #define ANNOUNCE_ROWS 10
+/* What users/townk/rules.mk computes with tools/keydefs.py; any value
+ * will do here (test_townk_announce.py checks the reply carries it). */
+#define TOWNK_KEYDEFS_FP 0xC0FFEE42u
 #include "../users/townk/townk_announce.c"
 
 #include "../users/townk/townk_hostos.h"

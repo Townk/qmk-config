@@ -21,6 +21,10 @@
 
 #define VIA_CUSTOM_GET_VALUE 0x08  // id_custom_get_value
 
+#ifndef TOWNK_KEYDEFS_FP
+#    error "TOWNK_KEYDEFS_FP is not defined: users/townk/rules.mk computes it with tools/keydefs.py"
+#endif
+
 static bool             subscribed  = false;
 static bool             full_needed = false;
 static uint32_t         lease_until = 0;
@@ -30,11 +34,24 @@ bool announce_handle_command(uint8_t *data, uint8_t length, uint32_t now) {
     if (length < 9 || data[1] != ANNOUNCE_CHANNEL) {
         return false;
     }
-    if (data[0] != VIA_CUSTOM_GET_VALUE || data[2] != ANNOUNCE_VALUE_SUBSCRIBE) {
+    bool keydefs = data[2] == ANNOUNCE_VALUE_KEYDEFS && length >= 10;
+    if (data[0] != VIA_CUSTOM_GET_VALUE || (data[2] != ANNOUNCE_VALUE_SUBSCRIBE && !keydefs)) {
         // Our channel, but not a command this version knows: answer
         // "unhandled" rather than let Svalboard's handler read it as one
         // of its own value ids.
         data[0] = 0xFF;  // id_unhandled
+        return true;
+    }
+
+    if (keydefs) {
+        uint32_t fp = (uint32_t)(TOWNK_KEYDEFS_FP);
+        data[3] = 'k';
+        data[4] = 'd';
+        data[5] = 'f';
+        data[6] = fp & 0xFF;
+        data[7] = (fp >> 8) & 0xFF;
+        data[8] = (fp >> 16) & 0xFF;
+        data[9] = fp >> 24;
         return true;
     }
 
