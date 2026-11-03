@@ -22,6 +22,7 @@ jobs:
         runs-on: ubuntu-24.04
         outputs:
             version: ${{ steps.version.outputs.version }}
+            qmk_sha: ${{ steps.qmk_sha.outputs.sha }}
 
         steps:
             - name: Set up Python 3.9
@@ -78,16 +79,28 @@ jobs:
 
                   qmk setup -y
 
+            # CI builds against the tip of svalboard/qmk@svalboard, unpinned;
+            # the release notes record which commit that was.
+            - name: Record the Svalboard QMK commit
+              id: qmk_sha
+              run: |
+                  echo "sha=$(git -C svalboard-qmk rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
             - name: Build firmware
               run: |
-                  # Build each target from qmk.json
-                  qmk userspace-compile
+                  # `make` compiles each target from qmk.json and then packages
+                  # the .svup updater files, which a bare `qmk userspace-compile`
+                  # skips. The version string is what the updater reports (at
+                  # most 16 characters).
+                  make FW_VERSION_STRING="v${{ steps.version.outputs.version }}"
 
             - name: Rename firmware files
               run: |
                   VERSION="${{ steps.version.outputs.version }}"
                   mv svalboard_trackball_pmw3389_left_townk.uf2 "svalboard-colemak-dh-townk-${VERSION}.left.uf2"
                   mv svalboard_trackball_pmw3389_right_townk.uf2 "svalboard-colemak-dh-townk-${VERSION}.right.uf2"
+                  mv svalboard_trackball_pmw3389_left_townk.svup "svalboard-colemak-dh-townk-${VERSION}.left.svup"
+                  mv svalboard_trackball_pmw3389_right_townk.svup "svalboard-colemak-dh-townk-${VERSION}.right.svup"
 
             - name: Upload firmware artifacts
               uses: actions/upload-artifact@v7
@@ -97,6 +110,9 @@ jobs:
                       *.uf2
                       *.hex
                       *.bin
+                      *.svup
+                      sval_update.py
+                      make_update.py
                   if-no-files-found: error
 
             # svaloverlay's page: skim's layer images in the overlay's
@@ -211,6 +227,11 @@ jobs:
                       `svaloverlay-macos.tar.gz` is the matching layer overlay
                       (svaloverlay, svalwatch and the overlay page), for macOS.
 
+                      The `.svup` files and the two scripts (`sval_update.py`,
+                      `make_update.py`) are what `qmk-flash` uses to update the
+                      keyboard over USB.
+
+                      **Svalboard QMK:** ${{ needs.build.outputs.qmk_sha }}
                       **Branch:** ${{ github.ref_name }}
                       **Commit:** ${{ github.sha }}
                   files: firmware/*
