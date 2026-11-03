@@ -29,6 +29,26 @@ func keymap(layers: Int = 2, changing index: Int? = nil) -> Keymap {
         #expect(key.allSatisfy { "0123456789abcdef".contains($0) })
     }
 
+    @Test func keydefsVerdict() {
+        #expect(Keydefs.verdict(board: 0xB68B_17F4, bundle: 0xB68B_17F4) == .matches(0xB68B_17F4))
+        #expect(Keydefs.verdict(board: 0xB68B_17F4, bundle: 0x1234_5678)
+            == .outOfDate(board: 0xB68B_17F4, bundle: 0x1234_5678))
+        // A bundle from before fingerprints cannot vouch for its tables.
+        #expect(Keydefs.verdict(board: 0xB68B_17F4, bundle: nil) == .outOfDate(board: 0xB68B_17F4, bundle: nil))
+        // Firmware from before them cannot say: drawn unchecked.
+        #expect(Keydefs.verdict(board: nil, bundle: 0x1234_5678) == .unknown)
+        #expect(Keydefs.verdict(board: nil, bundle: nil) == .unknown)
+    }
+
+    @Test func keydefsText() {
+        #expect(Keydefs.format(0x0B68_17F4) == "0x0B6817F4")
+        #expect(Keydefs.parse("0xB68B17F4") == 0xB68B_17F4)
+        #expect(Keydefs.parse(Keydefs.format(7)) == 7)
+        #expect(Keydefs.parse("B68B17F4") == nil)
+        #expect(Keydefs.parse("0x1FFFFFFFF") == nil)
+        #expect(Keydefs.parse("0xZZ") == nil)
+    }
+
     @Test func pruneKeepsTheNewestFive() {
         let now = Date()
         let dirs = (0..<8).map { i in

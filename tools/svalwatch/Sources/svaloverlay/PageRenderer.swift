@@ -60,6 +60,17 @@ final class PageRenderer {
         return version.isEmpty ? nil : version
     }
 
+    /// The key-definitions fingerprint the bundle's spelling tables were
+    /// built for (keydefs.json, from build_assets.py), or nil when the
+    /// bundle has none (it predates fingerprints) or it cannot be read.
+    func bundleKeydefs() -> UInt32? {
+        guard let data = FileManager.default.contents(atPath: bundle.appendingPathComponent("keydefs.json").path),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let text = json["fingerprint"] as? String
+        else { return nil }
+        return Keydefs.parse(text)
+    }
+
     /// The page already drawn for `key`, marked as just used so pruning
     /// keeps it.
     func cachedPage(_ key: String) -> URL? {

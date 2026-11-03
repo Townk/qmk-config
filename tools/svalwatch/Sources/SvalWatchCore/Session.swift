@@ -27,6 +27,15 @@
 /// short chunk, a layer count past what a keymap can hold, VIA without a
 /// keymap) is dropped and the session goes on watching without it, so the
 /// keymap never stands between the board and its layer and key reads.
+/// Each failure is logged (`Action.log`) once.
+///
+/// A keymap read whole is followed by one more read, the firmware's
+/// key-definitions fingerprint (townk_announce.c, tools/keydefs.py), and
+/// only then emitted, the fingerprint inside the same event, so whoever
+/// draws it decides whether its keycode tables fit before drawing
+/// anything. The same rules: tried once, and a firmware that does not
+/// have it (unhandled, or no signature), a lost reply or a rejection only
+/// means the keymap goes out with no fingerprint.
 ///
 /// Only one request is ever outstanding; a reply that is not the one
 /// awaited (someone else's, or a late duplicate) is ignored.
@@ -62,6 +71,9 @@ public struct Session: Sendable {
         /// Whether passive input from the board should wake polling early.
         /// Only wanted while idle: while active it would just add wakeups.
         case passiveWake(Bool)
+        /// One line for the log: something worth knowing went wrong, but
+        /// the session carries on (a keymap or fingerprint read given up).
+        case log(String)
     }
 
     private enum Phase: Equatable {
@@ -71,6 +83,7 @@ public struct Session: Sendable {
         case subscribing
         case keymapCount
         case keymapBuffer(offset: Int)
+        case keydefs
         case layer
         case matrix
     }
@@ -105,6 +118,8 @@ public struct Session: Sendable {
     private var keymapRead = false
     private var keymapLayers = 0
     private var keymapBytes: [UInt8] = []
+    /// The keymap read whole, held while its fingerprint is read.
+    private var pendingKeymap: Keymap?
 
     public private(set) var stats = Stats()
 
@@ -116,6 +131,9 @@ public struct Session: Sendable {
         public var rejections = 0
         /// Keymap reads given up, whatever the cause.
         public var keymapFailures = 0
+        /// Fingerprint reads lost or rejected (firmware without one is not
+        /// a failure: it answers, just without a fingerprint).
+        public var keydefsFailures = 0
     }
 
     public init(serial: String, config: Config = Config(),
@@ -204,29 +222,46 @@ public struct Session: Sendable {
             failures = 0
             // A layer mask has 32 bits; more layers, or none, is not a
             // keymap this tool can show.
-            guard (1...32).contains(layers) else { return abandonKeymap() }
+            guard (1...32).contains(layers) else {
+                return abandonKeymap("the board reports \(layers) layers")
+            }
             keymapLayers = Int(layers)
             keymapBytes = []
             return readKeymapChunk()
 
         case let (.keymapBuffer(offset), .keymapBuffer(id, at, bytes))
             where id == client && Int(at) == offset:
-            guard bytes.count == min(SvalProtocol.keymapChunkSize, keymapSize - offset) else {
-                return abandonKeymap()
+            let wanted = min(SvalProtocol.keymapChunkSize, keymapSize - offset)
+            guard bytes.count == wanted else {
+                return abandonKeymap("a short chunk at \(offset): \(bytes.count) of \(wanted) bytes")
             }
             keymapBytes += bytes
             return readKeymapChunk()
 
-        case let (.keymapCount, .keymapUnavailable(id)) where id == client,
-             let (.keymapBuffer, .keymapUnavailable(id)) where id == client:
-            return abandonKeymap()
+        case let (.keymapCount, .unhandled(id, echo)) where id == client && echo == [0, 0, 0]:
+            // VIA without a dynamic keymap: the request after its command
+            // byte is all zeros.
+            return abandonKeymap("VIA has no dynamic keymap")
+
+        case let (.keymapBuffer(offset), .unhandled(id, echo))
+            where id == client && echo == Array(keymapBufferRequest(offset)[7..<10]):
+            return abandonKeymap("VIA has no dynamic keymap")
 
         case let (.keymapCount, .error(id, _)) where id == client,
              let (.keymapBuffer, .error(id, _)) where id == client:
             // Usually an expired ID: re-bootstrap as below, keymap given up.
             stats.rejections += 1
-            dropKeymap()
-            return fail(at: now)
+            return [dropKeymap("the board rejected the client ID")] + fail(at: now)
+
+        case let (.keydefs, .keydefs(id, fingerprint)) where id == client:
+            failures = 0
+            return emitKeymap(keydefs: fingerprint) + startWatching()
+
+        case let (.keydefs, .error(id, _)) where id == client:
+            stats.rejections += 1
+            stats.keydefsFailures += 1
+            let note = Action.log("fingerprint read failed (the board rejected the client ID)")
+            return [note] + emitKeymap(keydefs: nil) + fail(at: now)
 
         case let (.matrix, .matrix(id, pressed)) where id == client:
             failures = 0
@@ -269,7 +304,10 @@ public struct Session: Sendable {
         switch phase {
         case .keymapCount, .keymapBuffer:
             // The ID is likely fine; the reads go on with it.
-            return abandonKeymap()
+            return abandonKeymap("no reply")
+        case .keydefs:
+            stats.keydefsFailures += 1
+            return [.log("fingerprint read failed (no reply)")] + emitKeymap(keydefs: nil) + startWatching()
         default:
             return fail(at: now)
         }
@@ -303,30 +341,42 @@ public struct Session: Sendable {
         let offset = keymapBytes.count
         guard offset >= keymapSize else {
             phase = .keymapBuffer(offset: offset)
-            let size = min(SvalProtocol.keymapChunkSize, keymapSize - offset)
-            return request(SvalProtocol.keymapBufferRequest(
-                client: client!, offset: UInt16(offset), size: UInt8(size)))
+            return request(keymapBufferRequest(offset))
         }
         keymapRead = true
         let codes = stride(from: 0, to: keymapSize, by: 2).map {
             UInt16(keymapBytes[$0]) << 8 | UInt16(keymapBytes[$0 + 1])
         }
         keymapBytes = []
-        let keymap = Keymap(layers: keymapLayers, rows: SvalProtocol.matrixRows,
-                            cols: SvalProtocol.matrixCols, keycodes: codes)
-        return [.emit(.keymap(keymap))] + startWatching()
+        pendingKeymap = Keymap(layers: keymapLayers, rows: SvalProtocol.matrixRows,
+                               cols: SvalProtocol.matrixCols, keycodes: codes)
+        phase = .keydefs
+        return request(SvalProtocol.keydefsRequest(client: client!))
+    }
+
+    /// The buffer read for the chunk at `offset`.
+    private func keymapBufferRequest(_ offset: Int) -> [UInt8] {
+        let size = min(SvalProtocol.keymapChunkSize, keymapSize - offset)
+        return SvalProtocol.keymapBufferRequest(client: client!, offset: UInt16(offset), size: UInt8(size))
+    }
+
+    /// The keymap held for its fingerprint, emitted with it.
+    private mutating func emitKeymap(keydefs: UInt32?) -> [Action] {
+        guard let keymap = pendingKeymap else { return [] }
+        pendingKeymap = nil
+        return [.emit(.keymap(keymap, keydefs: keydefs))]
     }
 
     /// Gives up this connect's keymap and goes on watching without it.
-    private mutating func abandonKeymap() -> [Action] {
-        dropKeymap()
-        return startWatching()
+    private mutating func abandonKeymap(_ why: String) -> [Action] {
+        [dropKeymap(why)] + startWatching()
     }
 
-    private mutating func dropKeymap() {
+    private mutating func dropKeymap(_ why: String) -> Action {
         stats.keymapFailures += 1
         keymapRead = true
         keymapBytes = []
+        return .log("keymap read failed (\(why)); watching without it")
     }
 
     private mutating func beginReads() -> [Action] {

@@ -81,7 +81,7 @@ let baseLayer = ConsoleParser.Line.layer(LayerState(active: 1, default: 1))
             return c
         }(), makeNonce: { nonce })
         let actions = connect(&s)
-        #expect(!sent(actions).contains { $0[6] == 0x08 })
+        #expect(!sent(actions).contains { $0[6] == 0x08 && $0[8] == 0xF7 })
         #expect(s.mode == .polling)
     }
 

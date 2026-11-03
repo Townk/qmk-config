@@ -19,7 +19,8 @@ compile` leaves next to its objects. Steps:
    draw the same page on the Mac from the keymap read off the keyboard
    (the page code and files, the merged config, the manifest, the
    exact-spelling tables, by value and by position, the layer
-   identifiers, and QMK's keycode spec), plus a VERSION hash of all of it.
+   identifiers, QMK's keycode spec, and keydefs.json, the key-definitions
+   fingerprint those tables were built for), plus a VERSION hash of all of it.
 
 skim must tag keys (`<g data-key="N">`, skim's feat/key-tags); the build
 fails if the images have no tags, since the overlay could not highlight.
@@ -39,6 +40,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import page_build
 import spelling
+from spelling import keydefs
 
 HERE = Path(__file__).resolve().parent
 KEYMAP = "keyboards/svalboard/keymaps/townk"
@@ -46,15 +48,17 @@ QMK_KEYBOARD = "svalboard/trackball/pmw3389/right"
 # What `qmk userspace-compile` leaves in qmk_home for that keyboard.
 BUILD_NAME = "svalboard_trackball_pmw3389_right_townk"
 # The userspace's custom keycodes: every member is in the spelling table.
-KEYCODES_HEADER = "users/townk/townk_keycodes.h"
-KEYCODES_ENUM = "custom_keycodes"
+KEYCODES_HEADER = keydefs.KEYCODES_HEADER
+KEYCODES_ENUM = keydefs.KEYCODES_ENUM
 # The userspace's layer identifiers (`_BASE`, `_NAV`, ...), which the renderer
 # spells layer arguments with.
-LAYERS_HEADER = "users/townk/townk_layers.h"
-LAYERS_ENUM = "layer_names"
+LAYERS_HEADER = keydefs.LAYERS_HEADER
+LAYERS_ENUM = keydefs.LAYERS_ENUM
 # The header's icons (keyboard, pin). Optional: without it they fall back
 # to whatever the system has, usually a missing-glyph box.
 ICON_FONT = Path.home() / "Library/Fonts/SymbolsNerdFontMono-Regular.ttf"
+# The bundle's key-definitions fingerprint (tools/keydefs.py).
+KEYDEFS_FILE = "keydefs.json"
 # Copied into the bundle from this directory: the renderer and the page code.
 BUNDLE_CODE = ("render_page.py", "page_build.py", "page.html") + page_build.PAGE_FILES
 
@@ -97,7 +101,7 @@ def spelling_tables(repo: Path, qmk_home: Path, elf: Path, keymap: Dict[str, Any
     per-position table, after checking the pairing against `spec`, and the
     layer identifiers by index."""
     stale = [path for path in (repo / KEYMAP / "keymap.c", repo / KEYCODES_HEADER,
-                               repo / LAYERS_HEADER)
+                               repo / LAYERS_HEADER, repo / keydefs.SVAL_JSON)
              if elf.is_file() and path.stat().st_mtime > elf.stat().st_mtime]
     if stale:
         sys.exit(f"build_assets: {stale[0]} is newer than {elf}; rebuild the firmware (`make`)")
@@ -110,7 +114,7 @@ def spelling_tables(repo: Path, qmk_home: Path, elf: Path, keymap: Dict[str, Any
     by_position = spelling.positions(spellings, numbers, matrix)
 
     names = spelling.enum_names((repo / KEYCODES_HEADER).read_text(), KEYCODES_ENUM)
-    sval = json.loads((repo / KEYMAP / "sval.json").read_text())
+    sval = json.loads((repo / keydefs.SVAL_JSON).read_text())
     names += [key["name"] for key in sval.get("customKeycodes", [])]
     cflags = elf.parent / f"obj_{elf.stem}" / "cflags.txt"
     named = spelling.compiled_values(
@@ -143,7 +147,8 @@ def keycode_spec(qmk_home: Path) -> Dict[str, Any]:
 
 def write_bundle(final: Path, config_path: Path, page_manifest: Dict[str, Any],
                  table: Dict[int, str], by_position: Dict[str, List[Any]],
-                 layer_names: Dict[str, str], spec: Dict[str, Any], icon_font: Path) -> None:
+                 layer_names: Dict[str, str], spec: Dict[str, Any], icon_font: Path,
+                 fingerprint: int) -> None:
     """The render bundle in `final`, replacing whatever was there.
 
     Written in full next to it, then swapped in with renames, so a reader
@@ -165,12 +170,20 @@ def write_bundle(final: Path, config_path: Path, page_manifest: Dict[str, Any],
     (out / "positions.json").write_text(json.dumps(by_position, indent=1) + "\n")
     (out / "layers.json").write_text(json.dumps(layer_names, indent=1) + "\n")
     (out / "keycodes.json").write_text(json.dumps(spec))
+    (out / KEYDEFS_FILE).write_text(keydefs_json(fingerprint))
     (out / "VERSION").write_text(bundle_version(out))
     if final.exists():
         final.rename(old)
     out.rename(final)
     if old.exists():
         shutil.rmtree(old)
+
+
+def keydefs_json(fingerprint: int) -> str:
+    """keydefs.json: the key-definitions fingerprint the tables were built
+    for (tools/keydefs.py). The overlay compares it with the keyboard's and
+    draws nothing with tables from other key definitions."""
+    return json.dumps({"fingerprint": keydefs.format_fp(fingerprint)}) + "\n"
 
 
 def bundle_version(bundle: Path) -> str:
@@ -215,8 +228,12 @@ def main() -> None:
         if not page_build.write_page(args.out, page_build.page(images, page_manifest),
                                      args.icon_font):
             print(f"build_assets: no icon font at {args.icon_font}; header icons will not render")
+        try:
+            fingerprint = keydefs.fingerprint(args.repo)
+        except keydefs.KeydefsError as e:
+            sys.exit(f"build_assets: {e}")
         write_bundle(args.out / "render", config_path, page_manifest, table, by_position,
-                     layer_names, spec, args.icon_font)
+                     layer_names, spec, args.icon_font, fingerprint)
     print(f"build_assets: {len(images)} layers, {len(table)} spellings -> {args.out}")
 
 

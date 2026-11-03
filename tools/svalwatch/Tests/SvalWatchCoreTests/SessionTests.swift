@@ -44,10 +44,35 @@ enum Board {
         return report(head + (granted ? Array("svw".utf8) + [1] + lease : lease))
     }
 
-    /// VIA's "unhandled": 0xFF, then the command it did not know.
-    static func unhandled(id: UInt32 = client, command: UInt8 = 0x08) -> [UInt8] {
-        report([0xDD] + SvalProtocol.le32(id) + [0xFE, 0xFF]
-            + (command == 0x08 ? [0x57, 0xF7] : [command]))
+    /// VIA's "unhandled", as quantum/via.c sends it: the request itself,
+    /// with 0xFF written over its command byte and everything else left
+    /// as it was. The wrapper header stays (client_wrapper.c).
+    static func unhandled(request: [UInt8]) -> [UInt8] {
+        var r = request
+        r[6] = 0xFF
+        return report(Array(r.prefix(64)))
+    }
+
+    /// Firmware without townk_announce.c's subscribe answers it "unhandled".
+    static func unhandled(id: UInt32 = client) -> [UInt8] {
+        unhandled(request: SvalProtocol.subscribeRequest(client: id, leaseMs: 5000))
+    }
+
+    /// The fingerprint every test board was built with.
+    static let fingerprint: UInt32 = 0xB68B_17F4
+
+    /// townk_announce.c's fingerprint reply, or with nil what firmware
+    /// from before it sends: "unhandled" on its channel.
+    static func keydefs(id: UInt32 = client, _ fp: UInt32? = fingerprint) -> [UInt8] {
+        guard let fp else { return unhandled(request: SvalProtocol.keydefsRequest(client: id)) }
+        return report([0xDD] + SvalProtocol.le32(id) + [0xFE, 0x08, 0x57, 0xF8]
+            + Array("kdf".utf8) + SvalProtocol.le32(fp))
+    }
+
+    /// What stock firmware sends back for the fingerprint read: the
+    /// request, untouched (svalboard.c ignores the channel).
+    static func stockKeydefs(id: UInt32 = client) -> [UInt8] {
+        report(Array(SvalProtocol.keydefsRequest(client: id).prefix(64)))
     }
 
     /// VIA's layer count reply: the request echoed, the count after it.
@@ -126,14 +151,19 @@ func connect(_ s: inout Session, at t: Double = 0, active: UInt32 = 1,
     return all
 }
 
-/// Answers the keymap read that follows the first info: one layer. Fails
-/// the calling test when the session was not reading it.
+/// Answers the keymap read that follows the first info (one layer), and
+/// the fingerprint read after it. Fails the calling test when the session
+/// was not reading them.
 @discardableResult
 func readKeymap(_ s: inout Session, at t: Double = 0, layers: Int = 1,
+                keydefs: UInt32? = Board.fingerprint,
                 sourceLocation: SourceLocation = #_sourceLocation) -> [Session.Action] {
     let count = s.receive(Board.layerCount(UInt8(layers)), at: t)
     #expect(sent(count).first?[6] == 0x12, "no keymap read in progress", sourceLocation: sourceLocation)
-    let all = count + Board.answerKeymap(&s, count, bytes: Board.keymapBytes(layers: layers), at: t)
+    var all = count + Board.answerKeymap(&s, count, bytes: Board.keymapBytes(layers: layers), at: t)
+    #expect(sent(all).last.map { Array($0[5..<9]) } == [0xFE, 0x08, 0x57, 0xF8],
+            "no fingerprint read after the keymap", sourceLocation: sourceLocation)
+    all += s.receive(Board.keydefs(keydefs), at: t)
     #expect(emitted(all).contains { if case .keymap = $0 { true } else { false } },
             "no keymap emitted", sourceLocation: sourceLocation)
     return all
@@ -170,13 +200,15 @@ let rowOne: [UInt8] = [0, 0b100, 0, 0, 0, 0, 0, 0, 0, 0]
             header + [0xFE, 0x12],       // keymap buffer: 54 + 54 + 12 bytes
             header + [0xFE, 0x12],
             header + [0xFE, 0x12],
+            header + [0xFE, 0x08],       // key-definitions fingerprint
             header + [0xFE, 0x02],       // matrix
             header + [0xDF, 0x16],       // layer
         ]
         #expect(sent(actions).map { Array($0.prefix(7)) } == expected)
         #expect(emitted(actions) == [
             .connected(serial: "sval:TEST", protocolVersion: 3),
-            .keymap(Keymap(layers: 1, rows: 10, cols: 6, keycodes: (0..<60).map { UInt16($0 + 0x100) })),
+            .keymap(Keymap(layers: 1, rows: 10, cols: 6, keycodes: (0..<60).map { UInt16($0 + 0x100) }),
+                    keydefs: Board.fingerprint),
             .keys([KeyPosition(row: 1, col: 2)]),
             .layer(LayerState(active: 0x8001, default: 1)),
         ])
@@ -352,8 +384,13 @@ let rowOne: [UInt8] = [0, 0b100, 0, 0, 0, 0, 0, 0, 0, 0]
             [0xFE, 0x12, 0, 216, 24],
         ]
         #expect(reads == expected)
+        // Not emitted yet: the fingerprint read comes first.
+        #expect(emitted(all).isEmpty)
+        #expect(sent(all).last.map { Array($0.prefix(9)) } == header + [0xFE, 0x08, 0x57, 0xF8])
+        all = s.receive(Board.keydefs(), at: 0)
         #expect(emitted(all) == [.keymap(Keymap(layers: 2, rows: 10, cols: 6,
-                                                 keycodes: (0..<120).map { UInt16($0 + 0x100) }))])
+                                                 keycodes: (0..<120).map { UInt16($0 + 0x100) }),
+                                          keydefs: Board.fingerprint)])
         // Then the reads polling starts with.
         #expect(sent(all).last.map { Array($0.prefix(7)) } == header + [0xFE, 0x02])
     }
@@ -459,9 +496,91 @@ let rowOne: [UInt8] = [0, 0b100, 0, 0, 0, 0, 0, 0, 0, 0]
     @Test func viaWithoutAKeymapIsAFailedRead() {
         var s = makeSession()
         untilLayerCount(&s)
-        let actions = s.receive(Board.unhandled(command: 0x11), at: 0)
+        let request = SvalProtocol.keymapLayerCountRequest(client: Board.client)
+        let actions = s.receive(Board.unhandled(request: request), at: 0)
         #expect(sent(actions).map { $0[6] } == [0x02])
         #expect(s.stats.keymapFailures == 1)
+        #expect(actions.contains(.log("keymap read failed (VIA has no dynamic keymap); watching without it")))
+    }
+
+    @Test func anUnhandledBufferReadIsAFailedRead() {
+        var s = makeSession()
+        untilLayerCount(&s)
+        let first = s.receive(Board.layerCount(2), at: 0)
+        _ = s.receive(Board.keymapBuffer(offset: 0, Array(Board.keymapBytes(layers: 2)[0..<54])), at: 0)
+        // An "unhandled" for the chunk already read is not this one's.
+        #expect(s.receive(Board.unhandled(request: sent(first).last!), at: 0).isEmpty)
+        let request = SvalProtocol.keymapBufferRequest(client: Board.client, offset: 54, size: 54)
+        let actions = s.receive(Board.unhandled(request: request), at: 0)
+        #expect(sent(actions).map { $0[6] } == [0x02])
+        #expect(s.stats.keymapFailures == 1)
+        #expect(!emitted(actions).contains(where: isKeymap))
+    }
+
+    @Test func eachFailedKeymapReadIsLoggedOnce() {
+        var s = makeSession()
+        untilLayerCount(&s)
+        let actions = s.timeout(at: 0.25)
+        #expect(actions.filter { if case .log = $0 { true } else { false } }
+            == [.log("keymap read failed (no reply); watching without it")])
+    }
+
+    /// Bootstrap, info and the whole keymap, leaving the session waiting
+    /// on the fingerprint.
+    func untilKeydefs(_ s: inout Session) {
+        untilLayerCount(&s)
+        let count = s.receive(Board.layerCount(1), at: 0)
+        _ = Board.answerKeymap(&s, count, bytes: Board.keymapBytes(layers: 1))
+    }
+
+    let oneLayer = Keymap(layers: 1, rows: 10, cols: 6, keycodes: (0..<60).map { UInt16($0 + 0x100) })
+
+    @Test func firmwareWithoutTheFingerprintStillSendsTheKeymap() {
+        var s = makeSession()
+        untilKeydefs(&s)
+        let actions = s.receive(Board.keydefs(nil), at: 0)
+        #expect(emitted(actions) == [.keymap(oneLayer, keydefs: nil)])
+        #expect(sent(actions).map { $0[6] } == [0x02])
+        #expect(s.stats.keydefsFailures == 0)  // it answered: no fingerprint is not a failure
+        #expect(!actions.contains { if case .log = $0 { true } else { false } })
+    }
+
+    @Test func stockFirmwareHasNoFingerprintEither() {
+        var s = makeSession()
+        untilKeydefs(&s)
+        #expect(emitted(s.receive(Board.stockKeydefs(), at: 0)) == [.keymap(oneLayer, keydefs: nil)])
+    }
+
+    @Test func aLostFingerprintReplySendsTheKeymapWithout() {
+        var s = makeSession()
+        untilKeydefs(&s)
+        let actions = s.timeout(at: 0.25)
+        #expect(emitted(actions) == [.keymap(oneLayer, keydefs: nil)])
+        #expect(actions.contains(.log("fingerprint read failed (no reply)")))
+        #expect(sent(actions).map { $0[6] } == [0x02])  // and watching goes on
+        #expect(s.stats.keydefsFailures == 1)
+        #expect(s.stats.keymapFailures == 0)
+        // A late reply is not taken for anything.
+        #expect(s.receive(Board.keydefs(), at: 0.3).isEmpty)
+    }
+
+    @Test func aRejectedFingerprintReadSendsTheKeymapAndRebootstraps() {
+        var s = makeSession()
+        untilKeydefs(&s)
+        let actions = s.receive(Board.rejected(), at: 0)
+        #expect(emitted(actions) == [.keymap(oneLayer, keydefs: nil)])
+        #expect(nextPoll(actions) == 0)
+        #expect(s.stats.keydefsFailures == 1)
+        _ = s.poll(at: 0)
+        let after = s.receive(Board.bootstrap(echo: nonce), at: 0)
+        #expect(sent(after).map { $0[6] } == [0x02])  // neither read again
+    }
+
+    @Test func anotherClientsFingerprintIsIgnored() {
+        var s = makeSession()
+        untilKeydefs(&s)
+        #expect(s.receive(Board.keydefs(id: 0x9999_0001, 0x1111_1111), at: 0).isEmpty)
+        #expect(emitted(s.receive(Board.keydefs(), at: 0)) == [.keymap(oneLayer, keydefs: Board.fingerprint)])
     }
 
     @Test func ignoresAnotherClientsBufferReply() {
@@ -505,7 +624,23 @@ let rowOne: [UInt8] = [0, 0b100, 0, 0, 0, 0, 0, 0, 0, 0]
         #expect(SvalProtocol.parse(Board.layerCount(8)) == .keymapLayerCount(client: Board.client, 8))
         #expect(SvalProtocol.parse(Board.keymapBuffer(offset: 0x0136, [0x00, 0x04, 0x52, 0x29]))
             == .keymapBuffer(client: Board.client, offset: 0x0136, bytes: [0x00, 0x04, 0x52, 0x29]))
-        #expect(SvalProtocol.parse(Board.unhandled(command: 0x12)) == .keymapUnavailable(client: Board.client))
+        let buffer = SvalProtocol.keymapBufferRequest(client: Board.client, offset: 0x0136, size: 54)
+        #expect(SvalProtocol.parse(Board.unhandled(request: buffer))
+            == .unhandled(client: Board.client, echo: [0x01, 0x36, 54]))
+    }
+
+    @Test func keydefsRequest() {
+        let r = SvalProtocol.keydefsRequest(client: Board.client)
+        #expect(r.count == 64)
+        #expect(Array(r.prefix(9)) == header + [0xFE, 0x08, 0x57, 0xF8])
+        #expect(r[9...].allSatisfy { $0 == 0 })
+    }
+
+    @Test func parsesKeydefsReplies() {
+        #expect(SvalProtocol.parse(Board.keydefs(0x1234_ABCD))
+            == .keydefs(client: Board.client, fingerprint: 0x1234_ABCD))
+        #expect(SvalProtocol.parse(Board.keydefs(nil)) == .keydefs(client: Board.client, fingerprint: nil))
+        #expect(SvalProtocol.parse(Board.stockKeydefs()) == .keydefs(client: Board.client, fingerprint: nil))
     }
 }
 
@@ -533,8 +668,11 @@ let rowOne: [UInt8] = [0, 0b100, 0, 0, 0, 0, 0, 0, 0, 0]
             == #"{"type":"keys","pressed":[[0,3],[6,1]]}"#)
         #expect(WatchEvent.keys([]).jsonLine == #"{"type":"keys","pressed":[]}"#)
         #expect(WatchEvent.disconnected.jsonLine == #"{"type":"disconnected"}"#)
-        #expect(WatchEvent.keymap(Keymap(layers: 1, rows: 1, cols: 3, keycodes: [4, 0x5229, 0])).jsonLine
-            == #"{"type":"keymap","layers":1,"keycodes":[4,21033,0]}"#)
+        #expect(WatchEvent.keymap(Keymap(layers: 1, rows: 1, cols: 3, keycodes: [4, 0x5229, 0]),
+                                  keydefs: 0x0B68_17F4).jsonLine
+            == #"{"type":"keymap","layers":1,"keydefs":"0x0B6817F4","keycodes":[4,21033,0]}"#)
+        #expect(WatchEvent.keymap(Keymap(layers: 1, rows: 1, cols: 3, keycodes: [4, 0, 0]), keydefs: nil).jsonLine
+            == #"{"type":"keymap","layers":1,"keydefs":null,"keycodes":[4,0,0]}"#)
         #expect(WatchEvent.pointer(PointerState(leftDPI: 400, rightDPI: 1600, leftScroll: true,
                                                 rightScroll: false, scrollKey: false)).jsonLine
             == #"{"type":"pointer","left":{"dpi":400,"scroll":true},"right":{"dpi":1600,"scroll":false},"scroll_key":false,"sniper":1,"boost":1}"#)

@@ -156,6 +156,8 @@ public final class Watcher {
                 schedule(after: delay) { s, t in s.timeout(at: t) }
             case let .passiveWake(on):
                 passive?.arm(on && !paused)
+            case let .log(line):
+                log("svalwatch: \(line)")
             }
         }
     }

@@ -4,7 +4,7 @@
 /// announcing changes later) stays behind it.
 ///
 ///     {"type":"connected","serial":"sval:E464B4B2934E2C2A","protocol":3}
-///     {"type":"keymap","layers":16,"keycodes":[41,30,…]}
+///     {"type":"keymap","layers":16,"keydefs":"0xB68B17F4","keycodes":[41,30,…]}
 ///     {"type":"layer","top":15,"active":32769,"default":1,"mods":0,"caps_word":false,"caps_lock":false}
 ///     {"type":"keys","pressed":[[0,3],[6,1]]}
 ///     {"type":"pointer","left":{"dpi":400,"scroll":true},"right":{"dpi":1600,"scroll":false},"scroll_key":false,"sniper":1,"boost":1}
@@ -16,13 +16,18 @@
 /// per connect, at any time after `connected` (an announcing board may
 /// send its `layer` and `keys` first), comes `keymap`: every layer's
 /// keycodes as the board holds them now, [layer][row][col] flattened, 60
-/// per layer. A board whose keymap cannot be read sends none, and the
-/// other lines carry on as usual. `pointer`
+/// per layer, with `keydefs`, the fingerprint of the key definitions the
+/// firmware was built with (tools/keydefs.py), or null when the firmware
+/// cannot say (it predates it, or the read failed). Both are read before
+/// the line goes out, so a reader deciding whether its keycode tables fit
+/// has everything in the one event. A board whose keymap cannot be read
+/// sends none, and the other lines carry on as usual. `pointer`
 /// (each trackball's DPI and whether it scrolls right now) comes only from
 /// firmware that announces it; a polled board never sends one.
 public enum WatchEvent: Equatable, Sendable {
     case connected(serial: String, protocolVersion: Int)
-    case keymap(Keymap)
+    /// The board's keymap and its key-definitions fingerprint, if known.
+    case keymap(Keymap, keydefs: UInt32?)
     case layer(LayerState)
     case keys([KeyPosition])
     case pointer(PointerState)
@@ -32,9 +37,10 @@ public enum WatchEvent: Equatable, Sendable {
         switch self {
         case let .connected(serial, version):
             return #"{"type":"connected","serial":"\#(escape(serial))","protocol":\#(version)}"#
-        case let .keymap(k):
+        case let .keymap(k, keydefs):
             let codes = k.keycodes.map(String.init).joined(separator: ",")
-            return #"{"type":"keymap","layers":\#(k.layers),"keycodes":[\#(codes)]}"#
+            let fp = keydefs.map { "\"\(Keydefs.format($0))\"" } ?? "null"
+            return #"{"type":"keymap","layers":\#(k.layers),"keydefs":\#(fp),"keycodes":[\#(codes)]}"#
         case let .layer(s):
             return #"{"type":"layer","top":\#(s.topLayer),"active":\#(s.active),"default":\#(s.default),"#
                 + #""mods":\#(s.mods),"caps_word":\#(s.capsWord),"caps_lock":\#(s.capsLock)}"#
@@ -143,5 +149,38 @@ public struct PointerState: Equatable, Sendable {
         self.scrollKey = scrollKey
         self.sniperDiv = sniperDiv
         self.boostMult = boostMult
+    }
+}
+
+/// The key-definitions fingerprint (tools/keydefs.py) as text: how the
+/// render bundle's keydefs.json and the log lines spell it.
+public enum Keydefs {
+    public static func format(_ fingerprint: UInt32) -> String {
+        let hex = String(fingerprint, radix: 16, uppercase: true)
+        return "0x" + String(repeating: "0", count: 8 - hex.count) + hex
+    }
+
+    public enum Verdict: Equatable, Sendable {
+        /// The keyboard's fingerprint is the bundle's: draw.
+        case matches(UInt32)
+        /// The firmware cannot say (it predates the fingerprint, or the
+        /// read failed): draw unchecked, as before fingerprints.
+        case unknown
+        /// The bundle's tables were built for other key definitions (or
+        /// it records none): drawing would name keys wrongly.
+        case outOfDate(board: UInt32, bundle: UInt32?)
+    }
+
+    /// Whether a render bundle with fingerprint `bundle` may draw a keymap
+    /// from a keyboard reporting `board`.
+    public static func verdict(board: UInt32?, bundle: UInt32?) -> Verdict {
+        guard let board else { return .unknown }
+        return bundle == board ? .matches(board) : .outOfDate(board: board, bundle: bundle)
+    }
+
+    /// keydefs.json's `fingerprint`, or nil when it is not one.
+    public static func parse(_ text: String) -> UInt32? {
+        guard text.hasPrefix("0x") || text.hasPrefix("0X") else { return nil }
+        return UInt32(text.dropFirst(2), radix: 16)
     }
 }

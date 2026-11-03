@@ -7,7 +7,11 @@ import WebKit
 /// images plus the which-key panel styling) in a transparent web view.
 /// Once a board reports its keymap, the panel swaps to a page drawn from
 /// that keymap (`PageRenderer`), so it shows the keys as flashed, not as
-/// they were when the overlay was built.
+/// they were when the overlay was built. Only when the keyboard's
+/// key-definitions fingerprint agrees with the render bundle's, though: a
+/// keyboard whose custom keycodes or layers were renumbered since the
+/// bundle was built would get keys spelled as other keys, so it keeps the
+/// page it has, with "out of date" in the header.
 ///
 /// It shows only while a board is connected: hidden until the first one
 /// connects, hidden again when it is unplugged, so a Mac without a
@@ -56,7 +60,7 @@ final class OverlayWindow: NSObject, WKScriptMessageHandler {
     /// replayed in this order whenever a page becomes ready, so a page
     /// loaded mid-session starts where the old one was.
     private var state: [Kind: String] = [:]
-    private enum Kind: CaseIterable { case onTop, connected, layer, keys, pointer }
+    private enum Kind: CaseIterable { case onTop, connected, layer, keys, pointer, stale }
     private(set) var onTop = false
 
     init(options: Options, log: @escaping (String) -> Void) {
@@ -121,6 +125,7 @@ final class OverlayWindow: NSObject, WKScriptMessageHandler {
             boardConnected = false
             wantedPage = nil  // a render still running is for this board only
             call(.connected, "overlay.connected(false)")
+            setStale(false)  // the next board's keymap decides again
             panel.orderOut(nil)
         case let .layer(state):
             call(.layer, "overlay.layer(\(state.active), \(state.default))")
@@ -130,21 +135,39 @@ final class OverlayWindow: NSObject, WKScriptMessageHandler {
         case .pointer:
             // The page reads the event as svalwatch prints it.
             call(.pointer, "overlay.pointer(\(event.jsonLine))")
-        case let .keymap(keymap):
-            show(keymap)
+        case let .keymap(keymap, keydefs):
+            show(keymap, keydefs: keydefs)
         }
     }
 
     /// The page for this keymap: the cached one if this overlay build drew
     /// it before, otherwise drawn now and shown when done. Without a render
     /// bundle (an older install, or a rebuild swapping it) the current page
-    /// stays.
-    private func show(_ keymap: Keymap) {
+    /// stays. So it does when the keyboard's key-definitions fingerprint is
+    /// not the bundle's, decided here before anything is looked up or
+    /// queued; a keyboard that cannot say (firmware from before the
+    /// fingerprint) is drawn as before, unchecked.
+    private func show(_ keymap: Keymap, keydefs board: UInt32?) {
         guard let version = renderer.bundleVersion() else {
             wantedPage = nil  // nor show a render started for an older keymap
             log("svaloverlay: no render bundle at \(renderer.bundle.path); keeping the current page")
             return
         }
+        switch Keydefs.verdict(board: board, bundle: renderer.bundleKeydefs()) {
+        case let .outOfDate(board, bundled):
+            wantedPage = nil
+            renderer.dropQueued()
+            log("svaloverlay: overlay out of date for this firmware: the keyboard's key definitions are "
+                + "\(Keydefs.format(board)), the render bundle's \(bundled.map(Keydefs.format) ?? "unknown"); "
+                + "keeping the current page (rebuild the overlay: `make` in the userspace)")
+            setStale(true)
+            return
+        case let .matches(board):
+            log("svaloverlay: key definitions \(Keydefs.format(board)) match the render bundle")
+        case .unknown:
+            log("svaloverlay: keyboard fingerprint unavailable (firmware predates it); drawing unchecked")
+        }
+        setStale(false)
         let key = PageCache.key(bundleVersion: version, keymap: keymap)
         wantedPage = key
         if let cached = renderer.cachedPage(key) {
@@ -156,6 +179,12 @@ final class OverlayWindow: NSObject, WKScriptMessageHandler {
             guard let self, let rendered, key == self.wantedPage else { return }
             self.load(page: rendered)
         }
+    }
+
+    /// The header's "out of date" note. Optional-called: a page cached by
+    /// an older overlay build has no such function.
+    private func setStale(_ on: Bool) {
+        call(.stale, "overlay.stale?.(\(on))")
     }
 
     // MARK: Z-order

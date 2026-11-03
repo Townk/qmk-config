@@ -46,6 +46,10 @@ public enum SvalProtocol {
     static let announceChannel: UInt8 = 0x57
     static let announceSubscribe: UInt8 = 0xF7
     static let announceSignature: [UInt8] = Array("svw".utf8)
+    /// townk_announce.c's key-definitions fingerprint, a read-only value
+    /// on the same channel (tools/keydefs.py says what it covers).
+    static let announceKeydefs: UInt8 = 0xF8
+    static let keydefsSignature: [UInt8] = Array("kdf".utf8)
 
     /// QMK's debug console, where the announcements arrive.
     public static let consoleUsagePage = 0xFF31
@@ -86,6 +90,11 @@ public enum SvalProtocol {
                          UInt8(leaseMs & 0xFF), UInt8(leaseMs >> 8)])
     }
 
+    /// The fingerprint of the key definitions the firmware was built with.
+    public static func keydefsRequest(client: UInt32) -> [UInt8] {
+        wrapped(client, [viaProtocol, viaCustomGetValue, announceChannel, announceKeydefs])
+    }
+
     /// Classifies one input report. Returns nil for anything that is not
     /// one of the replies this tool asks for, including other
     /// clients' traffic; the caller still has to check the client ID.
@@ -120,18 +129,9 @@ public enum SvalProtocol {
                 }
             }
             return .matrix(client: client, pressed)
-        case viaProtocol where r[6] == viaUnhandled
-            && (r[7] == viaKeymapLayerCount || r[7] == viaKeymapBuffer):
-            // VIA without a dynamic keymap echoes the command after 0xFF.
-            return .keymapUnavailable(client: client)
-        case viaProtocol where r[6] == viaKeymapLayerCount:
-            return .keymapLayerCount(client: client, r[7])
-        case viaProtocol where r[6] == viaKeymapBuffer:
-            // The request echoed at 6-9 (offset big-endian, size), the
-            // bytes from 10; the board never sends more than a chunk.
-            let size = min(Int(r[9]), keymapChunkSize, r.count - 10)
-            return .keymapBuffer(client: client, offset: UInt16(r[7]) << 8 | UInt16(r[8]),
-                                 bytes: Array(r[10..<10 + size]))
+        // Our channel first: VIA marks a command it did not handle by
+        // overwriting the command byte with 0xFF and leaving the rest, so an
+        // unhandled reply still carries channel and value id at 7-8.
         case viaProtocol where r[7] == announceChannel && r[8] == announceSubscribe
             && (r[6] == viaCustomGetValue || r[6] == viaUnhandled):
             // VIA reply at 6: command, channel, value id, then ours.
@@ -140,6 +140,27 @@ public enum SvalProtocol {
             }
             return .subscription(client: client, granted: Announcement(
                 version: r[12], leaseMs: UInt16(r[13]) | UInt16(r[14]) << 8))
+        case viaProtocol where r[7] == announceChannel && r[8] == announceKeydefs
+            && (r[6] == viaCustomGetValue || r[6] == viaUnhandled):
+            // Firmware from before the fingerprint answers "unhandled";
+            // stock firmware echoes the request, without the signature.
+            guard r[6] == viaCustomGetValue, Array(r[9..<12]) == keydefsSignature else {
+                return .keydefs(client: client, fingerprint: nil)
+            }
+            return .keydefs(client: client, fingerprint: u32(r, 12))
+        case viaProtocol where r[6] == viaUnhandled:
+            // Any other command VIA did not handle (a keymap read on VIA
+            // without a dynamic keymap): what followed the command in the
+            // request, untouched, so the caller can tell which one it was.
+            return .unhandled(client: client, echo: Array(r[7..<10]))
+        case viaProtocol where r[6] == viaKeymapLayerCount:
+            return .keymapLayerCount(client: client, r[7])
+        case viaProtocol where r[6] == viaKeymapBuffer:
+            // The request echoed at 6-9 (offset big-endian, size), the
+            // bytes from 10; the board never sends more than a chunk.
+            let size = min(Int(r[9]), keymapChunkSize, r.count - 10)
+            return .keymapBuffer(client: client, offset: UInt16(r[7]) << 8 | UInt16(r[8]),
+                                 bytes: Array(r[10..<10 + size]))
         default:
             return nil
         }
@@ -169,8 +190,13 @@ public enum Reply: Equatable, Sendable {
     case matrix(client: UInt32, [KeyPosition])
     case keymapLayerCount(client: UInt32, UInt8)
     case keymapBuffer(client: UInt32, offset: UInt16, bytes: [UInt8])
-    /// VIA answered a keymap read with "unhandled".
-    case keymapUnavailable(client: UInt32)
+    /// VIA answered "unhandled" (0xFF in place of the command byte) to a
+    /// command off the announce channel; `echo` is the three request bytes
+    /// that followed the command, which VIA leaves as they were.
+    case unhandled(client: UInt32, echo: [UInt8])
+    /// The key-definitions fingerprint; nil when the firmware has none
+    /// (it predates it, or lacks the userspace module).
+    case keydefs(client: UInt32, fingerprint: UInt32?)
     case error(client: UInt32, code: UInt8)
     /// The subscribe reply; `granted` is nil when the firmware has no
     /// announcements (stock firmware, or a userspace without the module).

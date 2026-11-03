@@ -13,6 +13,7 @@ const manifest = JSON.parse(document.getElementById("manifest").textContent);
 const panel = document.querySelector(".panel");
 const nameEl = document.querySelector(".layer-name");
 const variantEl = document.querySelector(".layer-variant");
+const staleEl = document.querySelector(".stale");
 const svgs = new Map(
   [...document.querySelectorAll(".keyboard svg")].map((svg) => [Number(svg.dataset.layer), svg]),
 );
@@ -228,6 +229,13 @@ window.overlay = {
   },
   onTop(on) {
     panel.classList.toggle("on-top", on);
+  },
+  // The keyboard's key definitions are not the ones this page was built
+  // for (svaloverlay kept it rather than draw keys under wrong names).
+  stale(on) {
+    if (staleEl.hidden === !on) return;
+    staleEl.hidden = !on;
+    reportSize();
   },
 };
 

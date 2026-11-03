@@ -43,6 +43,18 @@ html, body { background: transparent; overflow: hidden; }
 .pin { color: rgba(255, 199, 89, 1); visibility: hidden; }
 .panel.on-top .pin { visibility: visible; }
 
+/* The keyboard's key definitions are not the render bundle's, so the
+ * page shown may name keys wrongly: a small note in the footer's peach. */
+.stale {
+  font-size: 12px;
+  color: rgb(250, 179, 135);
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+.stale[hidden] { display: none; }
+.stale .icon { color: inherit; }
+
 hr.separator {
   border: none;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
