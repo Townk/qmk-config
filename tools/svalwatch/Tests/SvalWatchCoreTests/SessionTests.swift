@@ -48,6 +48,41 @@ enum Board {
         report([0xDD] + SvalProtocol.le32(id) + [0xFE, 0xFF, 0x57, 0xF7])
     }
 
+    /// VIA's layer count reply: the request echoed, the count after it.
+    static func layerCount(id: UInt32 = client, _ layers: UInt8) -> [UInt8] {
+        report([0xDD] + SvalProtocol.le32(id) + [0xFE, 0x11, layers])
+    }
+
+    /// VIA's keymap buffer reply: the request echoed (command, offset
+    /// big-endian, size), then that many bytes of the keymap.
+    static func keymapBuffer(id: UInt32 = client, offset: Int, _ bytes: [UInt8]) -> [UInt8] {
+        report([0xDD] + SvalProtocol.le32(id)
+            + [0xFE, 0x12, UInt8(offset >> 8), UInt8(offset & 0xFF), UInt8(bytes.count)] + bytes)
+    }
+
+    /// A keymap whose every keycode is its own index plus 0x100, stored
+    /// big-endian as the board does, so a byte-order slip shows.
+    static func keymapBytes(layers: Int) -> [UInt8] {
+        (0..<layers * 60).flatMap { i -> [UInt8] in
+            let kc = UInt16(i + 0x100)
+            return [UInt8(kc >> 8), UInt8(kc & 0xFF)]
+        }
+    }
+
+    /// Answers each buffer request in `actions` from `bytes`, the way the
+    /// board does, until the session stops asking.
+    static func answerKeymap(_ s: inout Session, _ actions: [Session.Action], bytes: [UInt8],
+                             at t: Double = 0) -> [Session.Action] {
+        var all: [Session.Action] = []
+        var pending = actions
+        while let req = sent(pending).last, req[5] == 0xFE, req[6] == 0x12 {
+            let offset = Int(req[7]) << 8 | Int(req[8])
+            pending = s.receive(keymapBuffer(offset: offset, Array(bytes[offset..<offset + Int(req[9])])), at: t)
+            all += pending
+        }
+        return all
+    }
+
     static func rejected(id: UInt32 = client) -> [UInt8] {
         report([0xDD] + SvalProtocol.le32(id) + [0xFF, 0x01])
     }
@@ -76,16 +111,24 @@ func nextPoll(_ actions: [Session.Action]) -> Double? {
     actions.lazy.compactMap { if case let .pollAfter(d) = $0 { d } else { nil } }.first
 }
 
-/// Runs the first poll through bootstrap, info, matrix and layer.
+/// Runs the first poll through bootstrap, info, keymap, matrix and layer.
 @discardableResult
 func connect(_ s: inout Session, at t: Double = 0, active: UInt32 = 1,
              rows: [UInt8] = Array(repeating: 0, count: 10)) -> [Session.Action] {
     var all = s.poll(at: t)
     all += s.receive(Board.bootstrap(echo: nonce), at: t)
     all += s.receive(Board.info(), at: t)
+    all += readKeymap(&s, at: t)
     all += s.receive(Board.matrix(rows: rows), at: t)
     all += s.receive(Board.layer(active: active), at: t)
     return all
+}
+
+/// Answers the keymap read that follows the first info: one layer.
+@discardableResult
+func readKeymap(_ s: inout Session, at t: Double = 0, layers: Int = 1) -> [Session.Action] {
+    let count = s.receive(Board.layerCount(UInt8(layers)), at: t)
+    return count + Board.answerKeymap(&s, count, bytes: Board.keymapBytes(layers: layers), at: t)
 }
 
 /// One later poll with a valid client ID: the matrix reply, then the
@@ -111,12 +154,17 @@ let rowOne: [UInt8] = [0, 0b100, 0, 0, 0, 0, 0, 0, 0, 0]
         let expected: [[UInt8]] = [
             [0xDD, 0, 0, 0, 0, 1, 2],    // bootstrap + nonce
             header + [0xDF, 0x00],       // info
+            header + [0xFE, 0x11],       // keymap layer count
+            header + [0xFE, 0x12],       // keymap buffer: 54 + 54 + 12 bytes
+            header + [0xFE, 0x12],
+            header + [0xFE, 0x12],
             header + [0xFE, 0x02],       // matrix
             header + [0xDF, 0x16],       // layer
         ]
         #expect(sent(actions).map { Array($0.prefix(7)) } == expected)
         #expect(emitted(actions) == [
             .connected(serial: "sval:TEST", protocolVersion: 3),
+            .keymap(Keymap(layers: 1, rows: 10, cols: 6, keycodes: (0..<60).map { UInt16($0 + 0x100) })),
             .keys([KeyPosition(row: 1, col: 2)]),
             .layer(LayerState(active: 0x8001, default: 1)),
         ])
@@ -257,9 +305,141 @@ let rowOne: [UInt8] = [0, 0b100, 0, 0, 0, 0, 0, 0, 0, 0]
         var actions = s.poll(at: 0)
         actions += s.receive(Board.bootstrap(echo: nonce), at: 0)
         actions += s.receive(Board.info(flags1: 0x0B, flags2: 0x00), at: 0)
+        actions += readKeymap(&s)
         actions += s.receive(Board.matrix(), at: 0)
         actions += s.receive(Board.layer(active: 1, default: 1, mods: 0x02, status: 0x01), at: 0)
         #expect(emitted(actions).last == .layer(LayerState(active: 1, default: 0)))
+    }
+}
+
+@Suite struct KeymapTests {
+    @Test func readsTheKeymapAfterInfo() {
+        var s = makeSession()
+        var actions = s.poll(at: 0)
+        actions += s.receive(Board.bootstrap(echo: nonce), at: 0)
+        actions = s.receive(Board.info(), at: 0)
+        #expect(sent(actions).map { Array($0.prefix(7)) } == [header + [0xFE, 0x11]])
+        #expect(actions.contains(.timeoutAfter(0.25)))
+
+        // Two layers: 2 * 10 * 6 keycodes of two bytes, 54 bytes a reply.
+        let bytes = Board.keymapBytes(layers: 2)
+        var reads: [[UInt8]] = []
+        actions = s.receive(Board.layerCount(2), at: 0)
+        var all: [Session.Action] = []
+        while let req = sent(actions).last, req[6] == 0x12 {
+            reads.append(Array(req[5..<10]))
+            let offset = Int(req[7]) << 8 | Int(req[8])
+            actions = s.receive(Board.keymapBuffer(offset: offset, Array(bytes[offset..<offset + Int(req[9])])), at: 0)
+            all += actions
+        }
+        let expected: [[UInt8]] = [
+            [0xFE, 0x12, 0, 0, 54],
+            [0xFE, 0x12, 0, 54, 54],
+            [0xFE, 0x12, 0, 108, 54],
+            [0xFE, 0x12, 0, 162, 54],
+            [0xFE, 0x12, 0, 216, 24],
+        ]
+        #expect(reads == expected)
+        #expect(emitted(all) == [.keymap(Keymap(layers: 2, rows: 10, cols: 6,
+                                                 keycodes: (0..<120).map { UInt16($0 + 0x100) }))])
+        // Then the reads polling starts with.
+        #expect(sent(all).last.map { Array($0.prefix(7)) } == header + [0xFE, 0x02])
+    }
+
+    @Test func announcedReadsTheKeymapAfterSubscribing() {
+        var s = announcedSession()
+        _ = s.poll(at: 0)
+        _ = s.receive(Board.bootstrap(echo: nonce), at: 0)
+        _ = s.receive(Board.info(), at: 0)
+        let actions = s.receive(Board.subscription(), at: 0)
+        #expect(sent(actions).last.map { Array($0.prefix(7)) } == header + [0xFE, 0x11])
+        #expect(nextPoll(actions) == nil)
+        let rest = readKeymap(&s)
+        #expect(emitted(rest).count == 1)
+        #expect(nextPoll(rest) == 2)  // then only renewals
+        #expect(s.mode == .announced)
+    }
+
+    @Test func readsItOncePerConnect() {
+        var s = makeSession()
+        connect(&s)
+        pollOnce(&s, at: 44)
+        _ = s.poll(at: 45)
+        let after = s.receive(Board.bootstrap(echo: nonce), at: 45)
+        #expect(sent(after).map { $0[6] } == [0x02])
+    }
+
+    @Test func dropsAPartialKeymapOnTimeout() {
+        var s = makeSession()
+        _ = s.poll(at: 0)
+        _ = s.receive(Board.bootstrap(echo: nonce), at: 0)
+        _ = s.receive(Board.info(), at: 0)
+        _ = s.receive(Board.layerCount(2), at: 0)
+        let first = s.receive(Board.keymapBuffer(offset: 0, Array(Board.keymapBytes(layers: 2)[0..<54])), at: 0)
+        #expect(emitted(first).isEmpty)
+        #expect(nextPoll(s.timeout(at: 0.25)) == 0)
+        #expect(s.stats.timeouts == 1)
+        // A late reply is not taken, and the next connect starts over.
+        #expect(s.receive(Board.keymapBuffer(offset: 54, Array(repeating: 0, count: 54)), at: 0.3).isEmpty)
+        _ = s.poll(at: 0.3)
+        let retry = s.receive(Board.bootstrap(echo: nonce), at: 0.3)
+        #expect(sent(retry).map { $0[6] } == [0x11])
+        let count = s.receive(Board.layerCount(1), at: 0.3)
+        #expect(sent(count).map { Array($0[6..<10]) } == [[0x12, 0, 0, 54]])
+        let done = Board.answerKeymap(&s, count, bytes: Board.keymapBytes(layers: 1), at: 0.3)
+        #expect(emitted(done) == [.keymap(Keymap(layers: 1, rows: 10, cols: 6,
+                                                  keycodes: (0..<60).map { UInt16($0 + 0x100) }))])
+    }
+
+    @Test func ignoresAnotherClientsBufferReply() {
+        var s = makeSession()
+        _ = s.poll(at: 0)
+        _ = s.receive(Board.bootstrap(echo: nonce), at: 0)
+        _ = s.receive(Board.info(), at: 0)
+        #expect(s.receive(Board.layerCount(id: 0x9999_0001, 4), at: 0).isEmpty)
+        _ = s.receive(Board.layerCount(1), at: 0)
+        let bytes = Board.keymapBytes(layers: 1)
+        #expect(s.receive(Board.keymapBuffer(id: 0x9999_0001, offset: 0, Array(bytes[0..<54])), at: 0).isEmpty)
+        // Nor one for an offset not asked for (a late duplicate).
+        #expect(s.receive(Board.keymapBuffer(offset: 54, Array(bytes[54..<108])), at: 0).isEmpty)
+        let ours = s.receive(Board.keymapBuffer(offset: 0, Array(bytes[0..<54])), at: 0)
+        #expect(sent(ours).map { Array($0[6..<10]) } == [[0x12, 0, 54, 54]])
+    }
+
+    @Test func aRejectedKeymapReadRebootstraps() {
+        var s = makeSession()
+        _ = s.poll(at: 0)
+        _ = s.receive(Board.bootstrap(echo: nonce), at: 0)
+        _ = s.receive(Board.info(), at: 0)
+        #expect(nextPoll(s.receive(Board.rejected(), at: 0)) == 0)
+        #expect(s.stats.rejections == 1)
+    }
+}
+
+@Suite struct SvalProtocolTests {
+    @Test func keymapLayerCountRequest() {
+        let r = SvalProtocol.keymapLayerCountRequest(client: Board.client)
+        #expect(r.count == 64)
+        #expect(Array(r.prefix(7)) == header + [0xFE, 0x11])
+        #expect(r[7...].allSatisfy { $0 == 0 })
+    }
+
+    @Test func keymapBufferRequest() {
+        let r = SvalProtocol.keymapBufferRequest(client: Board.client, offset: 0x0136, size: 54)
+        #expect(r.count == 64)
+        #expect(Array(r.prefix(10)) == header + [0xFE, 0x12, 0x01, 0x36, 54])
+        #expect(r[10...].allSatisfy { $0 == 0 })
+    }
+
+    @Test func theBufferChunkFillsAWrappedReport() {
+        // 64 - 6 (wrapper header the reply loses) - 4 (VIA's echo).
+        #expect(SvalProtocol.keymapChunkSize == 54)
+    }
+
+    @Test func parsesKeymapReplies() {
+        #expect(SvalProtocol.parse(Board.layerCount(8)) == .keymapLayerCount(client: Board.client, 8))
+        #expect(SvalProtocol.parse(Board.keymapBuffer(offset: 0x0136, [0x00, 0x04, 0x52, 0x29]))
+            == .keymapBuffer(client: Board.client, offset: 0x0136, bytes: [0x00, 0x04, 0x52, 0x29]))
     }
 }
 
@@ -287,6 +467,8 @@ let rowOne: [UInt8] = [0, 0b100, 0, 0, 0, 0, 0, 0, 0, 0]
             == #"{"type":"keys","pressed":[[0,3],[6,1]]}"#)
         #expect(WatchEvent.keys([]).jsonLine == #"{"type":"keys","pressed":[]}"#)
         #expect(WatchEvent.disconnected.jsonLine == #"{"type":"disconnected"}"#)
+        #expect(WatchEvent.keymap(Keymap(layers: 1, rows: 1, cols: 3, keycodes: [4, 0x5229, 0])).jsonLine
+            == #"{"type":"keymap","layers":1,"keycodes":[4,21033,0]}"#)
         #expect(WatchEvent.pointer(PointerState(leftDPI: 400, rightDPI: 1600, leftScroll: true,
                                                 rightScroll: false, scrollKey: false)).jsonLine
             == #"{"type":"pointer","left":{"dpi":400,"scroll":true},"right":{"dpi":1600,"scroll":false},"scroll_key":false,"sniper":1,"boost":1}"#)

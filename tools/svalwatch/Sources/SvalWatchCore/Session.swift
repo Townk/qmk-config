@@ -21,6 +21,11 @@
 /// two renewals (each renewal re-announces the full state, so silence
 /// means the console is not reaching us).
 ///
+/// Once per connect, after info and the subscribe, the session reads the
+/// board's keymap (VIA's layer count, then its buffer a chunk at a time)
+/// and emits it whole. A read cut short is dropped and starts over on the
+/// next client ID.
+///
 /// Only one request is ever outstanding; a reply that is not the one
 /// awaited (someone else's, or a late duplicate) is ignored.
 public struct Session: Sendable {
@@ -62,6 +67,8 @@ public struct Session: Sendable {
         case bootstrapping(nonce: [UInt8])
         case info
         case subscribing
+        case keymapCount
+        case keymapBuffer(offset: Int)
         case layer
         case matrix
     }
@@ -92,6 +99,9 @@ public struct Session: Sendable {
     private var lastLayerRead = -Double.infinity
     private var heardSinceRenewal = false
     private var silentRenewals = 0
+    private var keymapRead = false
+    private var keymapLayers = 0
+    private var keymapBytes: [UInt8] = []
 
     public private(set) var stats = Stats()
 
@@ -182,9 +192,21 @@ public struct Session: Sendable {
                 return beginReads()
             }
             mode = .announced
-            phase = .waiting
             heardSinceRenewal = false
-            return armPassive(false) + [.pollAfter(config.renewInterval)]
+            return startWatching()
+
+        case let (.keymapCount, .keymapLayerCount(id, layers)) where id == client:
+            keymapLayers = Int(layers)
+            keymapBytes = []
+            return readKeymapChunk()
+
+        case let (.keymapBuffer(offset), .keymapBuffer(id, at, bytes))
+            where id == client && Int(at) == offset:
+            keymapBytes += bytes
+            guard bytes.count == min(SvalProtocol.keymapChunkSize, keymapSize - offset) else {
+                return fail(at: now)
+            }
+            return readKeymapChunk()
 
         case let (.matrix, .matrix(id, pressed)) where id == client:
             failures = 0
@@ -209,6 +231,8 @@ public struct Session: Sendable {
 
         case let (.info, .error(id, _)) where id == client,
              let (.subscribing, .error(id, _)) where id == client,
+             let (.keymapCount, .error(id, _)) where id == client,
+             let (.keymapBuffer, .error(id, _)) where id == client,
              let (.layer, .error(id, _)) where id == client,
              let (.matrix, .error(id, _)) where id == client:
             // Usually an expired ID; a fresh bootstrap fixes it.
@@ -229,9 +253,44 @@ public struct Session: Sendable {
 
     private mutating func afterClient() -> [Action] {
         if mode == .probing && !config.useAnnouncements { mode = .polling }
-        if mode == .polling { return beginReads() }
+        if mode == .polling { return startWatching() }
         phase = .subscribing
         return request(SvalProtocol.subscribeRequest(client: client!, leaseMs: config.leaseMs))
+    }
+
+    /// With a client and the mode settled: the keymap if this connect has
+    /// not read it, then polling's first reads or the wait for renewal.
+    private mutating func startWatching() -> [Action] {
+        if !keymapRead {
+            phase = .keymapCount
+            return request(SvalProtocol.keymapLayerCountRequest(client: client!))
+        }
+        guard mode == .announced else { return beginReads() }
+        phase = .waiting
+        return armPassive(false) + [.pollAfter(config.renewInterval)]
+    }
+
+    private var keymapSize: Int {
+        keymapLayers * SvalProtocol.matrixRows * SvalProtocol.matrixCols * 2
+    }
+
+    /// Asks for the next chunk, or emits the keymap once it is all in.
+    private mutating func readKeymapChunk() -> [Action] {
+        let offset = keymapBytes.count
+        guard offset >= keymapSize else {
+            phase = .keymapBuffer(offset: offset)
+            let size = min(SvalProtocol.keymapChunkSize, keymapSize - offset)
+            return request(SvalProtocol.keymapBufferRequest(
+                client: client!, offset: UInt16(offset), size: UInt8(size)))
+        }
+        keymapRead = true
+        let codes = stride(from: 0, to: keymapSize, by: 2).map {
+            UInt16(keymapBytes[$0]) << 8 | UInt16(keymapBytes[$0 + 1])
+        }
+        keymapBytes = []
+        let keymap = Keymap(layers: keymapLayers, rows: SvalProtocol.matrixRows,
+                            cols: SvalProtocol.matrixCols, keycodes: codes)
+        return [.emit(.keymap(keymap))] + startWatching()
     }
 
     private mutating func beginReads() -> [Action] {

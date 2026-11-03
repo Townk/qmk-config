@@ -102,6 +102,9 @@ final class OverlayWindow: NSObject, WKScriptMessageHandler {
         case .pointer:
             // The page reads the event as svalwatch prints it.
             call("overlay.pointer(\(event.jsonLine))")
+        case .keymap:
+            // The page still draws the keymap it was built with.
+            break
         }
     }
 

@@ -28,6 +28,14 @@ public enum SvalProtocol {
     static let svalLayerState: UInt8 = 0x16
     static let viaGetKeyboardValue: UInt8 = 0x02
     static let viaSwitchMatrixState: UInt8 = 0x03
+    static let viaKeymapLayerCount: UInt8 = 0x11
+    static let viaKeymapBuffer: UInt8 = 0x12
+
+    /// The most keymap bytes one buffer read returns. A wrapped VIA reply
+    /// loses its last 6 bytes to the wrapper header (client_wrapper.c), so
+    /// the board clamps a buffer read to what follows VIA's 4-byte echo in
+    /// the 58 left: 54 bytes, 27 keycodes.
+    public static let keymapChunkSize = reportSize - 6 - 4
 
     public static let nonceSize = 20
 
@@ -62,13 +70,24 @@ public enum SvalProtocol {
         wrapped(client, [viaProtocol, viaGetKeyboardValue, viaSwitchMatrixState, 0])
     }
 
+    /// VIA's dynamic keymap layer count.
+    public static func keymapLayerCountRequest(client: UInt32) -> [UInt8] {
+        wrapped(client, [viaProtocol, viaKeymapLayerCount])
+    }
+
+    /// `size` bytes of VIA's dynamic keymap from `offset`: keycodes laid out
+    /// [layer][row][col], two bytes each, big-endian.
+    public static func keymapBufferRequest(client: UInt32, offset: UInt16, size: UInt8) -> [UInt8] {
+        wrapped(client, [viaProtocol, viaKeymapBuffer, UInt8(offset >> 8), UInt8(offset & 0xFF), size])
+    }
+
     public static func subscribeRequest(client: UInt32, leaseMs: UInt16) -> [UInt8] {
         wrapped(client, [viaProtocol, viaCustomGetValue, announceChannel, announceSubscribe,
                          UInt8(leaseMs & 0xFF), UInt8(leaseMs >> 8)])
     }
 
     /// Classifies one input report. Returns nil for anything that is not
-    /// one of the four replies this tool asks for, including other
+    /// one of the replies this tool asks for, including other
     /// clients' traffic; the caller still has to check the client ID.
     public static func parse(_ r: [UInt8]) -> Reply? {
         guard r.count >= 31, r[0] == wrapperPrefix else { return nil }
@@ -101,6 +120,14 @@ public enum SvalProtocol {
                 }
             }
             return .matrix(client: client, pressed)
+        case viaProtocol where r[6] == viaKeymapLayerCount:
+            return .keymapLayerCount(client: client, r[7])
+        case viaProtocol where r[6] == viaKeymapBuffer:
+            // The request echoed at 6-9 (offset big-endian, size), the
+            // bytes from 10; the board never sends more than a chunk.
+            let size = min(Int(r[9]), keymapChunkSize, r.count - 10)
+            return .keymapBuffer(client: client, offset: UInt16(r[7]) << 8 | UInt16(r[8]),
+                                 bytes: Array(r[10..<10 + size]))
         case viaProtocol where r[7] == announceChannel && r[8] == announceSubscribe
             && (r[6] == viaCustomGetValue || r[6] == viaUnhandled):
             // VIA reply at 6: command, channel, value id, then ours.
@@ -136,6 +163,8 @@ public enum Reply: Equatable, Sendable {
     case info(client: UInt32, InfoFlags)
     case layerState(client: UInt32, LayerState)
     case matrix(client: UInt32, [KeyPosition])
+    case keymapLayerCount(client: UInt32, UInt8)
+    case keymapBuffer(client: UInt32, offset: UInt16, bytes: [UInt8])
     case error(client: UInt32, code: UInt8)
     /// The subscribe reply; `granted` is nil when the firmware has no
     /// announcements (stock firmware, or a userspace without the module).

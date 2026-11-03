@@ -5,13 +5,15 @@ func announcedSession() -> Session {
     Session(serial: "sval:TEST", makeNonce: { nonce })
 }
 
-/// Bootstrap, info, then the subscribe that townk_announce.c grants.
+/// Bootstrap, info, the subscribe that townk_announce.c grants, then
+/// the keymap read that follows it.
 @discardableResult
 func subscribe(_ s: inout Session, at t: Double = 0, granted: Bool = true) -> [Session.Action] {
     var all = s.poll(at: t)
     all += s.receive(Board.bootstrap(echo: nonce), at: t)
     all += s.receive(Board.info(), at: t)
     all += s.receive(Board.subscription(granted: granted), at: t)
+    all += readKeymap(&s, at: t)
     return all
 }
 
@@ -22,11 +24,12 @@ let baseLayer = ConsoleParser.Line.layer(LayerState(active: 1, default: 1))
     @Test func subscribesAfterInfoAndThenOnlyRenews() {
         var s = announcedSession()
         let actions = subscribe(&s)
-        #expect(sent(actions).map { Array($0.prefix(11)) }.last
+        #expect(sent(actions).map { Array($0.prefix(11)) }[2]
             == header + [0xFE, 0x08, 0x57, 0xF7, 0x88, 0x13])  // 5000 ms lease
         #expect(s.mode == .announced)
         #expect(nextPoll(actions) == 2)
-        #expect(emitted(actions) == [.connected(serial: "sval:TEST", protocolVersion: 3)])
+        #expect(emitted(actions).first == .connected(serial: "sval:TEST", protocolVersion: 3))
+        #expect(emitted(actions).count == 2)  // and the keymap
         // The renewal is one subscribe, no reads.
         let renewal = s.poll(at: 2)
         #expect(sent(renewal).map { $0[6] } == [0x08])

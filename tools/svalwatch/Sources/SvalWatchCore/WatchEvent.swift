@@ -4,6 +4,7 @@
 /// announcing changes later) stays behind it.
 ///
 ///     {"type":"connected","serial":"sval:E464B4B2934E2C2A","protocol":3}
+///     {"type":"keymap","layers":16,"keycodes":[41,30,…]}
 ///     {"type":"layer","top":15,"active":32769,"default":1,"mods":0,"caps_word":false,"caps_lock":false}
 ///     {"type":"keys","pressed":[[0,3],[6,1]]}
 ///     {"type":"pointer","left":{"dpi":400,"scroll":true},"right":{"dpi":1600,"scroll":false},"scroll_key":false,"sniper":1,"boost":1}
@@ -11,11 +12,16 @@
 ///
 /// `pressed` holds matrix [row, col] pairs; rows 0-4 are the left half,
 /// 5-9 the right. After `connected`, a `layer` and a `keys` line always
-/// follow, so a reader never has to guess the starting state. `pointer`
+/// follow, so a reader never has to guess the starting state. Once per
+/// connect comes `keymap`: every layer's keycodes as the board holds them
+/// now, [layer][row][col] flattened, 60 per layer. A polled board sends
+/// it before the first `layer`; an announcing one may already have sent
+/// its `layer` and `keys` while the keymap was being read. `pointer`
 /// (each trackball's DPI and whether it scrolls right now) comes only from
 /// firmware that announces it; a polled board never sends one.
 public enum WatchEvent: Equatable, Sendable {
     case connected(serial: String, protocolVersion: Int)
+    case keymap(Keymap)
     case layer(LayerState)
     case keys([KeyPosition])
     case pointer(PointerState)
@@ -25,6 +31,9 @@ public enum WatchEvent: Equatable, Sendable {
         switch self {
         case let .connected(serial, version):
             return #"{"type":"connected","serial":"\#(escape(serial))","protocol":\#(version)}"#
+        case let .keymap(k):
+            let codes = k.keycodes.map(String.init).joined(separator: ",")
+            return #"{"type":"keymap","layers":\#(k.layers),"keycodes":[\#(codes)]}"#
         case let .layer(s):
             return #"{"type":"layer","top":\#(s.topLayer),"active":\#(s.active),"default":\#(s.default),"#
                 + #""mods":\#(s.mods),"caps_word":\#(s.capsWord),"caps_lock":\#(s.capsLock)}"#
@@ -53,6 +62,24 @@ public enum WatchEvent: Equatable, Sendable {
             }
         }
         return out
+    }
+}
+
+/// The board's dynamic keymap: `layers * rows * cols` keycodes in
+/// [layer][row][col] order, the matrix's rows and columns as in
+/// `KeyPosition`.
+public struct Keymap: Equatable, Sendable {
+    public let layers: Int
+    public let rows: Int
+    public let cols: Int
+    public let keycodes: [UInt16]
+
+    public init(layers: Int, rows: Int, cols: Int, keycodes: [UInt16]) {
+        precondition(keycodes.count == layers * rows * cols)
+        self.layers = layers
+        self.rows = rows
+        self.cols = cols
+        self.keycodes = keycodes
     }
 }
 
