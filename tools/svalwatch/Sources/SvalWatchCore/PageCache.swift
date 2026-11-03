@@ -21,9 +21,27 @@ public enum PageCache {
         return SHA256.hash(data: bytes).map { String(format: "%02x", $0) }.joined()
     }
 
-    /// The pages to delete so that only the `keep` most recently used ones
-    /// remain, newest by modification date.
-    public static func prune(dirs: [(name: String, modified: Date)], keep: Int) -> [String] {
-        dirs.sorted { $0.modified > $1.modified }.dropFirst(max(keep, 0)).map(\.name)
+    /// The entries to delete so that only the `keep` most recently used
+    /// pages remain, newest by modification date, plus every `<key>.tmp`
+    /// left by a render that died, except the one for `rendering`.
+    public static func prune(dirs: [(name: String, modified: Date)], keep: Int,
+                             rendering: String? = nil) -> [String] {
+        let busy = rendering.map { $0 + ".tmp" }
+        let stale = dirs.filter { $0.name.hasSuffix(".tmp") && $0.name != busy }.map(\.name)
+        let pages = dirs.filter { !$0.name.hasSuffix(".tmp") }
+        return stale + pages.sorted { $0.modified > $1.modified }.dropFirst(max(keep, 0)).map(\.name)
+    }
+
+    /// `uv`'s arguments for drawing a page (run with the bundle as the
+    /// working directory). skim needs Python 3.10 or newer, and without
+    /// `--python` uv takes the first python on PATH. `-B`: the bundle ships
+    /// in a chezmoi external, so importing page_build from it must not
+    /// write __pycache__ there.
+    public static func renderArguments(bundle: String, keymap: String, out: String) -> [String] {
+        [
+            "run", "--no-project", "--quiet", "--python", "3.13", "--with", "qmk-skim==0.7.5",
+            "python", "-I", "-B", bundle + "/render_page.py",
+            "--bundle", bundle, "--keymap", keymap, "--out", out,
+        ]
     }
 }

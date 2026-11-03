@@ -119,6 +119,7 @@ final class OverlayWindow: NSObject, WKScriptMessageHandler {
             showIfReady()
         case .disconnected:
             boardConnected = false
+            wantedPage = nil  // a render still running is for this board only
             call(.connected, "overlay.connected(false)")
             panel.orderOut(nil)
         case let .layer(state):
@@ -140,6 +141,7 @@ final class OverlayWindow: NSObject, WKScriptMessageHandler {
     /// stays.
     private func show(_ keymap: Keymap) {
         guard let version = renderer.bundleVersion() else {
+            wantedPage = nil  // nor show a render started for an older keymap
             log("svaloverlay: no render bundle at \(renderer.bundle.path); keeping the current page")
             return
         }

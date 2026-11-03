@@ -16,10 +16,9 @@ import SvalWatchCore
 final class PageRenderer {
     static let keep = 5
     nonisolated static let timeout: TimeInterval = 120
-    /// R10: skim needs Python 3.10 or newer, and without `--python` uv
-    /// takes the first python on PATH.
-    nonisolated static let python = "3.13"
-    nonisolated static let skim = "qmk-skim==0.7.5"
+    /// How long a `uv --version` probe may take before that uv counts as
+    /// broken (a shim that hangs must not hold the render slot forever).
+    nonisolated static let probeTimeout: TimeInterval = 5
 
     let bundle: URL
     let pages: URL
@@ -35,6 +34,20 @@ final class PageRenderer {
         pages = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("svaloverlay/pages", isDirectory: true)
         self.log = log
+        sweep()
+    }
+
+    /// Removes what a render killed with the process left behind: a
+    /// half-drawn `pages/<key>.tmp` and its scratch keymap directory.
+    private func sweep() {
+        let fm = FileManager.default
+        for name in (try? fm.contentsOfDirectory(atPath: pages.path)) ?? [] where name.hasSuffix(".tmp") {
+            try? fm.removeItem(at: pages.appendingPathComponent(name))
+        }
+        let temp = fm.temporaryDirectory
+        for name in (try? fm.contentsOfDirectory(atPath: temp.path)) ?? [] where name.hasPrefix(Self.scratchPrefix) {
+            try? fm.removeItem(at: temp.appendingPathComponent(name))
+        }
     }
 
     /// The bundle's VERSION, or nil while there is no bundle to render
@@ -90,13 +103,16 @@ final class PageRenderer {
         let current = current
         let started = Date()
         DispatchQueue.global(qos: .utility).async {
-            let outcome = Self.run(job, current)
-            Task { @MainActor in self.finish(job, outcome, seconds: -started.timeIntervalSinceNow) }
+            var notes: [String] = []
+            let outcome = Self.run(job, current, notes: &notes)
+            let said = notes
+            Task { @MainActor in self.finish(job, outcome, notes: said, seconds: -started.timeIntervalSinceNow) }
         }
     }
 
-    private func finish(_ job: Job, _ outcome: Outcome, seconds: Double) {
+    private func finish(_ job: Job, _ outcome: Outcome, notes: [String], seconds: Double) {
         running = nil
+        for note in notes { log("svaloverlay: \(note)") }
         switch outcome {
         case let .rendered(page):
             log("svaloverlay: drew the board's keymap in \(String(format: "%.1f", seconds)) s: \(page.path)")
@@ -115,12 +131,12 @@ final class PageRenderer {
     private func prune() {
         let fm = FileManager.default
         let names = (try? fm.contentsOfDirectory(atPath: pages.path)) ?? []
-        let dirs = names.filter { !$0.hasSuffix(".tmp") }.compactMap { name -> (name: String, modified: Date)? in
+        let dirs = names.compactMap { name -> (name: String, modified: Date)? in
             let attrs = try? fm.attributesOfItem(atPath: pages.appendingPathComponent(name).path)
             guard let modified = attrs?[.modificationDate] as? Date else { return nil }
             return (name, modified)
         }
-        for name in PageCache.prune(dirs: dirs, keep: Self.keep) {
+        for name in PageCache.prune(dirs: dirs, keep: Self.keep, rendering: running) {
             try? fm.removeItem(at: pages.appendingPathComponent(name))
         }
     }
@@ -140,14 +156,17 @@ final class PageRenderer {
         case failed(String)
     }
 
+    nonisolated static let scratchPrefix = "svaloverlay-render-"
+
     /// Writes the keymap where render_page.py reads it, runs it into
     /// `pages/<key>.tmp` and renames that to `pages/<key>` once it is
-    /// whole, so a page directory is never half-written.
-    nonisolated private static func run(_ job: Job, _ current: RunningProcess) -> Outcome {
+    /// whole, so a page directory is never half-written. Anything worth a
+    /// log line besides the outcome goes to `notes`.
+    nonisolated private static func run(_ job: Job, _ current: RunningProcess, notes: inout [String]) -> Outcome {
         let fm = FileManager.default
         let page = job.pages.appendingPathComponent(job.key, isDirectory: true)
         let tmp = job.pages.appendingPathComponent(job.key + ".tmp", isDirectory: true)
-        let scratch = fm.temporaryDirectory.appendingPathComponent("svaloverlay-\(job.key)", isDirectory: true)
+        let scratch = fm.temporaryDirectory.appendingPathComponent(scratchPrefix + job.key, isDirectory: true)
         defer { try? fm.removeItem(at: scratch) }
         do {
             try fm.createDirectory(at: job.pages, withIntermediateDirectories: true)
@@ -158,7 +177,7 @@ final class PageRenderer {
             return .failed("cannot prepare \(job.pages.path): \(error.localizedDescription)")
         }
 
-        guard let uv = findUV() else {
+        guard let uv = findUV(notes: &notes) else {
             return .failed("no uv on PATH, at ~/.local/share/mise or at /opt/homebrew/bin")
         }
         let keymapFile = scratch.appendingPathComponent("keymap.json")
@@ -174,11 +193,7 @@ final class PageRenderer {
 
         let process = Process()
         process.executableURL = uv
-        process.arguments = [
-            "run", "--no-project", "--quiet", "--python", python, "--with", skim,
-            "python", "-I", job.bundle.appendingPathComponent("render_page.py").path,
-            "--bundle", job.bundle.path, "--keymap", keymapFile.path, "--out", tmp.path,
-        ]
+        process.arguments = PageCache.renderArguments(bundle: job.bundle.path, keymap: keymapFile.path, out: tmp.path)
         process.currentDirectoryURL = job.bundle
         process.standardInput = FileHandle.nullDevice
         process.standardOutput = FileHandle.nullDevice
@@ -187,12 +202,11 @@ final class PageRenderer {
         let exited = DispatchSemaphore(value: 0)
         process.terminationHandler = { _ in exited.signal() }
         do {
-            try process.run()
+            guard try current.launch(process) else { return .failed("cancelled: svaloverlay is exiting") }
         } catch {
             return .failed("cannot run \(uv.path): \(error.localizedDescription)")
         }
-        current.set(process)
-        defer { current.set(nil) }
+        defer { current.finished() }
 
         if exited.wait(timeout: .now() + timeout) == .timedOut {
             process.terminate()
@@ -223,8 +237,9 @@ final class PageRenderer {
     /// `uv`, wherever this Mac has it. Hammerspoon starts the overlay with
     /// a minimal PATH, so after PATH come mise's shim and Homebrew's, then
     /// mise's installs themselves in case the shim cannot resolve without
-    /// mise's environment. The first that answers `uv --version` wins.
-    nonisolated static func findUV() -> URL? {
+    /// mise's environment. The first that answers `uv --version` within
+    /// `probeTimeout` wins; one that hangs is noted and skipped.
+    nonisolated static func findUV(notes: inout [String]) -> URL? {
         let fm = FileManager.default
         let home = fm.homeDirectoryForCurrentUser
         let path = ProcessInfo.processInfo.environment["PATH"] ?? ""
@@ -238,34 +253,64 @@ final class PageRenderer {
                 candidates.append(dir.appendingPathComponent(sub).appendingPathComponent("uv"))
             }
         }
-        return candidates.first { fm.isExecutableFile(atPath: $0.path) && answers($0) }
+        for uv in candidates where fm.isExecutableFile(atPath: uv.path) {
+            switch probe(uv) {
+            case .answers: return uv
+            case .fails: continue
+            case .hangs: notes.append("\(uv.path) --version did not answer in \(Int(probeTimeout)) s; skipped it")
+            }
+        }
+        return nil
     }
 
-    nonisolated private static func answers(_ uv: URL) -> Bool {
+    private enum Probe { case answers, fails, hangs }
+
+    nonisolated private static func probe(_ uv: URL) -> Probe {
         let probe = Process()
         probe.executableURL = uv
         probe.arguments = ["--version"]
         probe.standardInput = FileHandle.nullDevice
         probe.standardOutput = FileHandle.nullDevice
         probe.standardError = FileHandle.nullDevice
-        guard (try? probe.run()) != nil else { return false }
-        probe.waitUntilExit()
-        return probe.terminationReason == .exit && probe.terminationStatus == 0
+        let exited = DispatchSemaphore(value: 0)
+        probe.terminationHandler = { _ in exited.signal() }
+        guard (try? probe.run()) != nil else { return .fails }
+        if exited.wait(timeout: .now() + probeTimeout) == .timedOut {
+            probe.terminate()
+            if exited.wait(timeout: .now() + 1) == .timedOut { kill(probe.processIdentifier, SIGKILL) }
+            return .hangs
+        }
+        return probe.terminationReason == .exit && probe.terminationStatus == 0 ? .answers : .fails
     }
 }
 
 /// The render process in flight, so `cancel()` can reach it from the main
-/// thread while the render's own thread waits on it.
+/// thread while the render's own thread waits on it. Launching happens
+/// under the same lock, so a cancel lands either before the launch (which
+/// then does not happen) or after it (and stops the child).
 private final class RunningProcess: @unchecked Sendable {
     private let lock = NSLock()
     private var process: Process?
+    private var cancelled = false
 
-    func set(_ p: Process?) {
-        lock.withLock { process = p }
+    /// Runs `p` unless cancelled; false if it was not run.
+    func launch(_ p: Process) throws -> Bool {
+        try lock.withLock {
+            guard !cancelled else { return false }
+            try p.run()
+            process = p
+            return true
+        }
     }
 
+    func finished() {
+        lock.withLock { process = nil }
+    }
+
+    /// Stops the child, if any, and every later launch.
     func terminate() {
         lock.withLock {
+            cancelled = true
             if let process, process.isRunning { process.terminate() }
         }
     }

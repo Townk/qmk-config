@@ -39,4 +39,19 @@ func keymap(layers: Int = 2, changing index: Int? = nil) -> Keymap {
         #expect(PageCache.prune(dirs: Array(dirs.prefix(5)), keep: 5).isEmpty)
         #expect(PageCache.prune(dirs: [], keep: 5).isEmpty)
     }
+
+    @Test func pruneSkipsTheRenderInProgress() {
+        let now = Date()
+        let dirs = [(name: "old", modified: now), (name: "busy.tmp", modified: now.addingTimeInterval(-9)),
+                    (name: "stale.tmp", modified: now.addingTimeInterval(-9))]
+        #expect(Set(PageCache.prune(dirs: dirs, keep: 5, rendering: "busy")) == ["stale.tmp"])
+    }
+
+    @Test func theRenderCommandWritesNoBytecode() {
+        let args = PageCache.renderArguments(bundle: "/b", keymap: "/k.json", out: "/p/x.tmp")
+        #expect(args == [
+            "run", "--no-project", "--quiet", "--python", "3.13", "--with", "qmk-skim==0.7.5",
+            "python", "-I", "-B", "/b/render_page.py", "--bundle", "/b", "--keymap", "/k.json", "--out", "/p/x.tmp",
+        ])
+    }
 }

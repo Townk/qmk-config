@@ -6,7 +6,7 @@ Runs on the Mac, from the render bundle build_assets.py writes (DIR is
 `<assets>/render/`, where this file ships), under skim's Python:
 
     uv run --no-project --quiet --python 3.13 --with qmk-skim==0.7.5 \\
-        python -I <bundle>/render_page.py --bundle <bundle> --keymap km.json --out OUT
+        python -I -B <bundle>/render_page.py --bundle <bundle> --keymap km.json --out OUT
 
 FILE is the keymap as numbers, in the firmware's `[layer][row][col]`
 order: `{"layers": N, "rows": R, "cols": C, "keycodes": [...]}` (rows and
@@ -38,6 +38,11 @@ import sys
 import tempfile
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+
+# The bundle ships in ~/.local/share/svaloverlay, a chezmoi external with
+# `exact = true`: importing page_build from it must not leave __pycache__
+# there. svaloverlay also passes -B; this covers any other way in.
+sys.dont_write_bytecode = True
 
 HERE = Path(__file__).resolve().parent
 # What skim drops as an empty layer (renumbering the rest).

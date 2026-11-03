@@ -189,5 +189,36 @@ class LayoutKeymapTest(unittest.TestCase):
         self.assertIn("layer 1", str(caught.exception))
 
 
+
+class BytecodeTest(unittest.TestCase):
+    """The bundle ships in ~/.local/share/svaloverlay, a chezmoi external
+    with `exact = true`: a render must leave nothing behind in it."""
+
+    def test_running_the_renderer_writes_no_bytecode_into_the_bundle(self):
+        import shutil
+        import subprocess
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle = os.path.join(tmp, "render")
+            os.mkdir(bundle)
+            shutil.copy(render_page.__file__, bundle)
+            with open(os.path.join(bundle, "page_build.py"), "w") as f:
+                f.write("LOADED = True\n")
+            # As svaloverlay runs it (python -I, no -B here, so the module's
+            # own guard is what is tested), up to importing the bundle's
+            # page_build the way render() does.
+            script = (
+                "import runpy, sys\n"
+                f"runpy.run_path({os.path.join(bundle, 'render_page.py')!r}, run_name='render')\n"
+                f"sys.path.insert(0, {bundle!r})\n"
+                "import page_build\n"
+                "assert page_build.LOADED\n"
+            )
+            subprocess.run([sys.executable, "-I", "-c", script], cwd=bundle, check=True)
+
+            self.assertEqual([], [d for d, _, _ in os.walk(bundle) if d.endswith("__pycache__")])
+
+
 if __name__ == "__main__":
     unittest.main()
