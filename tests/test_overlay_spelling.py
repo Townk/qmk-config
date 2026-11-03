@@ -151,5 +151,12 @@ class MergeTest(unittest.TestCase):
                          {"0x0004": "KC_A", "0x7E14": "CKC_BSPC"})
 
 
+class LayerNamesTest(unittest.TestCase):
+    def test_layer_names_by_index_keep_the_first_name(self):
+        named = {"_BASE": 0, "_NAV": 4, "_SYS": 14, "_ALSO_NAV": 4}
+
+        self.assertEqual(spelling.layer_names(named), {"0": "_BASE", "4": "_NAV", "14": "_SYS"})
+
+
 if __name__ == "__main__":
     unittest.main()

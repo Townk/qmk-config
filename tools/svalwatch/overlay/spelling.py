@@ -126,6 +126,18 @@ def with_named(placed: Dict[int, str], named: Dict[str, int]) -> Dict[int, str]:
     return table
 
 
+def layer_names(named: Dict[str, int]) -> Dict[str, str]:
+    """`{"<index>": "<identifier>"}` from the layer enum's compiled values.
+
+    The renderer spells a layer argument it decodes with keymap.c's own
+    identifier (`LT(_NUM, ...)`). An index two names share keeps the first.
+    """
+    out: Dict[str, str] = {}
+    for name, value in named.items():
+        out.setdefault(str(value), name)
+    return out
+
+
 def to_json(table: Dict[int, str]) -> Dict[str, str]:
     """`{"0xNNNN": spelling}`, sorted, in the keycode spec's key format."""
     return {f"0x{value:04X}": table[value] for value in sorted(table)}

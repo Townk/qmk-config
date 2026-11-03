@@ -5,7 +5,7 @@
 Runs on the Mac, from the render bundle build_assets.py writes (DIR is
 `<assets>/render/`, where this file ships), under skim's Python:
 
-    uv run --no-project --quiet --with qmk-skim==0.7.5 \\
+    uv run --no-project --quiet --python 3.13 --with qmk-skim==0.7.5 \\
         python -I <bundle>/render_page.py --bundle <bundle> --keymap km.json --out OUT
 
 FILE is the keymap as numbers, in the firmware's `[layer][row][col]`
@@ -37,7 +37,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 HERE = Path(__file__).resolve().parent
 # What skim drops as an empty layer (renumbering the rest).
@@ -75,10 +75,6 @@ def _named(value: int, spec: Dict[str, Any]) -> Optional[str]:
     return keycode["key"] if keycode else None
 
 
-def _basic(value: int, spec: Dict[str, Any]) -> str:
-    return _named(value, spec) or f"0x{value:04X}"
-
-
 def _mod_bits(mods: int) -> List[str]:
     side = "R" if mods & MOD_RIGHT else "L"
     return [side + name for bit, name in enumerate(MOD_NAMES) if mods & (1 << bit)]
@@ -94,47 +90,58 @@ def _wrapped(mods: int, keycode: str) -> str:
     return keycode
 
 
-def _decode(define: str, value: int, offset: int, spec: Dict[str, Any]) -> Optional[str]:
+# Layer functions with the layer as their only argument, by spec range.
+LAYER_FUNCTIONS = {
+    "QK_TO": "TO", "QK_MOMENTARY": "MO", "QK_DEF_LAYER": "DF",
+    "QK_TOGGLE_LAYER": "TG", "QK_ONE_SHOT_LAYER": "OSL",
+    "QK_LAYER_TAP_TOGGLE": "TT", "QK_PERSISTENT_DEF_LAYER": "PDF",
+}
+
+
+def _decode(define: str, value: int, offset: int, basic: Callable[[int], str],
+            layer: Callable[[int], str]) -> Optional[str]:
     """QMK's spelling of `value`, `offset` into the range `define`.
 
     The bit fields within each range are QMK's (quantum/keycodes.h); the
-    ranges themselves come from the spec. None: a range this does not
-    decode.
+    ranges themselves come from the spec. `basic` spells an inner basic
+    keycode and `layer` a layer argument. Arguments are separated by ", ",
+    as keymap.c (and skim-config.yaml's keys) write them; mod masks are
+    not spaced. None: a range this does not decode.
     """
     low = offset & 0xFF
     if define == "QK_MODS":
         # Its mod bits are the value's own (QK_LCTL = 0x0100, ...); the
         # range starts at the first of them, not at a field boundary.
-        return _wrapped((value >> 8) & 0x1F, _basic(low, spec))
+        return _wrapped((value >> 8) & 0x1F, basic(low))
     if define == "QK_MOD_TAP":
-        return f"MT({_mod_mask((offset >> 8) & 0x1F)},{_basic(low, spec)})"
+        return f"MT({_mod_mask((offset >> 8) & 0x1F)}, {basic(low)})"
     if define == "QK_LAYER_TAP":
-        return f"LT({(offset >> 8) & 0xF},{_basic(low, spec)})"
+        return f"LT({layer((offset >> 8) & 0xF)}, {basic(low)})"
     if define == "QK_LAYER_MOD":
-        return f"LM({(offset >> 5) & 0xF},{_mod_mask(offset & 0x1F)})"
+        return f"LM({layer((offset >> 5) & 0xF)}, {_mod_mask(offset & 0x1F)})"
     if define == "QK_ONE_SHOT_MOD":
         return f"OSM({_mod_mask(offset & 0x1F)})"
     if define == "QK_SWAP_HANDS" and low < 0xF0:
-        return f"SH_T({_basic(low, spec)})"
-    layer_functions = {
-        "QK_TO": "TO", "QK_MOMENTARY": "MO", "QK_DEF_LAYER": "DF",
-        "QK_TOGGLE_LAYER": "TG", "QK_ONE_SHOT_LAYER": "OSL",
-        "QK_LAYER_TAP_TOGGLE": "TT", "QK_PERSISTENT_DEF_LAYER": "PDF",
-        "QK_TAP_DANCE": "TD",
-    }
-    if define in layer_functions:
-        return f"{layer_functions[define]}({offset})"
+        return f"SH_T({basic(low)})"
+    if define == "QK_TAP_DANCE":
+        return f"TD({offset})"
+    if define in LAYER_FUNCTIONS:
+        return f"{LAYER_FUNCTIONS[define]}({layer(offset)})"
     return None
 
 
 def spell(value: int, position: Optional[Position], positions: Dict[str, List[Any]],
-          table: Dict[int, str], spec: Dict[str, Any]) -> str:
+          table: Dict[int, str], spec: Dict[str, Any],
+          layer_names: Optional[Dict[str, str]] = None) -> str:
     """The spelling skim sees for `value`, found at `position` (layer, row, col).
 
     In order: (1) keymap.c's spelling at that position, when the keyboard
     still has the same value there (`positions`, from positions.json);
     (2) the build-time spelling of the value (`table`, from spelling.json);
-    (3) a generic QMK spelling, from the keycode spec's names and ranges;
+    (3) a generic QMK spelling, from the keycode spec's names and ranges,
+    in keymap.c's words where they are known: a composite's inner key as
+    `table` spells it, and a layer as its identifier (`layer_names`,
+    `{"<index>": "<identifier>"}`, from layers.json; numeric otherwise);
     (4) `0x%04X`.
     """
     if position is not None:
@@ -146,9 +153,17 @@ def spell(value: int, position: Optional[Position], positions: Dict[str, List[An
     named = _named(value, spec)
     if named:
         return named
+    names = layer_names or {}
+
+    def basic(code: int) -> str:
+        return table.get(code) or _named(code, spec) or f"0x{code:04X}"
+
+    def layer(index: int) -> str:
+        return names.get(str(index), str(index))
+
     for define, (first, last) in _ranges(spec).items():
         if first <= value <= last and define != "QK_BASIC":
-            decoded = _decode(define, value, value - first, spec)
+            decoded = _decode(define, value, value - first, basic, layer)
             if decoded:
                 return decoded
     return f"0x{value:04X}"
@@ -158,7 +173,8 @@ def spell(value: int, position: Optional[Position], positions: Dict[str, List[An
 
 def layout_keymap(numeric: Dict[str, Any], matrix: Sequence[Sequence[int]],
                   layers: Sequence[int], positions: Dict[str, List[Any]],
-                  table: Dict[int, str], spec: Dict[str, Any]) -> Dict[str, Any]:
+                  table: Dict[int, str], spec: Dict[str, Any],
+                  layer_names: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
     """A skim-ready keymap.json, as `qmk c2json` shapes it, from `numeric`.
 
     `matrix[i]` is layout key i's `[row, col]`. `layers` are the firmware
@@ -182,7 +198,7 @@ def layout_keymap(numeric: Dict[str, Any], matrix: Sequence[Sequence[int]],
                               f"has {count} layers")
         base = layer * rows * cols
         keys = [spell(int(keycodes[base + row * cols + col]), (layer, row, col),
-                      positions, table, spec)
+                      positions, table, spec, layer_names)
                 for row, col in matrix]
         if all(key in EMPTY_KEYS for key in keys):
             raise RenderError(f"layer {layer} is empty on the keyboard; skim would "
@@ -255,8 +271,9 @@ def render(bundle: Path, keymap_file: Path, out: Path) -> int:
     positions = _read_json(bundle / "positions.json")
     spec = _read_json(bundle / "keycodes.json")
     config = bundle / "skim-config.yaml"
+    layer_names = _read_json(bundle / "layers.json")
     keymap = layout_keymap(_read_json(keymap_file), manifest["matrix"],
-                           _config_layers(config), positions, table, spec)
+                           _config_layers(config), positions, table, spec, layer_names)
 
     sys.path.insert(0, str(bundle))
     with tempfile.TemporaryDirectory() as tmp:

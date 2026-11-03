@@ -73,16 +73,16 @@ class SpellTest(unittest.TestCase):
 
     def test_spells_an_unseen_layer_tap_generically(self):
         # LT(3, KC_A): QK_LAYER_TAP | (3 << 8) | KC_A
-        self.assertEqual(render_page.spell(0x4304, None, {}, {}, SPEC), "LT(3,KC_A)")
+        self.assertEqual(render_page.spell(0x4304, None, {}, {}, SPEC), "LT(3, KC_A)")
 
     def test_spells_mod_tap_and_wrapped_mods(self):
         # MT(MOD_LSFT, KC_A) = QK_MOD_TAP | (MOD_LSFT << 8) | KC_A
-        self.assertEqual(render_page.spell(0x2204, None, {}, {}, SPEC), "MT(MOD_LSFT,KC_A)")
+        self.assertEqual(render_page.spell(0x2204, None, {}, {}, SPEC), "MT(MOD_LSFT, KC_A)")
         # LSFT(KC_A) = QK_LSFT | KC_A
         self.assertEqual(render_page.spell(0x0204, None, {}, {}, SPEC), "LSFT(KC_A)")
         # Several mods, and right-hand mods (bit 4 makes all of them right).
         self.assertEqual(render_page.spell(0x2304, None, {}, {}, SPEC),
-                         "MT(MOD_LCTL|MOD_LSFT,KC_A)")
+                         "MT(MOD_LCTL|MOD_LSFT, KC_A)")
         self.assertEqual(render_page.spell(0x1204, None, {}, {}, SPEC), "RSFT(KC_A)")
         self.assertEqual(render_page.spell(0x0304, None, {}, {}, SPEC), "LCTL(LSFT(KC_A))")
 
@@ -91,12 +91,36 @@ class SpellTest(unittest.TestCase):
         self.assertEqual(render_page.spell(0x5201, None, {}, {}, SPEC), "TO(1)")
         self.assertEqual(render_page.spell(0x52A2, None, {}, {}, SPEC), "OSM(MOD_LSFT)")
         # LM(1, MOD_LSFT) = QK_LAYER_MOD | (1 << 5) | MOD_LSFT
-        self.assertEqual(render_page.spell(0x5022, None, {}, {}, SPEC), "LM(1,MOD_LSFT)")
+        self.assertEqual(render_page.spell(0x5022, None, {}, {}, SPEC), "LM(1, MOD_LSFT)")
+
+    def test_layer_arguments_use_the_keymaps_layer_names(self):
+        names = {"2": "_GAM2", "3": "_GAM2_TOO", "5": "_NUM"}
+        # LT(_NUM, KC_SPACE): an unseen layer-tap, in the spelling (and
+        # spacing) skim-config.yaml's pre_process keys use.
+        self.assertEqual(render_page.spell(0x452C, None, {}, {}, SPEC, names), "LT(_NUM, KC_SPACE)")
+        self.assertEqual(render_page.spell(0x5222, None, {}, {}, SPEC, names), "MO(_GAM2)")
+        self.assertEqual(render_page.spell(0x50A2, None, {}, {}, SPEC, names), "LM(_NUM, MOD_LSFT)")
+        # A layer without a name stays numeric.
+        self.assertEqual(render_page.spell(0x5221, None, {}, {}, SPEC, names), "MO(1)")
+
+    def test_composites_spell_their_inner_key_as_the_keymap_does(self):
+        # The keymap spells 0x00E1 KC_LSFT; the spec's primary name is KC_LEFT_SHIFT.
+        table = {0x00E1: "KC_LSFT"}
+        self.assertEqual(render_page.spell(0x21E1, None, {}, table, SPEC), "MT(MOD_LCTL, KC_LSFT)")
+        self.assertEqual(render_page.spell(0x21E1, None, {}, {}, SPEC), "MT(MOD_LCTL, KC_LEFT_SHIFT)")
+
+    def test_an_unseen_combo_matches_a_real_pre_process_key(self):
+        # keyboards/svalboard/keymaps/townk/skim-config.yaml has
+        # `pre_process: - keycode: LSFT(KC_TAB)`; keymap.c does not place it.
+        spec = dict(SPEC, keycodes=dict(SPEC["keycodes"], **{
+            "0x002B": {"group": "basic", "key": "KC_TAB"}}))
+        self.assertEqual(render_page.spell(0x022B, None, {}, {0x002B: "KC_TAB"}, spec),
+                         "LSFT(KC_TAB)")
 
     def test_unknown_value_is_hex(self):
         self.assertEqual(render_page.spell(0x7E35, None, {}, {}, SPEC), "0x7E35")
         # A wrapper around a basic code the spec does not name.
-        self.assertEqual(render_page.spell(0x43A5, None, {}, {}, SPEC), "LT(3,0x00A5)")
+        self.assertEqual(render_page.spell(0x43A5, None, {}, {}, SPEC), "LT(3, 0x00A5)")
         # A range whose meaning depends on the firmware's build is left as hex.
         self.assertEqual(render_page.spell(0x8001, None, {}, {}, SPEC), "0x8001")
 
@@ -107,7 +131,7 @@ class LayoutKeymapTest(unittest.TestCase):
 
         out = render_page.layout_keymap(keymap, SWAPPED, [0, 1], {}, {}, SPEC)
 
-        self.assertEqual(out["layers"], [["KC_A", "KC_B"], ["MO(2)", "MT(MOD_LSFT,KC_A)"]])
+        self.assertEqual(out["layers"], [["KC_A", "KC_B"], ["MO(2)", "MT(MOD_LSFT, KC_A)"]])
         self.assertEqual(out["layout"], "LAYOUT")
         self.assertIn("keyboard", out)
         self.assertIn("keymap", out)
@@ -119,6 +143,13 @@ class LayoutKeymapTest(unittest.TestCase):
         out = render_page.layout_keymap(keymap, SWAPPED, [2, 0], positions, {}, SPEC)
 
         self.assertEqual(out["layers"], [["KC_A", "KC_SPC"], ["KC_A", "KC_A"]])
+
+    def test_layout_keymap_passes_the_layer_names_on(self):
+        keymap = numeric([[[0x5222, 0x0004]]])
+
+        out = render_page.layout_keymap(keymap, SWAPPED, [0], {}, {}, SPEC, {"2": "_GAM2"})
+
+        self.assertEqual(out["layers"], [["KC_A", "MO(_GAM2)"]])
 
     def test_rows_and_cols_default_to_the_matrix(self):
         keymap = numeric([[[0x0005, 0x0004]]])
