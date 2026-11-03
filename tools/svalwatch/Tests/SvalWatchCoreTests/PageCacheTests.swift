@@ -21,6 +21,22 @@ func keymap(layers: Int = 2, changing index: Int? = nil) -> Keymap {
             != PageCache.key(bundleVersion: "v2", keymap: keymap()))
     }
 
+    @Test func keyChangesWithTheRenderPin() {
+        // Bumping skim or Python in renderArguments redraws every page.
+        let base = PageCache.key(bundleVersion: "v1", keymap: keymap())
+        #expect(PageCache.key(bundleVersion: "v1", keymap: keymap(),
+                              renderPin: ["--python", "3.13", "--with", "qmk-skim==0.7.6"]) != base)
+        #expect(PageCache.key(bundleVersion: "v1", keymap: keymap(),
+                              renderPin: ["--python", "3.14", "--with", "qmk-skim==0.7.5"]) != base)
+        // The default is the pin the render command really uses.
+        #expect(PageCache.key(bundleVersion: "v1", keymap: keymap(), renderPin: PageCache.renderPin) == base)
+        let args = PageCache.renderArguments(bundle: "/b", keymap: "/k", out: "/o")
+        #expect(Array(args[3..<7]) == PageCache.renderPin)
+        // Argument boundaries count: the pin is not just its characters.
+        #expect(PageCache.key(bundleVersion: "v1", keymap: keymap(), renderPin: ["ab", "c"])
+            != PageCache.key(bundleVersion: "v1", keymap: keymap(), renderPin: ["a", "bc"]))
+    }
+
     @Test func keyIsStableForEqualInput() {
         let key = PageCache.key(bundleVersion: "v1", keymap: keymap())
         #expect(key == PageCache.key(bundleVersion: "v1", keymap: keymap()))
