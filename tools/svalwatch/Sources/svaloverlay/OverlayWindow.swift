@@ -5,6 +5,9 @@ import WebKit
 /// The overlay: a borderless panel in the bottom-left corner of the main
 /// display, showing the page built by `make overlay-assets` (skim's layer
 /// images plus the which-key panel styling) in a transparent web view.
+/// Once a board reports its keymap, the panel swaps to a page drawn from
+/// that keymap (`PageRenderer`), so it shows the keys as flashed, not as
+/// they were when the overlay was built.
 ///
 /// It shows only while a board is connected: hidden until the first one
 /// connects, hidden again when it is unplugged, so a Mac without a
@@ -37,15 +40,30 @@ final class OverlayWindow: NSObject, WKScriptMessageHandler {
     private let options: Options
     private let panel: NSPanel
     private let web: WKWebView
+    let renderer: PageRenderer
+    private let log: (String) -> Void
+    /// The page in the web view has said "ready", so it takes calls.
     private var ready = false
     /// The page has reported its size, so the panel has its real frame.
     private var sized = false
     private var boardConnected = false
-    private var pending: [String] = []
+    /// The page directory loaded (or loading) in the web view.
+    private var page: URL
+    /// The page the latest keymap wants; a render finished for any other
+    /// keymap is stale and not shown.
+    private var wantedPage: String?
+    /// The last call of each kind, which is the whole state a page shows:
+    /// replayed in this order whenever a page becomes ready, so a page
+    /// loaded mid-session starts where the old one was.
+    private var state: [Kind: String] = [:]
+    private enum Kind: CaseIterable { case onTop, connected, layer, keys, pointer }
     private(set) var onTop = false
 
-    init(options: Options) {
+    init(options: Options, log: @escaping (String) -> Void) {
         self.options = options
+        self.log = log
+        page = options.assets
+        renderer = PageRenderer(bundle: options.assets.appendingPathComponent("render", isDirectory: true), log: log)
         panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 600, height: 200),
                         styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         let config = WKWebViewConfiguration()
@@ -77,9 +95,18 @@ final class OverlayWindow: NSObject, WKScriptMessageHandler {
         }
     }
 
+    /// Loads the default page, the one shipped in the assets directory.
     func load() {
-        let index = options.assets.appendingPathComponent("index.html")
-        web.loadFileURL(index, allowingReadAccessTo: options.assets)
+        load(page: options.assets)
+    }
+
+    /// Swaps the web view to the page in `dir`. Until it says "ready" the
+    /// old one stays up and calls are only remembered; then the new page
+    /// gets the current state at once.
+    func load(page dir: URL) {
+        page = dir
+        ready = false
+        web.loadFileURL(dir.appendingPathComponent("index.html"), allowingReadAccessTo: dir)
     }
 
     // MARK: State from the board
@@ -88,23 +115,44 @@ final class OverlayWindow: NSObject, WKScriptMessageHandler {
         switch event {
         case .connected:
             boardConnected = true
-            call("overlay.connected(true)")
+            call(.connected, "overlay.connected(true)")
             showIfReady()
         case .disconnected:
             boardConnected = false
-            call("overlay.connected(false)")
+            call(.connected, "overlay.connected(false)")
             panel.orderOut(nil)
         case let .layer(state):
-            call("overlay.layer(\(state.active), \(state.default))")
+            call(.layer, "overlay.layer(\(state.active), \(state.default))")
         case let .keys(pressed):
             let pairs = pressed.map { "[\($0.row),\($0.col)]" }.joined(separator: ",")
-            call("overlay.keys([\(pairs)])")
+            call(.keys, "overlay.keys([\(pairs)])")
         case .pointer:
             // The page reads the event as svalwatch prints it.
-            call("overlay.pointer(\(event.jsonLine))")
-        case .keymap:
-            // The page still draws the keymap it was built with.
-            break
+            call(.pointer, "overlay.pointer(\(event.jsonLine))")
+        case let .keymap(keymap):
+            show(keymap)
+        }
+    }
+
+    /// The page for this keymap: the cached one if this overlay build drew
+    /// it before, otherwise drawn now and shown when done. Without a render
+    /// bundle (an older install, or a rebuild swapping it) the current page
+    /// stays.
+    private func show(_ keymap: Keymap) {
+        guard let version = renderer.bundleVersion() else {
+            log("svaloverlay: no render bundle at \(renderer.bundle.path); keeping the current page")
+            return
+        }
+        let key = PageCache.key(bundleVersion: version, keymap: keymap)
+        wantedPage = key
+        if let cached = renderer.cachedPage(key) {
+            renderer.dropQueued()
+            if cached != page { load(page: cached) }
+            return
+        }
+        renderer.render(keymap, key: key) { [weak self] key, rendered in
+            guard let self, let rendered, key == self.wantedPage else { return }
+            self.load(page: rendered)
         }
     }
 
@@ -114,7 +162,7 @@ final class OverlayWindow: NSObject, WKScriptMessageHandler {
         onTop = on
         panel.level = on ? Self.topLevel : Self.bottomLevel
         if panel.isVisible { panel.orderFrontRegardless() }
-        call("overlay.onTop(\(on))")
+        call(.onTop, "overlay.onTop(\(on))")
     }
 
     // MARK: Page bridge
@@ -125,9 +173,9 @@ final class OverlayWindow: NSObject, WKScriptMessageHandler {
         case "ready":
             ready = true
             configure()
-            let queued = pending
-            pending.removeAll()
-            for script in queued { web.evaluateJavaScript(script) }
+            for kind in Kind.allCases {
+                if let script = state[kind] { web.evaluateJavaScript(script) }
+            }
         case "size":
             if let w = body["w"] as? Double, let h = body["h"] as? Double {
                 resize(width: w, height: h)
@@ -150,12 +198,9 @@ final class OverlayWindow: NSObject, WKScriptMessageHandler {
         web.evaluateJavaScript("overlay.configure({panelWidth: \(width.rounded())})")
     }
 
-    private func call(_ script: String) {
-        if ready {
-            web.evaluateJavaScript(script)
-        } else {
-            pending.append(script)
-        }
+    private func call(_ kind: Kind, _ script: String) {
+        state[kind] = script
+        if ready { web.evaluateJavaScript(script) }
     }
 
     // MARK: Placement

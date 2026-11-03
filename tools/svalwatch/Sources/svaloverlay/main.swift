@@ -16,7 +16,10 @@ let usage = """
       toggle    switch between the two
       quit      exit (as does closing stdin)
 
-      --assets DIR      the page from `make overlay-assets`
+      --assets DIR      the page from `make overlay-assets`, shown until
+                        the board's keymap is read and drawn with the
+                        bundle in DIR/render (pages are cached in
+                        ~/Library/Caches/svaloverlay/pages)
                         (default ~/.local/share/svaloverlay)
       --width W         panel width: points, or a share of the main
                         display's width like 25% (the default)
@@ -82,7 +85,7 @@ func log(_ line: String) { stderr.write(Data((line + "\n").utf8)) }
 let app = NSApplication.shared
 app.setActivationPolicy(.accessory)  // no Dock icon, no menu bar, never key
 
-let overlay = OverlayWindow(options: overlayOptions)
+let overlay = OverlayWindow(options: overlayOptions, log: log)
 overlay.load()
 if startOnTop { overlay.setOnTop(true) }
 
@@ -90,12 +93,24 @@ let watcher = Watcher(options: watcherOptions, output: { overlay.show($0) }, log
 watcher.start()
 let activity = SystemActivity(watcher: watcher)
 
-let commands = StdinWatch(onLine: { command in
+/// Exits without leaving a page render behind: Hammerspoon stops the
+/// overlay with SIGTERM or by closing stdin, and the next start would
+/// render the same page alongside it.
+@MainActor func quit() -> Never {
+    overlay.renderer.cancel()
+    exit(0)
+}
+signal(SIGTERM, SIG_IGN)
+let terminate = DispatchSource.makeSignalSource(signal: SIGTERM, queue: .main)
+terminate.setEventHandler { MainActor.assumeIsolated { quit() } }
+terminate.resume()
+
+let commands = StdinWatch(onEOF: { quit() }, onLine: { command in
     switch command {
     case "top": overlay.setOnTop(true)
     case "bottom": overlay.setOnTop(false)
     case "toggle": overlay.setOnTop(!overlay.onTop)
-    case "quit": exit(0)
+    case "quit": quit()
     case "": break
     default: log("svaloverlay: unknown command \(command)")
     }
