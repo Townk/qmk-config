@@ -102,7 +102,7 @@ let activity = SystemActivity(watcher: watcher)
 }
 signal(SIGTERM, SIG_IGN)
 let terminate = DispatchSource.makeSignalSource(signal: SIGTERM, queue: .main)
-terminate.setEventHandler { MainActor.assumeIsolated { quit() } }
+terminate.setEventHandler { MainActor.assumeIsolated { () -> Void in quit() } }
 terminate.resume()
 
 let commands = StdinWatch(onEOF: { quit() }, onLine: { command in
