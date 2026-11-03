@@ -12,11 +12,12 @@
 ///
 /// `pressed` holds matrix [row, col] pairs; rows 0-4 are the left half,
 /// 5-9 the right. After `connected`, a `layer` and a `keys` line always
-/// follow, so a reader never has to guess the starting state. Once per
-/// connect comes `keymap`: every layer's keycodes as the board holds them
-/// now, [layer][row][col] flattened, 60 per layer. A polled board sends
-/// it before the first `layer`; an announcing one may already have sent
-/// its `layer` and `keys` while the keymap was being read. `pointer`
+/// follow, so a reader never has to guess the starting state. At most once
+/// per connect, at any time after `connected` (an announcing board may
+/// send its `layer` and `keys` first), comes `keymap`: every layer's
+/// keycodes as the board holds them now, [layer][row][col] flattened, 60
+/// per layer. A board whose keymap cannot be read sends none, and the
+/// other lines carry on as usual. `pointer`
 /// (each trackball's DPI and whether it scrolls right now) comes only from
 /// firmware that announces it; a polled board never sends one.
 public enum WatchEvent: Equatable, Sendable {

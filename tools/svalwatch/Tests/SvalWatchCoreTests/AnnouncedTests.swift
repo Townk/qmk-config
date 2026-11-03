@@ -53,6 +53,18 @@ let baseLayer = ConsoleParser.Line.layer(LayerState(active: 1, default: 1))
         #expect(sent(actions).last?[6] == 0x02)  // the matrix read
     }
 
+    @Test func theFallbackReadsTheKeymapBeforeTheMatrix() {
+        var s = announcedSession()
+        _ = s.poll(at: 0)
+        _ = s.receive(Board.bootstrap(echo: nonce), at: 0)
+        _ = s.receive(Board.info(), at: 0)
+        let fallback = s.receive(Board.subscription(granted: false), at: 0)
+        #expect(sent(fallback).map { Array($0.prefix(7)) } == [header + [0xFE, 0x11]])
+        let rest = readKeymap(&s)
+        #expect(emitted(rest).first.map(isKeymap) == true)
+        #expect(sent(rest).last?[6] == 0x02)  // the matrix read, after
+    }
+
     @Test func anUnhandledReplyFallsBackToo() {
         var s = announcedSession()
         _ = s.poll(at: 0)

@@ -23,8 +23,10 @@
 ///
 /// Once per connect, after info and the subscribe, the session reads the
 /// board's keymap (VIA's layer count, then its buffer a chunk at a time)
-/// and emits it whole. A read cut short is dropped and starts over on the
-/// next client ID.
+/// and emits it whole. It tries once: a read that fails (a lost reply, a
+/// short chunk, a layer count past what a keymap can hold, VIA without a
+/// keymap) is dropped and the session goes on watching without it, so the
+/// keymap never stands between the board and its layer and key reads.
 ///
 /// Only one request is ever outstanding; a reply that is not the one
 /// awaited (someone else's, or a late duplicate) is ignored.
@@ -99,6 +101,7 @@ public struct Session: Sendable {
     private var lastLayerRead = -Double.infinity
     private var heardSinceRenewal = false
     private var silentRenewals = 0
+    /// The keymap was read, or tried and failed, on this connect.
     private var keymapRead = false
     private var keymapLayers = 0
     private var keymapBytes: [UInt8] = []
@@ -111,6 +114,8 @@ public struct Session: Sendable {
         public var announcements = 0
         public var timeouts = 0
         public var rejections = 0
+        /// Keymap reads given up, whatever the cause.
+        public var keymapFailures = 0
     }
 
     public init(serial: String, config: Config = Config(),
@@ -189,24 +194,39 @@ public struct Session: Sendable {
             failures = 0
             guard granted != nil else {
                 mode = .polling
-                return beginReads()
+                return startWatching()
             }
             mode = .announced
             heardSinceRenewal = false
             return startWatching()
 
         case let (.keymapCount, .keymapLayerCount(id, layers)) where id == client:
+            failures = 0
+            // A layer mask has 32 bits; more layers, or none, is not a
+            // keymap this tool can show.
+            guard (1...32).contains(layers) else { return abandonKeymap() }
             keymapLayers = Int(layers)
             keymapBytes = []
             return readKeymapChunk()
 
         case let (.keymapBuffer(offset), .keymapBuffer(id, at, bytes))
             where id == client && Int(at) == offset:
-            keymapBytes += bytes
             guard bytes.count == min(SvalProtocol.keymapChunkSize, keymapSize - offset) else {
-                return fail(at: now)
+                return abandonKeymap()
             }
+            keymapBytes += bytes
             return readKeymapChunk()
+
+        case let (.keymapCount, .keymapUnavailable(id)) where id == client,
+             let (.keymapBuffer, .keymapUnavailable(id)) where id == client:
+            return abandonKeymap()
+
+        case let (.keymapCount, .error(id, _)) where id == client,
+             let (.keymapBuffer, .error(id, _)) where id == client:
+            // Usually an expired ID: re-bootstrap as below, keymap given up.
+            stats.rejections += 1
+            dropKeymap()
+            return fail(at: now)
 
         case let (.matrix, .matrix(id, pressed)) where id == client:
             failures = 0
@@ -231,8 +251,6 @@ public struct Session: Sendable {
 
         case let (.info, .error(id, _)) where id == client,
              let (.subscribing, .error(id, _)) where id == client,
-             let (.keymapCount, .error(id, _)) where id == client,
-             let (.keymapBuffer, .error(id, _)) where id == client,
              let (.layer, .error(id, _)) where id == client,
              let (.matrix, .error(id, _)) where id == client:
             // Usually an expired ID; a fresh bootstrap fixes it.
@@ -248,7 +266,13 @@ public struct Session: Sendable {
     public mutating func timeout(at now: Double) -> [Action] {
         guard phase != .waiting else { return [] }
         stats.timeouts += 1
-        return fail(at: now)
+        switch phase {
+        case .keymapCount, .keymapBuffer:
+            // The ID is likely fine; the reads go on with it.
+            return abandonKeymap()
+        default:
+            return fail(at: now)
+        }
     }
 
     private mutating func afterClient() -> [Action] {
@@ -291,6 +315,18 @@ public struct Session: Sendable {
         let keymap = Keymap(layers: keymapLayers, rows: SvalProtocol.matrixRows,
                             cols: SvalProtocol.matrixCols, keycodes: codes)
         return [.emit(.keymap(keymap))] + startWatching()
+    }
+
+    /// Gives up this connect's keymap and goes on watching without it.
+    private mutating func abandonKeymap() -> [Action] {
+        dropKeymap()
+        return startWatching()
+    }
+
+    private mutating func dropKeymap() {
+        stats.keymapFailures += 1
+        keymapRead = true
+        keymapBytes = []
     }
 
     private mutating func beginReads() -> [Action] {

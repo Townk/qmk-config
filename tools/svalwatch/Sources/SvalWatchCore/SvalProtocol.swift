@@ -120,6 +120,10 @@ public enum SvalProtocol {
                 }
             }
             return .matrix(client: client, pressed)
+        case viaProtocol where r[6] == viaUnhandled
+            && (r[7] == viaKeymapLayerCount || r[7] == viaKeymapBuffer):
+            // VIA without a dynamic keymap echoes the command after 0xFF.
+            return .keymapUnavailable(client: client)
         case viaProtocol where r[6] == viaKeymapLayerCount:
             return .keymapLayerCount(client: client, r[7])
         case viaProtocol where r[6] == viaKeymapBuffer:
@@ -165,6 +169,8 @@ public enum Reply: Equatable, Sendable {
     case matrix(client: UInt32, [KeyPosition])
     case keymapLayerCount(client: UInt32, UInt8)
     case keymapBuffer(client: UInt32, offset: UInt16, bytes: [UInt8])
+    /// VIA answered a keymap read with "unhandled".
+    case keymapUnavailable(client: UInt32)
     case error(client: UInt32, code: UInt8)
     /// The subscribe reply; `granted` is nil when the firmware has no
     /// announcements (stock firmware, or a userspace without the module).

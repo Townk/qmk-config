@@ -44,8 +44,10 @@ enum Board {
         return report(head + (granted ? Array("svw".utf8) + [1] + lease : lease))
     }
 
-    static func unhandled(id: UInt32 = client) -> [UInt8] {
-        report([0xDD] + SvalProtocol.le32(id) + [0xFE, 0xFF, 0x57, 0xF7])
+    /// VIA's "unhandled": 0xFF, then the command it did not know.
+    static func unhandled(id: UInt32 = client, command: UInt8 = 0x08) -> [UInt8] {
+        report([0xDD] + SvalProtocol.le32(id) + [0xFE, 0xFF]
+            + (command == 0x08 ? [0x57, 0xF7] : [command]))
     }
 
     /// VIA's layer count reply: the request echoed, the count after it.
@@ -124,11 +126,21 @@ func connect(_ s: inout Session, at t: Double = 0, active: UInt32 = 1,
     return all
 }
 
-/// Answers the keymap read that follows the first info: one layer.
+/// Answers the keymap read that follows the first info: one layer. Fails
+/// the calling test when the session was not reading it.
 @discardableResult
-func readKeymap(_ s: inout Session, at t: Double = 0, layers: Int = 1) -> [Session.Action] {
+func readKeymap(_ s: inout Session, at t: Double = 0, layers: Int = 1,
+                sourceLocation: SourceLocation = #_sourceLocation) -> [Session.Action] {
     let count = s.receive(Board.layerCount(UInt8(layers)), at: t)
-    return count + Board.answerKeymap(&s, count, bytes: Board.keymapBytes(layers: layers), at: t)
+    #expect(sent(count).first?[6] == 0x12, "no keymap read in progress", sourceLocation: sourceLocation)
+    let all = count + Board.answerKeymap(&s, count, bytes: Board.keymapBytes(layers: layers), at: t)
+    #expect(emitted(all).contains { if case .keymap = $0 { true } else { false } },
+            "no keymap emitted", sourceLocation: sourceLocation)
+    return all
+}
+
+func isKeymap(_ e: WatchEvent) -> Bool {
+    if case .keymap = e { true } else { false }
 }
 
 /// One later poll with a valid client ID: the matrix reply, then the
@@ -369,26 +381,87 @@ let rowOne: [UInt8] = [0, 0b100, 0, 0, 0, 0, 0, 0, 0, 0]
         #expect(sent(after).map { $0[6] } == [0x02])
     }
 
-    @Test func dropsAPartialKeymapOnTimeout() {
-        var s = makeSession()
+    /// Bootstrap and info, leaving the session waiting on the layer count.
+    func untilLayerCount(_ s: inout Session) {
         _ = s.poll(at: 0)
         _ = s.receive(Board.bootstrap(echo: nonce), at: 0)
         _ = s.receive(Board.info(), at: 0)
+    }
+
+    @Test func dropsAPartialKeymapOnTimeout() {
+        var s = makeSession()
+        untilLayerCount(&s)
         _ = s.receive(Board.layerCount(2), at: 0)
         let first = s.receive(Board.keymapBuffer(offset: 0, Array(Board.keymapBytes(layers: 2)[0..<54])), at: 0)
         #expect(emitted(first).isEmpty)
-        #expect(nextPoll(s.timeout(at: 0.25)) == 0)
+        let gaveUp = s.timeout(at: 0.25)
+        #expect(emitted(gaveUp).isEmpty)
         #expect(s.stats.timeouts == 1)
-        // A late reply is not taken, and the next connect starts over.
-        #expect(s.receive(Board.keymapBuffer(offset: 54, Array(repeating: 0, count: 54)), at: 0.3).isEmpty)
-        _ = s.poll(at: 0.3)
-        let retry = s.receive(Board.bootstrap(echo: nonce), at: 0.3)
-        #expect(sent(retry).map { $0[6] } == [0x11])
-        let count = s.receive(Board.layerCount(1), at: 0.3)
-        #expect(sent(count).map { Array($0[6..<10]) } == [[0x12, 0, 0, 54]])
-        let done = Board.answerKeymap(&s, count, bytes: Board.keymapBytes(layers: 1), at: 0.3)
-        #expect(emitted(done) == [.keymap(Keymap(layers: 1, rows: 10, cols: 6,
-                                                  keycodes: (0..<60).map { UInt16($0 + 0x100) }))])
+        #expect(s.stats.keymapFailures == 1)
+        // The rest of the keymap is not taken late, half a keymap never
+        // shows up, and the session keeps its client ID.
+        let late = s.receive(Board.keymapBuffer(offset: 54, Array(Board.keymapBytes(layers: 2)[54..<108])), at: 0.3)
+        #expect(late.isEmpty)
+        #expect(sent(gaveUp).map { Array($0.prefix(7)) } == [header + [0xFE, 0x02]])
+    }
+
+    @Test func aFailedKeymapReadStillWatchesLayers() {
+        var s = makeSession()
+        untilLayerCount(&s)
+        _ = s.receive(Board.layerCount(2), at: 0)
+        _ = s.receive(Board.keymapBuffer(offset: 0, Array(Board.keymapBytes(layers: 2)[0..<54])), at: 0)
+        var actions = s.timeout(at: 0.25)
+        #expect(sent(actions).map { $0[6] } == [0x02])  // the matrix read
+        actions = s.receive(Board.matrix(rows: rowOne), at: 0.25)
+        actions += s.receive(Board.layer(active: 1 << 5), at: 0.25)
+        #expect(emitted(actions) == [
+            .keys([KeyPosition(row: 1, col: 2)]),
+            .layer(LayerState(active: 1 << 5, default: 1)),
+        ])
+        // A new client ID does not try the keymap again.
+        pollOnce(&s, at: 44)
+        _ = s.poll(at: 45)
+        let after = s.receive(Board.bootstrap(echo: nonce), at: 45)
+        #expect(sent(after).map { $0[6] } == [0x02])
+    }
+
+    @Test func aRejectedKeymapReadRebootstrapsWithoutIt() {
+        var s = makeSession()
+        untilLayerCount(&s)
+        #expect(nextPoll(s.receive(Board.rejected(), at: 0)) == 0)
+        #expect(s.stats.rejections == 1)
+        #expect(s.stats.keymapFailures == 1)
+        _ = s.poll(at: 0)
+        let after = s.receive(Board.bootstrap(echo: nonce), at: 0)
+        #expect(sent(after).map { $0[6] } == [0x02])
+    }
+
+    @Test(arguments: [UInt8(0), 33, 255])
+    func anImpossibleLayerCountIsAFailedRead(layers: UInt8) {
+        var s = makeSession()
+        untilLayerCount(&s)
+        let actions = s.receive(Board.layerCount(layers), at: 0)
+        #expect(emitted(actions).isEmpty)
+        #expect(sent(actions).map { $0[6] } == [0x02])
+        #expect(s.stats.keymapFailures == 1)
+    }
+
+    @Test func aShortChunkIsAFailedRead() {
+        var s = makeSession()
+        untilLayerCount(&s)
+        _ = s.receive(Board.layerCount(1), at: 0)
+        let actions = s.receive(Board.keymapBuffer(offset: 0, Array(repeating: 4, count: 20)), at: 0)
+        #expect(!emitted(actions).contains(where: isKeymap))
+        #expect(sent(actions).map { $0[6] } == [0x02])
+        #expect(s.stats.keymapFailures == 1)
+    }
+
+    @Test func viaWithoutAKeymapIsAFailedRead() {
+        var s = makeSession()
+        untilLayerCount(&s)
+        let actions = s.receive(Board.unhandled(command: 0x11), at: 0)
+        #expect(sent(actions).map { $0[6] } == [0x02])
+        #expect(s.stats.keymapFailures == 1)
     }
 
     @Test func ignoresAnotherClientsBufferReply() {
@@ -406,14 +479,6 @@ let rowOne: [UInt8] = [0, 0b100, 0, 0, 0, 0, 0, 0, 0, 0]
         #expect(sent(ours).map { Array($0[6..<10]) } == [[0x12, 0, 54, 54]])
     }
 
-    @Test func aRejectedKeymapReadRebootstraps() {
-        var s = makeSession()
-        _ = s.poll(at: 0)
-        _ = s.receive(Board.bootstrap(echo: nonce), at: 0)
-        _ = s.receive(Board.info(), at: 0)
-        #expect(nextPoll(s.receive(Board.rejected(), at: 0)) == 0)
-        #expect(s.stats.rejections == 1)
-    }
 }
 
 @Suite struct SvalProtocolTests {
@@ -440,6 +505,7 @@ let rowOne: [UInt8] = [0, 0b100, 0, 0, 0, 0, 0, 0, 0, 0]
         #expect(SvalProtocol.parse(Board.layerCount(8)) == .keymapLayerCount(client: Board.client, 8))
         #expect(SvalProtocol.parse(Board.keymapBuffer(offset: 0x0136, [0x00, 0x04, 0x52, 0x29]))
             == .keymapBuffer(client: Board.client, offset: 0x0136, bytes: [0x00, 0x04, 0x52, 0x29]))
+        #expect(SvalProtocol.parse(Board.unhandled(command: 0x12)) == .keymapUnavailable(client: Board.client))
     }
 }
 
