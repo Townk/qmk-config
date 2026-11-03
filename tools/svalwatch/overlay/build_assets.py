@@ -51,7 +51,7 @@ KEYCODES_ENUM = "custom_keycodes"
 # The header's icons (keyboard, pin). Optional: without it they fall back
 # to whatever the system has, usually a missing-glyph box.
 ICON_FONT = Path.home() / "Library/Fonts/SymbolsNerdFontMono-Regular.ttf"
-# Copied into the bundle from this directory; render_page.py once it exists.
+# Copied into the bundle from this directory: the renderer and the page code.
 BUNDLE_CODE = ("render_page.py", "page_build.py", "page.html") + page_build.PAGE_FILES
 
 
@@ -146,8 +146,7 @@ def write_bundle(final: Path, config_path: Path, page_manifest: Dict[str, Any],
             shutil.rmtree(leftover)
     out.mkdir(parents=True)
     for name in BUNDLE_CODE:
-        if (HERE / name).exists():
-            shutil.copyfile(HERE / name, out / name)
+        shutil.copyfile(HERE / name, out / name)
     if icon_font.exists():
         shutil.copyfile(icon_font, out / "icons.ttf")
     shutil.copyfile(config_path, out / "skim-config.yaml")
