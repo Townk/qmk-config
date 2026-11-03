@@ -94,20 +94,27 @@ For detailed layer diagrams with all key positions, see the [Layer Reference](do
 Build firmware for both keyboard halves:
 
 ```bash
-qmk userspace-compile
+make
 ```
 
-This produces the QMK default filenames in the project root:
+This compiles every target in `qmk.json` as an in-firmware-updater build
+(through `qmk userspace-compile`) and packages the updater files, producing
+the QMK default filenames in the project root:
 
 - `svalboard_trackball_pmw3389_left_townk.uf2` - Left half firmware
 - `svalboard_trackball_pmw3389_right_townk.uf2` - Right half firmware
+- the matching `.svup` update files, plus `sval_update.py` and `make_update.py`
 
-Or build a specific half:
+Or build a specific half, with the same flags and version string:
 
 ```bash
-qmk compile -kb svalboard/trackball/pmw3389/left -km townk
-qmk compile -kb svalboard/trackball/pmw3389/right -km townk
+make svalboard/trackball/pmw3389/left:townk
+make svalboard/trackball/pmw3389/right:townk
 ```
+
+A bare `qmk compile` skips the updater flags in `qmk.json`, so avoid it. A
+single-half build packages only its own `.svup`, and `qmk-flash` installs both
+halves from one build, so run a full `make` before flashing over the updater.
 
 > [!NOTE]
 > The CI workflow renames these to `svalboard-colemak-dh-townk-{VERSION}.left.uf2`
