@@ -20,10 +20,48 @@ FW_VERSION_STRING ?= $(or $(shell python3 -I tools/updater/package_updates.py ve
 
 PACKAGE := python3 -I tools/updater/package_updates.py
 
-.PHONY: all clean
+# The installed overlay's render bundle, and a Python with skim to rebuild it
+# with: the same defaults as tools/svalwatch/Makefile.
+OVERLAY_ASSETS ?= $(HOME)/.local/share/svaloverlay
+SKIM_PYTHON ?= $(HOME)/.local/share/uv/tools/qmk-skim/bin/python
+
+.PHONY: all clean overlay-keydefs
 all:
 	qmk userspace-compile -e SVAL_FW_VERSION_STRING=$(FW_VERSION_STRING)
 	$(PACKAGE) package --dir .
+	$(MAKE) overlay-keydefs
+
+# The installed overlay draws the keyboard's keymap with spelling tables
+# keyed on keycode values, which move when a custom keycode or layer enum
+# (or sval.json's customKeycodes) is inserted or reordered. The overlay
+# refuses to draw with tables built for other key definitions (it compares
+# fingerprints, tools/keydefs.py), so after a build that renumbered them,
+# rebuild the installed bundle and restart a running overlay; otherwise it
+# would show "out of date" after the flash. Nothing to do when the
+# fingerprints match, which is every build that did not touch the enums.
+# Skipped in CI (nothing installed) and without skim; a failed rebuild only
+# warns, since the firmware itself is fine.
+overlay-keydefs:
+ifdef CI
+	echo "overlay: CI build, not checking the installed overlay bundle"
+else
+	if [ ! -x "$(SKIM_PYTHON)" ]; then \
+	  echo "overlay: no skim at $(SKIM_PYTHON), not checking the installed overlay bundle"; \
+	elif python3 -I tools/keydefs.py matches "$(OVERLAY_ASSETS)/render/keydefs.json"; then \
+	  :; \
+	else \
+	  echo "overlay: rebuilding the installed overlay bundle for these key definitions"; \
+	  if $(MAKE) -C tools/svalwatch overlay-assets ASSETS="$(OVERLAY_ASSETS)" SKIM_PYTHON="$(SKIM_PYTHON)"; then \
+	    if command -v hs >/dev/null 2>&1; then \
+	      hs -t 3 -c 'local s = require("svalboard"); s.pause(10); s.resume()' </dev/null >/dev/null \
+	        && echo "overlay: restarted the running overlay" \
+	        || echo "overlay: warning: could not restart the overlay through Hammerspoon" >&2; \
+	    fi; \
+	  else \
+	    echo "overlay: warning: rebuilding the overlay bundle failed; the overlay keeps its old one" >&2; \
+	  fi; \
+	fi
+endif
 
 clean:
 	qmk clean

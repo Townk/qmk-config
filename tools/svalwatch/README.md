@@ -62,6 +62,31 @@ make install                          # binaries + default page + bundle into ~/
 make overlay-assets                   # after changing the overlay's look, skim config or bundle
 ```
 
+One kind of keymap change does need the bundle rebuilt: renumbering the
+custom keycodes or layers. The bundle's spelling tables are keyed on keycode
+values, and inserting or reordering a member of `enum custom_keycodes`
+(`users/townk/townk_keycodes.h`), `enum layer_names`
+(`users/townk/townk_layers.h`) or the keymap's `sval.json` `customKeycodes`
+moves every value after it. `tools/keydefs.py` hashes those ordered names
+(and the enums' initializers) into a 32-bit fingerprint, which changes
+exactly when a value can move. The firmware build compiles it in
+(`users/townk/rules.mk`) and the board answers it on request; the bundle
+records it in `render/keydefs.json`. On connect the overlay reads both, and
+when they differ it keeps the page it has, puts "overlay out of date for
+this firmware" in its header and logs why, rather than name keys wrongly.
+Firmware from before the fingerprint cannot say; the overlay logs
+"fingerprint unavailable" and draws as before.
+
+The repo root's `make` keeps the installed bundle in step: after building
+and packaging, it compares the source fingerprint with the installed
+bundle's (`~/.local/share/svaloverlay/render/keydefs.json`) and, only when
+they differ or there is no bundle, runs `make overlay-assets` here and
+restarts a running overlay through Hammerspoon (`svalboard` pause/resume).
+It prints one line either way. It is skipped in CI and when skim is not
+installed (`SKIM_PYTHON`, the same default as here), and a failed rebuild
+is a warning, not a failed build. `python3 -I tools/keydefs.py fingerprint`
+prints the source fingerprint.
+
 Other Macs get both from the firmware release instead: CI attaches
 `svaloverlay-macos.tar.gz` (page and bundle included), and the dotfiles
 install it.

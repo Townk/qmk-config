@@ -24,8 +24,10 @@ test:
 # plus the render bundle (render/) the overlay draws the keyboard's own keymap
 # with. The overlay reads the keymap off the keyboard when it connects and
 # renders its page itself, so nothing needs running after a flash; this target
-# is for working on the overlay itself (its look, skim config or bundle) and
-# for CI, which packs the result into the release archive.
+# is for working on the overlay itself (its look, skim config or bundle), for
+# CI, which packs the result into the release archive, and for the repo root's
+# `make`, which runs it when the key definitions were renumbered (their
+# fingerprint, tools/keydefs.py, no longer matches the installed bundle's).
 overlay-assets:
 	@test -f "$(ELF)" || { echo "overlay-assets: no firmware ELF at $(ELF); build the firmware first (\`make\` in $(REPO))" >&2; exit 1; }
 	$(SKIM_PYTHON) overlay/build_assets.py --repo $(REPO) --qmk-home $(QMK_HOME) --elf $(ELF) --out $(ASSETS)

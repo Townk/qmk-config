@@ -112,6 +112,10 @@ make svalboard/trackball/pmw3389/left:townk
 make svalboard/trackball/pmw3389/right:townk
 ```
 
+A full `make` also keeps the installed layer overlay's render bundle in step
+with the firmware's key definitions, rebuilding it only when a custom keycode
+or layer was renumbered (see `tools/svalwatch/README.md`).
+
 A bare `qmk compile` skips the updater flags in `qmk.json`, so avoid it. A
 single-half build packages only its own `.svup`, and `qmk-flash` installs both
 halves from one build, so run a full `make` before flashing over the updater.
