@@ -20,44 +20,10 @@ FW_VERSION_STRING ?= $(or $(shell python3 -I tools/updater/package_updates.py ve
 
 PACKAGE := python3 -I tools/updater/package_updates.py
 
-# The overlay's layer pictures are drawn from this keymap and installed in
-# ~/.local/share/svaloverlay, and nothing on the keyboard tells the overlay
-# the keymap changed: without this step a flash puts the new keymap on the
-# board while the overlay keeps showing the old one. So `make` redraws them
-# too, then restarts a running overlay through Hammerspoon, because a running
-# svaloverlay keeps the page it started with. pause+resume instead of a kill:
-# a kill reads as a crash to the svalboard module, and a few of those in a
-# row make it stop restarting the overlay at all. resume() leaves an overlay
-# that is switched off, off.
-#
-# Skipped where it cannot or should not run: in CI (the overlay page is its
-# own job there, packed into the release archive) and on a machine without
-# skim. A failure here is a warning, not a failed build, because the firmware
-# is already built and packaged by then, and that is what `make` is for.
-SKIM_PYTHON ?= $(HOME)/.local/share/uv/tools/qmk-skim/bin/python
-
-.PHONY: all clean overlay
+.PHONY: all clean
 all:
 	qmk userspace-compile -e SVAL_FW_VERSION_STRING=$(FW_VERSION_STRING)
 	$(PACKAGE) package --dir .
-	$(MAKE) overlay
-
-overlay:
-	if [ -n "$$CI" ]; then \
-	  echo "overlay: skipped in CI (the release builds its own overlay page)"; \
-	elif [ ! -x "$(SKIM_PYTHON)" ]; then \
-	  echo "overlay: skipped, no skim at $(SKIM_PYTHON) (set SKIM_PYTHON=...)"; \
-	elif $(MAKE) -C tools/svalwatch overlay-assets SKIM_PYTHON="$(SKIM_PYTHON)"; then \
-	  if command -v hs >/dev/null 2>&1; then \
-	    hs -t 3 -c 'local s = require("svalboard"); s.pause(10); s.resume()' </dev/null >/dev/null 2>&1 \
-	      && echo "overlay: redrawn and restarted" \
-	      || echo "overlay: redrawn; Hammerspoon did not answer, so a running overlay shows the new keymap after its next restart"; \
-	  else \
-	    echo "overlay: redrawn"; \
-	  fi; \
-	else \
-	  echo "warning: overlay: could not redraw the layer pictures; the firmware is built, but the overlay still shows the previous keymap" >&2; \
-	fi
 
 clean:
 	qmk clean

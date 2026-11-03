@@ -116,7 +116,10 @@ jobs:
                   if-no-files-found: error
 
             # svaloverlay's page: skim's layer images in the overlay's
-            # palette, built from the keymap with this job's QMK checkout.
+            # palette, built from the keymap with this job's QMK checkout,
+            # plus the render bundle (render/) the overlay draws the
+            # keyboard's own keymap with. It reads the firmware ELF `make`
+            # left in svalboard-qmk/.build, so it has to run after the build.
             # Platform-independent, so it is built here and handed to the
             # macOS job that packs it with the binaries.
             - name: Build the overlay page

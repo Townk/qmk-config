@@ -20,9 +20,12 @@ TESTING_PLUGINS := $(firstword $(wildcard /Library/Developer/CommandLineTools/us
 test:
 	swift test $(if $(TESTING_PLUGINS),-Xswiftc -plugin-path -Xswiftc $(TESTING_PLUGINS))
 
-# svaloverlay's page: skim's layer images in the overlay's palette, plus the
-# render bundle (render/) the overlay draws the keyboard's own keymap with.
-# Rebuild after changing the keymap or its skim config.
+# svaloverlay's default page: skim's layer images in the overlay's palette,
+# plus the render bundle (render/) the overlay draws the keyboard's own keymap
+# with. The overlay reads the keymap off the keyboard when it connects and
+# renders its page itself, so nothing needs running after a flash; this target
+# is for working on the overlay itself (its look, skim config or bundle) and
+# for CI, which packs the result into the release archive.
 overlay-assets:
 	@test -f "$(ELF)" || { echo "overlay-assets: no firmware ELF at $(ELF); build the firmware first (\`make\` in $(REPO))" >&2; exit 1; }
 	$(SKIM_PYTHON) overlay/build_assets.py --repo $(REPO) --qmk-home $(QMK_HOME) --elf $(ELF) --out $(ASSETS)

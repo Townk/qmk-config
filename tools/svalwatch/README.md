@@ -47,16 +47,24 @@ reloads: off (not running at all), background, or on top. Leader, `t`, `k`
 steps to the next one, off → background → on top → off; the binding is
 sticky, so keep pressing `k` until Esc.
 
-Its page is built from the keymap with skim, in the overlay palette of
-`overlay/skim-overlay.yaml`, and needs skim 0.7.5 or later (key tags and `layer_indicator.reserve_space`):
+Its page follows the keyboard: on connect the overlay reads the keymap off
+the board and renders the layer pictures itself, with the render bundle
+(`render/`) that ships next to the default page, so flashing a new keymap
+needs no rebuild and no reinstall. The default page (used until the keymap
+has been read) is built with skim, in the overlay palette of
+`overlay/skim-overlay.yaml`, and needs skim 0.7.5 or later (key tags and
+`layer_indicator.reserve_space`), the built firmware ELF (`make` in the repo
+root) and ARM binutils. `overlay-assets` is only for changing the overlay
+itself:
 
 ```sh
-make install                          # binaries + page into ~/.local
-make overlay-assets                   # after changing the keymap or its skim config
+make install                          # binaries + default page + bundle into ~/.local
+make overlay-assets                   # after changing the overlay's look, skim config or bundle
 ```
 
 Other Macs get both from the firmware release instead: CI attaches
-`svaloverlay-macos.tar.gz`, and the dotfiles install it.
+`svaloverlay-macos.tar.gz` (page and bundle included), and the dotfiles
+install it.
 
 Memory, measured 2026-10-25: about 70 MB for svaloverlay plus about 130 MB
 across WebKit's helper processes (content, GPU, networking); 0% CPU idle.
