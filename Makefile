@@ -2,6 +2,8 @@
 
 MAKEFLAGS += --no-print-directory
 
+# `make` is the build: it compiles through the qmk CLI and then packages
+# the .svup updater files (a bare `qmk userspace-compile` skips that).
 # Everything routes through the qmk CLI, which resolves this overlay's
 # keymap (keymap.json, the Vial feature flags, the keymap's config.h)
 # BEFORE invoking make inside qmk_home. Forwarding goals straight to
@@ -10,9 +12,13 @@ MAKEFLAGS += --no-print-directory
 # townk_overrides.c under -Werror. (That old path also mis-parsed the
 # current `qmk config` output, which appends " (config)" to values.)
 
+# Overridden by CI (FW_VERSION_STRING=v1.2.3); at most 16 chars of A-Za-z0-9._+-
+FW_VERSION_STRING ?= $(shell python3 -I tools/updater/package_updates.py version)
+
 .PHONY: all clean
 all:
-	qmk userspace-compile
+	qmk userspace-compile -e SVAL_FW_VERSION_STRING=$(FW_VERSION_STRING)
+	python3 -I tools/updater/package_updates.py package --dir .
 
 clean:
 	qmk clean

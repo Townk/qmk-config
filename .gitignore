@@ -24,3 +24,8 @@ tests/libtownk_mouse.so
 
 # Virtualenv
 .venv
+
+# updater packaging (tools/updater/package_updates.py)
+*.svup
+/sval_update.py
+/make_update.py

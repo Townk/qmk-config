@@ -1,7 +1,7 @@
 {
-    "userspace_version": "1.0",
+    "userspace_version": "1.1",
     "build_targets": [
-        ["svalboard/trackball/pmw3389/left", "townk"],
-        ["svalboard/trackball/pmw3389/right", "townk"]
+        ["svalboard/trackball/pmw3389/left", "townk", {"SVAL_UPDATER": "yes", "SVAL_UPDATE_NO_CHORD": "yes"}],
+        ["svalboard/trackball/pmw3389/right", "townk", {"SVAL_UPDATER": "yes", "SVAL_UPDATE_NO_CHORD": "yes"}]
     ]
 }
