@@ -18,8 +18,8 @@ compile` leaves next to its objects. Steps:
 5. Write the render bundle to DIR/render/: what render_page.py needs to
    draw the same page on the Mac from the keymap read off the keyboard
    (the page code and files, the merged config, the manifest, the
-   exact-spelling table and QMK's keycode spec), plus a VERSION hash of
-   all of it.
+   exact-spelling tables, by value and by position, and QMK's keycode
+   spec), plus a VERSION hash of all of it.
 
 skim must tag keys (`<g data-key="N">`, skim's feat/key-tags); the build
 fails if the images have no tags, since the overlay could not highlight.
@@ -35,7 +35,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import page_build
 import spelling
@@ -85,9 +85,11 @@ def layout_spellings(keymap: Dict[str, Any], config: Dict[str, Any],
     return out
 
 
-def spelling_table(repo: Path, qmk_home: Path, elf: Path, keymap: Dict[str, Any],
-                   config: Dict[str, Any], matrix: List[List[int]]) -> Dict[int, str]:
-    """Placed keys by position, then every named custom keycode."""
+def spelling_tables(repo: Path, qmk_home: Path, elf: Path, keymap: Dict[str, Any],
+                    config: Dict[str, Any], matrix: List[List[int]],
+                    spec: Dict[str, Any]) -> Tuple[Dict[int, str], Dict[str, List[Any]]]:
+    """The value table (placed keys, then every named custom keycode) and
+    the per-position table, after checking the pairing against `spec`."""
     stale = [path for path in (repo / KEYMAP / "keymap.c", repo / KEYCODES_HEADER)
              if elf.is_file() and path.stat().st_mtime > elf.stat().st_mtime]
     if stale:
@@ -95,7 +97,10 @@ def spelling_table(repo: Path, qmk_home: Path, elf: Path, keymap: Dict[str, Any]
     rows = 1 + max(row for row, _ in matrix)
     cols = 1 + max(col for _, col in matrix)
     numbers = spelling.elf_keymaps(elf, rows, cols)
-    placed = spelling.pair(layout_spellings(keymap, config, len(numbers)), numbers, matrix)
+    spellings = layout_spellings(keymap, config, len(numbers))
+    spelling.check_spec(spellings, numbers, matrix, spec)
+    placed = spelling.pair(spellings, numbers, matrix)
+    by_position = spelling.positions(spellings, numbers, matrix)
 
     names = spelling.enum_names((repo / KEYCODES_HEADER).read_text(), KEYCODES_ENUM)
     sval = json.loads((repo / KEYMAP / "sval.json").read_text())
@@ -103,7 +108,7 @@ def spelling_table(repo: Path, qmk_home: Path, elf: Path, keymap: Dict[str, Any]
     cflags = elf.parent / f"obj_{elf.stem}" / "cflags.txt"
     named = spelling.compiled_values(
         qmk_home, cflags, ["QMK_KEYBOARD_H", f'"{Path(KEYCODES_HEADER).name}"'], names)
-    return spelling.with_named(placed, named)
+    return spelling.with_named(placed, named), by_position
 
 
 def keycode_spec(qmk_home: Path) -> Dict[str, Any]:
@@ -126,11 +131,19 @@ def keycode_spec(qmk_home: Path) -> Dict[str, Any]:
     return json.loads(done.stdout)
 
 
-def write_bundle(out: Path, config_path: Path, page_manifest: Dict[str, Any],
-                 table: Dict[int, str], spec: Dict[str, Any], icon_font: Path) -> None:
-    """The render bundle in `out`, replacing whatever was there."""
-    if out.exists():
-        shutil.rmtree(out)
+def write_bundle(final: Path, config_path: Path, page_manifest: Dict[str, Any],
+                 table: Dict[int, str], by_position: Dict[str, List[Any]],
+                 spec: Dict[str, Any], icon_font: Path) -> None:
+    """The render bundle in `final`, replacing whatever was there.
+
+    Written in full next to it, then swapped in with renames, so a reader
+    sees the old bundle or the new one, never a half-written one.
+    """
+    out = final.with_name(final.name + ".tmp")
+    old = final.with_name(final.name + ".old")
+    for leftover in (out, old):
+        if leftover.exists():
+            shutil.rmtree(leftover)
     out.mkdir(parents=True)
     for name in BUNDLE_CODE:
         if (HERE / name).exists():
@@ -140,8 +153,14 @@ def write_bundle(out: Path, config_path: Path, page_manifest: Dict[str, Any],
     shutil.copyfile(config_path, out / "skim-config.yaml")
     (out / "manifest.json").write_text(json.dumps(page_manifest))
     (out / "spelling.json").write_text(json.dumps(spelling.to_json(table), indent=1) + "\n")
+    (out / "positions.json").write_text(json.dumps(by_position, indent=1) + "\n")
     (out / "keycodes.json").write_text(json.dumps(spec))
     (out / "VERSION").write_text(bundle_version(out))
+    if final.exists():
+        final.rename(old)
+    out.rename(final)
+    if old.exists():
+        shutil.rmtree(old)
 
 
 def bundle_version(bundle: Path) -> str:
@@ -178,14 +197,16 @@ def main() -> None:
             args.repo / KEYMAP / "skim-config.yaml", HERE / "skim-overlay.yaml", work)
         images = page_build.layer_images(keymap, config_path, work)
         page_manifest = page_build.manifest(config, layout)
-        table = spelling_table(args.repo, args.qmk_home, elf, json.loads(keymap.read_text()),
-                               config, page_manifest["matrix"])
         spec = keycode_spec(args.qmk_home)
+        table, by_position = spelling_tables(
+            args.repo, args.qmk_home, elf, json.loads(keymap.read_text()), config,
+            page_manifest["matrix"], spec)
 
         if not page_build.write_page(args.out, page_build.page(images, page_manifest),
                                      args.icon_font):
             print(f"build_assets: no icon font at {args.icon_font}; header icons will not render")
-        write_bundle(args.out / "render", config_path, page_manifest, table, spec, args.icon_font)
+        write_bundle(args.out / "render", config_path, page_manifest, table, by_position,
+                     spec, args.icon_font)
     print(f"build_assets: {len(images)} layers, {len(table)} spellings -> {args.out}")
 
 

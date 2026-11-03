@@ -62,13 +62,57 @@ class PairTest(unittest.TestCase):
 
         with self.assertRaises(SystemExit) as layers:
             spelling.pair([["KC_A", "KC_B"]], elf, SWAPPED)
-        self.assertIn("1", str(layers.exception.code))
-        self.assertIn("2", str(layers.exception.code))
+        self.assertRegex(str(layers.exception.code),
+                         r"^spelling: the keymap has 1 layers but the firmware has 2$")
 
         with self.assertRaises(SystemExit) as keys:
             spelling.pair([["KC_A", "KC_B", "KC_C"], ["KC_A", "KC_B"]], elf, SWAPPED)
-        self.assertIn("3", str(keys.exception.code))
-        self.assertIn("2", str(keys.exception.code))
+        self.assertRegex(str(keys.exception.code),
+                         r"^spelling: layer 0 has 3 keys but the layout has 2$")
+
+
+class PositionsTest(unittest.TestCase):
+    def test_one_value_spelled_two_ways_keeps_both_positions(self):
+        spellings = [["KC_LCMD", "KC_B"], ["ML_CMD", "KC_B"]]
+        elf = [[[0x0005, 0x00E3]], [[0x0005, 0x00E3]]]
+
+        self.assertEqual(spelling.positions(spellings, elf, SWAPPED), {
+            "0,0,1": [0x00E3, "KC_LCMD"],
+            "0,0,0": [0x0005, "KC_B"],
+            "1,0,1": [0x00E3, "ML_CMD"],
+            "1,0,0": [0x0005, "KC_B"],
+        })
+
+    def test_skips_undefined_layers(self):
+        self.assertEqual(spelling.positions([None, ["KC_A", "KC_B"]],
+                                            [[[0, 0]], [[0x0005, 0x0004]]], SWAPPED),
+                         {"1,0,1": [0x0004, "KC_A"], "1,0,0": [0x0005, "KC_B"]})
+
+
+SPEC = {"keycodes": {
+    "0x0004": {"key": "KC_A"},
+    "0x0005": {"key": "KC_B"},
+    "0x00E3": {"key": "KC_LEFT_GUI", "aliases": ["KC_LGUI", "KC_LCMD"]},
+}}
+
+
+class CheckSpecTest(unittest.TestCase):
+    def test_accepts_names_and_aliases_with_their_values(self):
+        spellings = [["KC_A", "KC_LCMD"], ["ML_CMD", "LT(1, KC_B)"]]
+        elf = [[[0x00E3, 0x0004]], [[0x4105, 0x00E3]]]
+
+        spelling.check_spec(spellings, elf, SWAPPED, SPEC)  # no SystemExit
+
+    def test_fails_naming_position_spelling_and_both_values(self):
+        # Layer 1 paired with the wrong firmware layer: KC_B reads as 0x0004.
+        spellings = [["KC_A", "KC_B"], ["KC_A", "KC_B"]]
+        elf = [[[0x0005, 0x0004]], [[0x0004, 0x0004]]]
+
+        with self.assertRaises(SystemExit) as failed:
+            spelling.check_spec(spellings, elf, SWAPPED, SPEC)
+        self.assertRegex(str(failed.exception.code),
+                         r"(?m)^spelling: layer 1 row 0 col 0: KC_B is 0x0004 in the "
+                         r"firmware but 0x0005 in the keycode spec$")
 
 
 class EnumNamesTest(unittest.TestCase):

@@ -35,26 +35,25 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence
+from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple
 
 PROBE_SYMBOL = "spelling_probe"
 
 
-def pair(layout_spellings: Sequence[Optional[Sequence[str]]],
-         elf_keymaps: Sequence[Sequence[Sequence[int]]],
-         matrix: Sequence[Sequence[int]]) -> Dict[int, str]:
-    """Pair each placed key's spelling with its value, by matrix position.
+def placed_keys(layout_spellings: Sequence[Optional[Sequence[str]]],
+                elf_keymaps: Sequence[Sequence[Sequence[int]]],
+                matrix: Sequence[Sequence[int]]) -> Iterator[Tuple[int, int, int, int, str]]:
+    """Every placed key as `(layer, row, col, value, spelling)`.
 
     `layout_spellings[layer]` is that layer's spellings in layout order,
     or None for a layer the keymap does not define (it is skipped).
     `elf_keymaps[layer][row][col]` is the firmware's value there.
-    `matrix[i]` is layout key i's `[row, col]`. A value spelled two ways
-    keeps the first (layer order, then layout order), with a warning.
+    `matrix[i]` is layout key i's `[row, col]`. Layer order, then layout
+    order. A shape that does not line up fails, naming both counts.
     """
     if len(layout_spellings) != len(elf_keymaps):
         sys.exit(f"spelling: the keymap has {len(layout_spellings)} layers but "
                  f"the firmware has {len(elf_keymaps)}")
-    table: Dict[int, str] = {}
     for layer, (spellings, numbers) in enumerate(zip(layout_spellings, elf_keymaps)):
         if spellings is None:
             continue
@@ -62,13 +61,61 @@ def pair(layout_spellings: Sequence[Optional[Sequence[str]]],
             sys.exit(f"spelling: layer {layer} has {len(spellings)} keys but the "
                      f"layout has {len(matrix)}")
         for spelled, (row, col) in zip(spellings, matrix):
-            value = numbers[row][col]
-            first = table.setdefault(value, spelled)
-            if first != spelled:
-                print(f"spelling: warning: 0x{value:04X} is spelled {first!r} and "
-                      f"{spelled!r} (layer {layer}); keeping {first!r}",
-                      file=sys.stderr)
+            yield layer, row, col, numbers[row][col], spelled
+
+
+def pair(layout_spellings: Sequence[Optional[Sequence[str]]],
+         elf_keymaps: Sequence[Sequence[Sequence[int]]],
+         matrix: Sequence[Sequence[int]]) -> Dict[int, str]:
+    """Pair each placed key's spelling with its value, by matrix position.
+
+    See `placed_keys`. A value spelled two ways keeps the first, with a
+    warning; `positions` keeps both, by position.
+    """
+    table: Dict[int, str] = {}
+    for layer, _, _, value, spelled in placed_keys(layout_spellings, elf_keymaps, matrix):
+        first = table.setdefault(value, spelled)
+        if first != spelled:
+            print(f"spelling: warning: 0x{value:04X} is spelled {first!r} and "
+                  f"{spelled!r} (layer {layer}); keeping {first!r}",
+                  file=sys.stderr)
     return table
+
+
+def positions(layout_spellings: Sequence[Optional[Sequence[str]]],
+              elf_keymaps: Sequence[Sequence[Sequence[int]]],
+              matrix: Sequence[Sequence[int]]) -> Dict[str, List[Any]]:
+    """`{"L,R,C": [value, spelling]}` for every placed key (matrix coordinates).
+
+    The renderer uses a position's spelling when the keyboard still has
+    that value there, so a value spelled two ways keeps both spellings.
+    """
+    return {f"{layer},{row},{col}": [value, spelled]
+            for layer, row, col, value, spelled
+            in placed_keys(layout_spellings, elf_keymaps, matrix)}
+
+
+def check_spec(layout_spellings: Sequence[Optional[Sequence[str]]],
+               elf_keymaps: Sequence[Sequence[Sequence[int]]],
+               matrix: Sequence[Sequence[int]], spec: Dict[str, Any]) -> None:
+    """Fail unless every placed spec name (or alias) has its spec value.
+
+    Cross-checks the pairing itself: a layer or key paired with the wrong
+    firmware position shows up as a basic keycode with another value.
+    """
+    by_name: Dict[str, int] = {}
+    for value, keycode in spec["keycodes"].items():
+        for name in [keycode["key"], *keycode.get("aliases", [])]:
+            by_name[name] = int(value, 16)
+    wrong = [f"spelling: layer {layer} row {row} col {col}: {spelled} is 0x{value:04X} "
+             f"in the firmware but 0x{by_name[spelled]:04X} in the keycode spec"
+             for layer, row, col, value, spelled
+             in placed_keys(layout_spellings, elf_keymaps, matrix)
+             if spelled in by_name and by_name[spelled] != value]
+    if wrong:
+        sys.exit("\n".join(wrong + ["spelling: the keymap and the firmware do not pair up; "
+                                    "is the firmware stale, or skim-config.yaml's layers "
+                                    "out of keymap.c's order?"]))
 
 
 def with_named(placed: Dict[int, str], named: Dict[str, int]) -> Dict[int, str]:
