@@ -7,6 +7,9 @@ ASSETS ?= $(PREFIX)/share/svaloverlay
 SKIM_PYTHON ?= $(HOME)/.local/share/uv/tools/qmk-skim/bin/python
 QMK_HOME ?= $(shell qmk config user.qmk_home | sed -E 's/^user\.qmk_home=//; s/ \(config\)$$//')
 REPO := $(abspath ../..)
+# The built firmware, which the overlay's spelling table is read from: `make`
+# in $(REPO) leaves it in qmk_home.
+ELF ?= $(QMK_HOME)/.build/svalboard_trackball_pmw3389_right_townk.elf
 
 build:
 	swift build -c release
@@ -17,10 +20,12 @@ TESTING_PLUGINS := $(firstword $(wildcard /Library/Developer/CommandLineTools/us
 test:
 	swift test $(if $(TESTING_PLUGINS),-Xswiftc -plugin-path -Xswiftc $(TESTING_PLUGINS))
 
-# svaloverlay's page: skim's layer images in the overlay's palette.
+# svaloverlay's page: skim's layer images in the overlay's palette, plus the
+# render bundle (render/) the overlay draws the keyboard's own keymap with.
 # Rebuild after changing the keymap or its skim config.
 overlay-assets:
-	$(SKIM_PYTHON) overlay/build_assets.py --repo $(REPO) --qmk-home $(QMK_HOME) --out $(ASSETS)
+	@test -f "$(ELF)" || { echo "overlay-assets: no firmware ELF at $(ELF); build the firmware first (\`make\` in $(REPO))" >&2; exit 1; }
+	$(SKIM_PYTHON) overlay/build_assets.py --repo $(REPO) --qmk-home $(QMK_HOME) --elf $(ELF) --out $(ASSETS)
 
 # A running svaloverlay keeps the code and page it started with, so stop
 # it: Hammerspoon's svalboard module restarts it within seconds, on the new
